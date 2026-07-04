@@ -14,7 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      food_entries: {
+        Row: {
+          carbs_g: number
+          created_at: string
+          fat_g: number
+          id: string
+          kcal: number
+          label: string
+          protein_g: number
+        }
+        Insert: {
+          carbs_g?: number
+          created_at?: string
+          fat_g?: number
+          id?: string
+          kcal: number
+          label: string
+          protein_g?: number
+        }
+        Update: {
+          carbs_g?: number
+          created_at?: string
+          fat_g?: number
+          id?: string
+          kcal?: number
+          label?: string
+          protein_g?: number
+        }
+        Relationships: []
+      }
+      movement_entries: {
+        Row: {
+          created_at: string
+          id: string
+          kcal: number
+          label: string
+          minutes: number
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kcal: number
+          label: string
+          minutes: number
+          source: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kcal?: number
+          label?: string
+          minutes?: number
+          source?: string
+        }
+        Relationships: []
+      }
+      profile: {
+        Row: {
+          active_burn_goal_kcal: number
+          activity_level: string
+          age: number
+          fat_loss_pace: string
+          gender: string
+          height_cm: number
+          id: number
+          resting_hr: number
+          updated_at: string
+          weight_kg: number
+        }
+        Insert: {
+          active_burn_goal_kcal?: number
+          activity_level?: string
+          age?: number
+          fat_loss_pace?: string
+          gender?: string
+          height_cm?: number
+          id?: number
+          resting_hr?: number
+          updated_at?: string
+          weight_kg?: number
+        }
+        Update: {
+          active_burn_goal_kcal?: number
+          activity_level?: string
+          age?: number
+          fat_loss_pace?: string
+          gender?: string
+          height_cm?: number
+          id?: number
+          resting_hr?: number
+          updated_at?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
