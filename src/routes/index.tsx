@@ -8,7 +8,7 @@ import { targets, type Profile } from "@/lib/calc";
 import { toast, Toaster } from "sonner";
 import {
   Flame, Footprints, UtensilsCrossed, Settings, Trash2, Shuffle,
-  CheckCircle2, Sparkles, Loader2, Watch, Wand2,
+  CheckCircle2, Sparkles, Loader2, Watch, Wand2, ArrowLeft,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -25,6 +25,8 @@ type Food = {
   protein_g: number; carbs_g: number; fat_g: number; created_at: string;
 };
 
+type MetricKey = "minutes" | "active_kcal" | "eaten_kcal" | "protein" | "carbs" | "fat";
+
 const NUDGES = [
   { icon: "💪", text: "10 push-ups", minutes: 3, met: 5 },
   { icon: "🧘", text: "2 min stretch", minutes: 2, met: 2.5 },
@@ -38,14 +40,32 @@ const NUDGES = [
   { icon: "🦵", text: "20 calf raises", minutes: 2, met: 3.5 },
 ];
 
-function todayStart() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+function dayStart(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function dayKey(d: Date) {
+  return dayStart(d).toISOString().slice(0, 10);
+}
+function isSameDay(a: Date, b: Date) {
+  return dayKey(a) === dayKey(b);
+}
+function isToday(d: Date) {
+  return isSameDay(d, new Date());
+}
+// For backdated inserts we set the timestamp to noon-local of the selected day.
+function timestampForDay(d: Date) {
+  if (isToday(d)) return new Date().toISOString();
+  const x = new Date(d);
+  x.setHours(12, 0, 0, 0);
+  return x.toISOString();
 }
 
 function App() {
   const qc = useQueryClient();
+  const [selectedDate, setSelectedDate] = useState<Date>(() => dayStart(new Date()));
+  const [metric, setMetric] = useState<MetricKey>("minutes");
 
   const profileQ = useQuery({
     queryKey: ["profile"],
@@ -72,7 +92,8 @@ function App() {
   const foodQ = useQuery({
     queryKey: ["food"],
     queryFn: async (): Promise<Food[]> => {
-      const since = todayStart();
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
       const { data, error } = await supabase.from("food_entries")
         .select("*").gte("created_at", since.toISOString())
         .order("created_at", { ascending: false });
@@ -104,18 +125,24 @@ function App() {
   const t = targets(profile);
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
+  const viewingToday = isToday(selectedDate);
 
-  const todayMovements = movements.filter(m => new Date(m.created_at) >= todayStart());
-  const totalMinutes = todayMovements.reduce((s, m) => s + Number(m.minutes), 0);
-  const activeBurn = todayMovements.reduce((s, m) => s + Number(m.kcal), 0);
+  const dayMovements = movements.filter(m => isSameDay(new Date(m.created_at), selectedDate));
+  const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
+  const totalMinutes = dayMovements.reduce((s, m) => s + Number(m.minutes), 0);
+  const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0);
   const totalBurn = Math.round(t.bmr + activeBurn);
-  const eaten = foods.reduce((s, f) => s + Number(f.kcal), 0);
-  const proteinG = foods.reduce((s, f) => s + Number(f.protein_g), 0);
-  const carbsG = foods.reduce((s, f) => s + Number(f.carbs_g), 0);
-  const fatG = foods.reduce((s, f) => s + Number(f.fat_g), 0);
+  const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
+  const proteinG = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0);
+  const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
+  const fatG = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
 
   const streak = computeStreak(movements);
-  const last7 = last7DaysMinutes(movements);
+  const last7 = last7Days(movements, foods, metric, t);
+
+  const dateLabel = viewingToday
+    ? "Today"
+    : selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 
   return (
     <div className="min-h-screen pb-24">
@@ -137,12 +164,22 @@ function App() {
             <Settings size={20} />
           </button>
         </div>
+        {!viewingToday && (
+          <div className="mx-auto max-w-xl px-5 pb-3">
+            <button
+              onClick={() => setSelectedDate(dayStart(new Date()))}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sand/15 border border-sand/30 text-sand text-xs font-semibold hover:bg-sand/25 transition"
+            >
+              <ArrowLeft size={12} /> Back to today
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
         {/* Hero snapshot */}
         <section className="text-center space-y-1">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">Today</div>
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">{dateLabel}</div>
           <div className="flex items-baseline justify-center gap-4">
             <div>
               <div className="font-display font-bold text-5xl text-sand">{totalMinutes}</div>
@@ -154,17 +191,19 @@ function App() {
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">kcal active</div>
             </div>
           </div>
-          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-sand/10 border border-sand/20">
-            <Flame size={14} className="text-sand" />
-            <span className="text-xs font-mono">{streak} day streak</span>
-          </div>
+          {viewingToday && (
+            <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-sand/10 border border-sand/20">
+              <Flame size={14} className="text-sand" />
+              <span className="text-xs font-mono">{streak} day streak</span>
+            </div>
+          )}
         </section>
 
         {/* Oasis meter */}
         <OasisMeter minutes={totalMinutes} />
 
         {/* Daily benchmark */}
-        <Card title="Daily benchmark" hint="Compass, not a rulebook.">
+        <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
           <div className="space-y-3">
             <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
             <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
@@ -174,27 +213,42 @@ function App() {
           </div>
         </Card>
 
-        {/* Nudge */}
-        <NudgeCard weight={profile.weight_kg} onLogged={invalidate} />
+        {/* Nudge (today only) */}
+        {viewingToday && <NudgeCard weight={profile.weight_kg} onLogged={invalidate} />}
 
-        {/* Movement log input */}
-        <MovementInput weight={profile.weight_kg} onLogged={invalidate} />
+        {/* Log inputs — allow back-filling on any day */}
+        <MovementInput
+          weight={profile.weight_kg}
+          logDate={selectedDate}
+          viewingToday={viewingToday}
+          onLogged={invalidate}
+        />
+        <FoodInput
+          logDate={selectedDate}
+          viewingToday={viewingToday}
+          onLogged={invalidate}
+        />
 
-        {/* Food log input */}
-        <FoodInput onLogged={invalidate} />
-
-        {/* Today's log */}
-        <Card title="Today's log">
-          <TodayLog movements={todayMovements} foods={foods} onChange={invalidate} />
+        {/* Day's log */}
+        <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
+          <DayLog movements={dayMovements} foods={dayFoods} onChange={invalidate} />
         </Card>
 
         {/* Last 7 days */}
-        <Card title="Last 7 days">
-          <SevenDayStrip data={last7} />
+        <Card
+          title="Last 7 days"
+          right={<MetricPicker value={metric} onChange={setMetric} />}
+        >
+          <SevenDayStrip
+            data={last7}
+            metric={metric}
+            selectedDate={selectedDate}
+            onSelect={(d) => setSelectedDate(dayStart(d))}
+          />
         </Card>
 
         {/* Balance */}
-        <Card title="Estimated balance">
+        <Card title={viewingToday ? "Estimated balance" : `Balance · ${dateLabel}`}>
           <div className="grid grid-cols-2 gap-3">
             <Stat label="Eaten" value={Math.round(eaten)} unit="kcal" tone="warm" />
             <Stat label="Burned" value={totalBurn} unit="kcal" tone="cool" />
@@ -226,12 +280,14 @@ function App() {
 
 /* ---------- Components ---------- */
 
-function Card({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Card({ title, hint, right, children }: {
+  title: string; hint?: string; right?: React.ReactNode; children: React.ReactNode;
+}) {
   return (
     <section className="rounded-2xl bg-card border border-border/50 shadow-[var(--shadow-card)] p-5">
-      <div className="flex items-baseline justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-2">
         <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground">{title}</h2>
-        {hint && <span className="text-[10px] text-muted-foreground/70 italic">{hint}</span>}
+        {right ? right : (hint && <span className="text-[10px] text-muted-foreground/70 italic">{hint}</span>)}
       </div>
       {children}
     </section>
@@ -243,7 +299,6 @@ function OasisMeter({ minutes }: { minutes: number }) {
   return (
     <div className="relative rounded-2xl border border-border/50 overflow-hidden bg-card shadow-[var(--shadow-card)]">
       <div className="relative h-40">
-        {/* fill */}
         <div
           className="absolute inset-x-0 bottom-0 transition-[height] duration-1000 ease-out"
           style={{
@@ -260,7 +315,6 @@ function OasisMeter({ minutes }: { minutes: number }) {
             }}
           />
         </div>
-        {/* overlay text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="font-mono text-xs uppercase tracking-widest text-foreground/80 mix-blend-plus-lighter">Oasis fill</div>
           <div className="font-display font-bold text-4xl">{pct}%</div>
@@ -277,8 +331,6 @@ function BenchmarkRow({ label, value, target, unit, mode }: {
   const v = Math.round(value);
   const pct = Math.min(100, target > 0 ? (v / target) * 100 : 0);
   const overTarget = v > target;
-  // mode "under" = want value <= target => green if <= target, red if over
-  // mode "over"  = want value >= target => green if >= target, red if under
   const good = mode === "under" ? v <= target : v >= target;
   const color = good ? "var(--oasis)" : "var(--coral)";
 
@@ -302,7 +354,6 @@ function BenchmarkRow({ label, value, target, unit, mode }: {
               background: "var(--coral)", transform: "translateX(-100%)"
             }} />
         )}
-        {/* target marker */}
         <div className="absolute top-[-2px] bottom-[-2px] w-[2px] bg-foreground/50" style={{ left: "100%", transform: "translateX(-1px)" }} />
       </div>
     </div>
@@ -359,7 +410,9 @@ function NudgeCard({ weight, onLogged }: { weight: number; onLogged: () => void 
   );
 }
 
-function MovementInput({ weight, onLogged }: { weight: number; onLogged: () => void }) {
+function MovementInput({ weight, logDate, viewingToday, onLogged }: {
+  weight: number; logDate: Date; viewingToday: boolean; onLogged: () => void;
+}) {
   const [text, setText] = useState("");
   const parse = useServerFn(parseMovement);
   const [busy, setBusy] = useState(false);
@@ -370,7 +423,10 @@ function MovementInput({ weight, onLogged }: { weight: number; onLogged: () => v
     setBusy(true);
     try {
       const parsed = await parse({ data: { text: text.trim(), weight_kg: weight } });
-      const { error } = await supabase.from("movement_entries").insert(parsed);
+      const { error } = await supabase.from("movement_entries").insert({
+        ...parsed,
+        created_at: timestampForDay(logDate),
+      });
       if (error) throw error;
       toast.success(`Logged ${parsed.label} · ${parsed.kcal} kcal (${parsed.source})`);
       setText("");
@@ -380,10 +436,14 @@ function MovementInput({ weight, onLogged }: { weight: number; onLogged: () => v
     } finally { setBusy(false); }
   };
 
+  const dateHint = viewingToday
+    ? "Watch numbers are trusted exactly. No number → smart estimate."
+    : `Back-filling to ${logDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
+
   return (
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
       <label className="text-[10px] uppercase tracking-widest text-oasis/80 flex items-center gap-1.5 mb-2">
-        <Footprints size={12} /> Log movement
+        <Footprints size={12} /> Log movement {!viewingToday && <span className="text-sand">· past day</span>}
       </label>
       <textarea
         rows={2}
@@ -392,10 +452,8 @@ function MovementInput({ weight, onLogged }: { weight: number; onLogged: () => v
         placeholder='e.g. "walked 30 min, watch said 145 kcal" or "played padel 45 min"'
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-oasis/40 placeholder:text-muted-foreground/50"
       />
-      <div className="flex items-center justify-between mt-2">
-        <span className="text-[10px] text-muted-foreground">
-          Watch numbers are trusted exactly. No number → smart estimate.
-        </span>
+      <div className="flex items-center justify-between mt-2 gap-2">
+        <span className="text-[10px] text-muted-foreground">{dateHint}</span>
         <button type="submit" disabled={busy || !text.trim()}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-oasis text-accent-foreground text-xs font-semibold disabled:opacity-40">
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
@@ -406,7 +464,9 @@ function MovementInput({ weight, onLogged }: { weight: number; onLogged: () => v
   );
 }
 
-function FoodInput({ onLogged }: { onLogged: () => void }) {
+function FoodInput({ logDate, viewingToday, onLogged }: {
+  logDate: Date; viewingToday: boolean; onLogged: () => void;
+}) {
   const [text, setText] = useState("");
   const parse = useServerFn(parseFood);
   const [busy, setBusy] = useState(false);
@@ -417,7 +477,10 @@ function FoodInput({ onLogged }: { onLogged: () => void }) {
     setBusy(true);
     try {
       const parsed = await parse({ data: { text: text.trim() } });
-      const { error } = await supabase.from("food_entries").insert(parsed);
+      const { error } = await supabase.from("food_entries").insert({
+        ...parsed,
+        created_at: timestampForDay(logDate),
+      });
       if (error) throw error;
       toast.success(`Logged ${parsed.label} · ${parsed.kcal} kcal`);
       setText("");
@@ -430,7 +493,7 @@ function FoodInput({ onLogged }: { onLogged: () => void }) {
   return (
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
       <label className="text-[10px] uppercase tracking-widest text-sand/80 flex items-center gap-1.5 mb-2">
-        <UtensilsCrossed size={12} /> Log food or drink
+        <UtensilsCrossed size={12} /> Log food or drink {!viewingToday && <span className="text-sand">· past day</span>}
       </label>
       <textarea
         rows={2}
@@ -439,7 +502,12 @@ function FoodInput({ onLogged }: { onLogged: () => void }) {
         placeholder='e.g. "chicken shawarma wrap" or "flat white with oat milk"'
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
       />
-      <div className="flex items-center justify-end mt-2">
+      <div className="flex items-center justify-between mt-2 gap-2">
+        <span className="text-[10px] text-muted-foreground">
+          {viewingToday
+            ? " "
+            : `Back-filling to ${logDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`}
+        </span>
         <button type="submit" disabled={busy || !text.trim()}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-sand text-primary-foreground text-xs font-semibold disabled:opacity-40">
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
@@ -450,7 +518,7 @@ function FoodInput({ onLogged }: { onLogged: () => void }) {
   );
 }
 
-function TodayLog({ movements, foods, onChange }: {
+function DayLog({ movements, foods, onChange }: {
   movements: Movement[]; foods: Food[]; onChange: () => void;
 }) {
   type Row = { kind: "m" | "f"; ts: string; el: React.ReactNode };
@@ -500,7 +568,7 @@ function TodayLog({ movements, foods, onChange }: {
 
   if (rows.length === 0) {
     return <div className="text-sm text-muted-foreground text-center py-6">
-      Nothing logged yet today. Move or eat something 👀
+      Nothing logged for this day yet.
     </div>;
   }
 
@@ -526,30 +594,90 @@ function LogRow({ icon, label, sub, value, tone, onDelete }: {
   );
 }
 
-function SevenDayStrip({ data }: { data: { date: Date; minutes: number; isToday: boolean }[] }) {
-  const max = Math.max(60, ...data.map(d => d.minutes));
+/* ---------- 7-day strip ---------- */
+
+const METRIC_META: Record<MetricKey, { label: string; unit: string; mode: "over" | "under" }> = {
+  minutes: { label: "Movement min", unit: "min", mode: "over" },
+  active_kcal: { label: "Active kcal", unit: "kcal", mode: "over" },
+  eaten_kcal: { label: "Calories eaten", unit: "kcal", mode: "under" },
+  protein: { label: "Protein", unit: "g", mode: "over" },
+  carbs: { label: "Carbs", unit: "g", mode: "under" },
+  fat: { label: "Fat", unit: "g", mode: "under" },
+};
+
+type DayPoint = { date: Date; value: number; target: number; isToday: boolean };
+
+function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: MetricKey) => void }) {
   return (
-    <div className="flex items-end justify-between gap-2 h-28">
-      {data.map((d, i) => {
-        const h = Math.max(4, (d.minutes / max) * 100);
-        return (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-            <div className="flex-1 flex items-end w-full">
-              <div className="w-full rounded-t-md transition-all"
-                style={{
-                  height: `${h}%`,
-                  background: d.isToday ? "var(--gradient-sand)" : "oklch(0.5 0.12 210 / 0.7)",
-                  boxShadow: d.isToday ? "var(--shadow-glow-sand)" : "none",
-                }}
-              />
-            </div>
-            <div className={`text-[10px] font-mono ${d.isToday ? "text-sand font-bold" : "text-muted-foreground"}`}>
-              {d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
-            </div>
-            <div className="text-[10px] text-muted-foreground/70 font-mono">{d.minutes}</div>
-          </div>
-        );
-      })}
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value as MetricKey)}
+      className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+    >
+      {(Object.keys(METRIC_META) as MetricKey[]).map(k => (
+        <option key={k} value={k}>{METRIC_META[k].label}</option>
+      ))}
+    </select>
+  );
+}
+
+function SevenDayStrip({ data, metric, selectedDate, onSelect }: {
+  data: DayPoint[]; metric: MetricKey; selectedDate: Date; onSelect: (d: Date) => void;
+}) {
+  const meta = METRIC_META[metric];
+  return (
+    <div>
+      <div className="flex items-end justify-between gap-1.5 h-32">
+        {data.map((d, i) => {
+          const pct = d.target > 0 ? Math.min(100, (d.value / d.target) * 100) : 0;
+          const overPct = d.target > 0 && d.value > d.target ? Math.min(30, ((d.value - d.target) / d.target) * 100) : 0;
+          const good = meta.mode === "under" ? d.value <= d.target : d.value >= d.target;
+          const selected = isSameDay(d.date, selectedDate);
+          const barColor = d.value === 0
+            ? "oklch(0.35 0.02 210 / 0.5)"
+            : good ? "var(--oasis)" : "var(--coral)";
+          return (
+            <button
+              key={i}
+              onClick={() => onSelect(d.date)}
+              className={`flex-1 flex flex-col items-center gap-1 rounded-lg p-1 transition ${
+                selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
+              }`}
+              aria-label={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}`}
+            >
+              <div className={`text-[10px] font-mono tabular-nums ${selected ? "text-sand" : "text-muted-foreground"}`}>
+                {Math.round(d.value)}
+              </div>
+              <div className="flex-1 flex items-end w-full min-h-[60px]">
+                <div className="relative w-full bg-secondary/60 rounded-md overflow-hidden" style={{ height: "100%" }}>
+                  <div className="absolute inset-x-0 bottom-0 rounded-md transition-all duration-500"
+                    style={{
+                      height: `${Math.max(3, pct)}%`,
+                      background: barColor,
+                      opacity: d.value === 0 ? 0.4 : 0.9,
+                    }}
+                  />
+                  {overPct > 0 && meta.mode === "under" && (
+                    <div className="absolute inset-x-0 top-0 bg-coral/60"
+                      style={{ height: `${overPct}%` }} />
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col items-center leading-tight">
+                <div className={`text-[10px] font-mono ${d.isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}>
+                  {d.isToday ? "Today" : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
+                </div>
+                <div className={`text-[9px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
+                  {d.date.getDate()}/{d.date.getMonth() + 1}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="text-[10px] text-muted-foreground/70 mt-2 text-center">
+        Tap any day to view its numbers · target {data[0]?.target ?? 0} {meta.unit}
+      </div>
     </div>
   );
 }
@@ -688,34 +816,54 @@ function computeStreak(movements: Movement[]): number {
   if (movements.length === 0) return 0;
   const daysWithMove = new Set<string>();
   for (const m of movements) {
-    const d = new Date(m.created_at);
-    d.setHours(0, 0, 0, 0);
-    daysWithMove.add(d.toISOString().slice(0, 10));
+    daysWithMove.add(dayKey(new Date(m.created_at)));
   }
   let streak = 0;
   const cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
-  // If today has no movement, streak based on consecutive prior days? Spec says "consecutive days with at least one movement entry, breaking on first day with zero movement."
-  // Interpret: count backwards from today; if today missing, streak = 0.
-  while (daysWithMove.has(cursor.toISOString().slice(0, 10))) {
+  while (daysWithMove.has(dayKey(cursor))) {
     streak++;
     cursor.setDate(cursor.getDate() - 1);
   }
   return streak;
 }
 
-function last7DaysMinutes(movements: Movement[]) {
-  const days: { date: Date; minutes: number; isToday: boolean }[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function last7Days(
+  movements: Movement[],
+  foods: Food[],
+  metric: MetricKey,
+  t: ReturnType<typeof targets>,
+): DayPoint[] {
+  const out: DayPoint[] = [];
+  const today = dayStart(new Date());
+  const target = metricTarget(metric, t);
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    const minutes = movements
-      .filter(m => new Date(m.created_at).toISOString().slice(0, 10) === key)
-      .reduce((s, m) => s + Number(m.minutes), 0);
-    days.push({ date: d, minutes: Math.round(minutes), isToday: i === 0 });
+    const key = dayKey(d);
+    const dayMoves = movements.filter(m => dayKey(new Date(m.created_at)) === key);
+    const dayFoods = foods.filter(f => dayKey(new Date(f.created_at)) === key);
+    let value = 0;
+    switch (metric) {
+      case "minutes": value = dayMoves.reduce((s, m) => s + Number(m.minutes), 0); break;
+      case "active_kcal": value = dayMoves.reduce((s, m) => s + Number(m.kcal), 0); break;
+      case "eaten_kcal": value = dayFoods.reduce((s, f) => s + Number(f.kcal), 0); break;
+      case "protein": value = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0); break;
+      case "carbs": value = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0); break;
+      case "fat": value = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0); break;
+    }
+    out.push({ date: d, value: Math.round(value), target, isToday: i === 0 });
   }
-  return days;
+  return out;
+}
+
+function metricTarget(metric: MetricKey, t: ReturnType<typeof targets>): number {
+  switch (metric) {
+    case "minutes": return 60;
+    case "active_kcal": return t.active_burn;
+    case "eaten_kcal": return t.calories;
+    case "protein": return t.protein_g;
+    case "carbs": return t.carbs_g;
+    case "fat": return t.fat_g;
+  }
 }
