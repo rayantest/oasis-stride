@@ -220,8 +220,13 @@ function App() {
           activeBurn={activeBurn}
           eaten={eaten}
           proteinG={proteinG}
+          carbsG={carbsG}
+          fatG={fatG}
+          weightKg={profile.weight_kg}
           calorieTarget={t.calories}
           proteinTarget={t.protein_g}
+          carbTarget={t.carbs_g}
+          fatTarget={t.fat_g}
           activeTarget={t.active_burn}
         />
 
