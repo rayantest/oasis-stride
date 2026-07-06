@@ -377,45 +377,57 @@ function DailyInsights({
 
   return (
     <section className="rounded-2xl p-5 border border-border/50 bg-gradient-to-br from-card via-card to-secondary/30 shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between mb-3">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between mb-1 text-left"
+        aria-expanded={open}
+      >
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
           <Sparkles size={12} /> Daily insight · {dateLabel}
         </span>
-        <span
-          className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border"
-          style={{ color: toneColor, borderColor: toneColor, background: `color-mix(in oklch, ${toneColor} 12%, transparent)` }}
-        >
-          {status}
+        <span className="flex items-center gap-2">
+          <span
+            className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border"
+            style={{ color: toneColor, borderColor: toneColor, background: `color-mix(in oklch, ${toneColor} 12%, transparent)` }}
+          >
+            {status}
+          </span>
+          <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
         </span>
-      </div>
-      <p className="font-display text-base leading-snug mb-3">{text}</p>
-      {nuances.map((n, i) => (
-        <p key={i} className="text-sm text-muted-foreground leading-relaxed mt-2">{n}</p>
-      ))}
+      </button>
 
-      <div className="mt-4 pt-3 border-t border-border/40">
-        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Macro impact on your body</div>
-        <div className="space-y-2">
-          {macros.map((m) => (
-            <div key={m.key} className="rounded-xl border border-border/40 bg-background/40 p-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold">{m.label}</span>
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  {Math.round(m.grams)}g · {Math.round(m.kcal)} kcal ({m.pctOfEaten}%) · Δ {fmtSigned(m.delta)}g
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{m.text}</p>
-            </div>
+      {open && (
+        <>
+          <p className="font-display text-base leading-snug mb-3">{text}</p>
+          {nuances.map((n, i) => (
+            <p key={i} className="text-sm text-muted-foreground leading-relaxed mt-2">{n}</p>
           ))}
-        </div>
-      </div>
 
-      <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-border/40">
-        <MiniStat label="Net" value={fmtSigned(netCals)} unit="kcal" />
-        <MiniStat label="Food Δ" value={fmtSigned(calDelta)} unit="kcal" />
-        <MiniStat label="Protein Δ" value={fmtSigned(proDelta)} unit="g" />
-        <MiniStat label="Active Δ" value={fmtSigned(actDelta)} unit="kcal" />
-      </div>
+          <div className="mt-4 pt-3 border-t border-border/40">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Macro impact on your body</div>
+            <div className="space-y-2">
+              {macros.map((m) => (
+                <div key={m.key} className="rounded-xl border border-border/40 bg-background/40 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-semibold">{m.label}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">
+                      {Math.round(m.grams)}g · {Math.round(m.kcal)} kcal ({m.pctOfEaten}%) · Δ {fmtSigned(m.delta)}g
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{m.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-border/40">
+            <MiniStat label="Net" value={fmtSigned(netCals)} unit="kcal" />
+            <MiniStat label="Food Δ" value={fmtSigned(calDelta)} unit="kcal" />
+            <MiniStat label="Protein Δ" value={fmtSigned(proDelta)} unit="g" />
+            <MiniStat label="Active Δ" value={fmtSigned(actDelta)} unit="kcal" />
+          </div>
+        </>
+      )}
     </section>
   );
 }
