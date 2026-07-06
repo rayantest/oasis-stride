@@ -302,11 +302,19 @@ function DailyInsights({
   calorieTarget, proteinTarget, activeTarget,
 }: {
   dateLabel: string; bmr: number; activeBurn: number; eaten: number; proteinG: number;
-  calorieTarget: number; proteinTarget: number; activeTarget: number;
+function DailyInsights({
+  dateLabel, bmr, activeBurn, eaten, proteinG, carbsG, fatG, weightKg,
+  calorieTarget, proteinTarget, carbTarget, fatTarget, activeTarget,
+}: {
+  dateLabel: string; bmr: number; activeBurn: number; eaten: number;
+  proteinG: number; carbsG: number; fatG: number; weightKg: number;
+  calorieTarget: number; proteinTarget: number; carbTarget: number; fatTarget: number; activeTarget: number;
 }) {
   const netCals = eaten - (bmr + activeBurn);
   const calDelta = eaten - calorieTarget;
   const proDelta = proteinG - proteinTarget;
+  const carbDelta = carbsG - carbTarget;
+  const fatDelta = fatG - fatTarget;
   const actDelta = activeBurn - activeTarget;
 
   let status: string;
@@ -337,6 +345,38 @@ function DailyInsights({
     nuances.push("A lower movement day combined with a food surplus means extra energy storage. Try to hit your step goal tomorrow.");
   }
 
+  // Macro impact — how protein / carbs / fat affected the body today
+  const proteinPerKg = weightKg > 0 ? proteinG / weightKg : 0;
+  const macros = [
+    macroImpact({
+      key: "protein",
+      label: "Protein",
+      grams: proteinG,
+      delta: proDelta,
+      kcal: proteinG * 4,
+      eaten,
+      extra: { proteinPerKg, weightKg, netCals },
+    }),
+    macroImpact({
+      key: "carbs",
+      label: "Carbs",
+      grams: carbsG,
+      delta: carbDelta,
+      kcal: carbsG * 4,
+      eaten,
+      extra: { actDelta },
+    }),
+    macroImpact({
+      key: "fat",
+      label: "Fat",
+      grams: fatG,
+      delta: fatDelta,
+      kcal: fatG * 9,
+      eaten,
+      extra: {},
+    }),
+  ];
+
   const toneColor = tone === "oasis" ? "var(--oasis)" : tone === "coral" ? "var(--coral)" : "var(--sand)";
 
   return (
@@ -356,6 +396,24 @@ function DailyInsights({
       {nuances.map((n, i) => (
         <p key={i} className="text-sm text-muted-foreground leading-relaxed mt-2">{n}</p>
       ))}
+
+      <div className="mt-4 pt-3 border-t border-border/40">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Macro impact on your body</div>
+        <div className="space-y-2">
+          {macros.map((m) => (
+            <div key={m.key} className="rounded-xl border border-border/40 bg-background/40 p-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-semibold">{m.label}</span>
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  {Math.round(m.grams)}g · {Math.round(m.kcal)} kcal ({m.pctOfEaten}%) · Δ {fmtSigned(m.delta)}g
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">{m.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-border/40">
         <MiniStat label="Net" value={fmtSigned(netCals)} unit="kcal" />
         <MiniStat label="Food Δ" value={fmtSigned(calDelta)} unit="kcal" />
@@ -364,6 +422,52 @@ function DailyInsights({
       </div>
     </section>
   );
+}
+
+type MacroExtra = { proteinPerKg?: number; weightKg?: number; netCals?: number; actDelta?: number };
+function macroImpact(args: {
+  key: string; label: string; grams: number; delta: number; kcal: number; eaten: number; extra: MacroExtra;
+}) {
+  const { key, label, grams, delta, kcal, eaten, extra } = args;
+  const pctOfEaten = eaten > 0 ? Math.round((kcal / eaten) * 100) : 0;
+  let text = "";
+
+  if (key === "protein") {
+    const ppk = extra.proteinPerKg ?? 0;
+    if (delta < -20) {
+      text = `Low protein today (${ppk.toFixed(1)} g/kg). Your body has less material to repair muscle — expect slower recovery and more lean-mass risk if you're in a deficit.`;
+    } else if (delta < -5) {
+      text = `Slightly under target (${ppk.toFixed(1)} g/kg). Recovery is okay but not optimal — aim a bit higher tomorrow.`;
+    } else if (delta <= 20) {
+      text = `On point (${ppk.toFixed(1)} g/kg). Enough amino acids to protect muscle, keep you full, and support recovery.`;
+    } else {
+      text = `Well above target (${ppk.toFixed(1)} g/kg). Great for satiety and muscle protection; excess is used for energy, not stored as fat easily.`;
+    }
+    if ((extra.netCals ?? 0) < -300 && delta < 0) {
+      text += " In a deficit, hitting protein matters most — prioritize it tomorrow.";
+    }
+  } else if (key === "carbs") {
+    if (delta < -30) {
+      text = `Low carbs today. Glycogen stores are being drawn down — you may feel flatter workouts and lower energy, but this pushes the body toward using fat for fuel.`;
+    } else if (delta <= 30) {
+      text = `Carbs in a healthy range. Steady blood sugar, replenished glycogen for tomorrow's movement, and stable energy.`;
+    } else {
+      text = `Carbs over target. Extra glycogen is topped up; if activity was low today, the surplus becomes the easiest route to fat storage.`;
+      if ((extra.actDelta ?? 0) > 100) {
+        text += " Your high activity absorbed most of it — less of a concern today.";
+      }
+    }
+  } else if (key === "fat") {
+    if (delta < -15) {
+      text = `Fat intake low. Watch hormone health and fat-soluble vitamin absorption (A, D, E, K) if this repeats — aim for at least ~0.6 g/kg.`;
+    } else if (delta <= 15) {
+      text = `Fat in a healthy range. Supports hormones, cell membranes, and keeps meals satisfying.`;
+    } else {
+      text = `Fat over target. Fat is calorie-dense (9 kcal/g), so overshooting quickly adds surplus energy — the biggest lever for tomorrow if you want a tighter deficit.`;
+    }
+  }
+
+  return { key, label, grams, delta, kcal, pctOfEaten, text };
 }
 
 function MiniStat({ label, value, unit }: { label: string; value: string; unit: string }) {
