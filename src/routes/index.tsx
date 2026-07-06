@@ -298,11 +298,6 @@ function App() {
 /* ---------- Components ---------- */
 
 function DailyInsights({
-  dateLabel, bmr, activeBurn, eaten, proteinG,
-  calorieTarget, proteinTarget, activeTarget,
-}: {
-  dateLabel: string; bmr: number; activeBurn: number; eaten: number; proteinG: number;
-function DailyInsights({
   dateLabel, bmr, activeBurn, eaten, proteinG, carbsG, fatG, weightKg,
   calorieTarget, proteinTarget, carbTarget, fatTarget, activeTarget,
 }: {
