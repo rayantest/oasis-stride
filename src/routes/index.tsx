@@ -213,6 +213,18 @@ function App() {
           </div>
         </Card>
 
+        {/* Daily AI Insights */}
+        <DailyInsights
+          dateLabel={dateLabel}
+          bmr={t.bmr}
+          activeBurn={activeBurn}
+          eaten={eaten}
+          proteinG={proteinG}
+          calorieTarget={t.calories}
+          proteinTarget={t.protein_g}
+          activeTarget={t.active_burn}
+        />
+
         {/* Nudge (today only) */}
         {viewingToday && <NudgeCard weight={profile.weight_kg} onLogged={invalidate} />}
 
