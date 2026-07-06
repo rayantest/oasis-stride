@@ -292,6 +292,90 @@ function App() {
 
 /* ---------- Components ---------- */
 
+function DailyInsights({
+  dateLabel, bmr, activeBurn, eaten, proteinG,
+  calorieTarget, proteinTarget, activeTarget,
+}: {
+  dateLabel: string; bmr: number; activeBurn: number; eaten: number; proteinG: number;
+  calorieTarget: number; proteinTarget: number; activeTarget: number;
+}) {
+  const netCals = eaten - (bmr + activeBurn);
+  const calDelta = eaten - calorieTarget;
+  const proDelta = proteinG - proteinTarget;
+  const actDelta = activeBurn - activeTarget;
+
+  let status: string;
+  let tone: "oasis" | "sand" | "coral";
+  let text: string;
+  if (netCals < -500) {
+    status = "Deep Deficit"; tone = "oasis";
+    text = "You created a significant energy deficit today, accelerating fat loss.";
+  } else if (netCals < -100) {
+    status = "Moderate Deficit"; tone = "oasis";
+    text = "A steady, sustainable deficit for fat loss.";
+  } else if (netCals <= 100) {
+    status = "Maintenance"; tone = "sand";
+    text = "Perfectly balanced day. You fueled your body exactly what it burned.";
+  } else {
+    status = "Surplus"; tone = "coral";
+    text = "You gave your body extra energy today, ideal for recovery or muscle growth.";
+  }
+
+  const nuances: string[] = [];
+  if (actDelta > 200 && calDelta > 0) {
+    nuances.push("Don't worry about going over your food target — your high activity level completely offset it.");
+  }
+  if (actDelta > 200 && proDelta < -15) {
+    nuances.push("However, because activity was high and protein was low, prioritize recovery meals tomorrow to protect lean muscle.");
+  }
+  if (actDelta < -100 && calDelta > 150) {
+    nuances.push("A lower movement day combined with a food surplus means extra energy storage. Try to hit your step goal tomorrow.");
+  }
+
+  const toneColor = tone === "oasis" ? "var(--oasis)" : tone === "coral" ? "var(--coral)" : "var(--sand)";
+
+  return (
+    <section className="rounded-2xl p-5 border border-border/50 bg-gradient-to-br from-card via-card to-secondary/30 shadow-[var(--shadow-card)]">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+          <Sparkles size={12} /> Daily insight · {dateLabel}
+        </span>
+        <span
+          className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border"
+          style={{ color: toneColor, borderColor: toneColor, background: `color-mix(in oklch, ${toneColor} 12%, transparent)` }}
+        >
+          {status}
+        </span>
+      </div>
+      <p className="font-display text-base leading-snug mb-3">{text}</p>
+      {nuances.map((n, i) => (
+        <p key={i} className="text-sm text-muted-foreground leading-relaxed mt-2">{n}</p>
+      ))}
+      <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-border/40">
+        <MiniStat label="Net" value={fmtSigned(netCals)} unit="kcal" />
+        <MiniStat label="Food Δ" value={fmtSigned(calDelta)} unit="kcal" />
+        <MiniStat label="Protein Δ" value={fmtSigned(proDelta)} unit="g" />
+        <MiniStat label="Active Δ" value={fmtSigned(actDelta)} unit="kcal" />
+      </div>
+    </section>
+  );
+}
+
+function MiniStat({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <div className="text-center">
+      <div className="font-mono text-sm font-semibold">{value}</div>
+      <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">{label} {unit}</div>
+    </div>
+  );
+}
+
+function fmtSigned(n: number) {
+  const r = Math.round(n);
+  return r > 0 ? `+${r}` : `${r}`;
+}
+
+
 function Card({ title, hint, right, children }: {
   title: string; hint?: string; right?: React.ReactNode; children: React.ReactNode;
 }) {
