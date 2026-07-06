@@ -8,7 +8,7 @@ import { targets, type Profile } from "@/lib/calc";
 import { toast, Toaster } from "sonner";
 import {
   Flame, Footprints, UtensilsCrossed, Settings, Trash2, Shuffle,
-  CheckCircle2, Sparkles, Loader2, Watch, Wand2, ArrowLeft,
+  CheckCircle2, Sparkles, Loader2, Watch, Wand2, ArrowLeft, ChevronDown,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
