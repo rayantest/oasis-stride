@@ -305,6 +305,7 @@ function DailyInsights({
   proteinG: number; carbsG: number; fatG: number; weightKg: number;
   calorieTarget: number; proteinTarget: number; carbTarget: number; fatTarget: number; activeTarget: number;
 }) {
+  const [open, setOpen] = useState(true);
   const netCals = eaten - (bmr + activeBurn);
   const calDelta = eaten - calorieTarget;
   const proDelta = proteinG - proteinTarget;
