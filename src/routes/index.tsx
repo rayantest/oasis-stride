@@ -5,10 +5,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { parseMovement, parseFood } from "@/lib/ai-parse.functions";
 import { targets, type Profile } from "@/lib/calc";
+import { computeSignals } from "@/lib/coach-signals";
+import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
 import { toast, Toaster } from "sonner";
 import {
   Flame, Footprints, UtensilsCrossed, Settings, Trash2, Shuffle,
   CheckCircle2, Sparkles, Loader2, Watch, Wand2, ArrowLeft, ChevronDown,
+  Compass,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
