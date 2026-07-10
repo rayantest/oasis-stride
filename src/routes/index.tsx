@@ -5,10 +5,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { parseMovement, parseFood } from "@/lib/ai-parse.functions";
 import { targets, type Profile } from "@/lib/calc";
+import { computeSignals } from "@/lib/coach-signals";
+import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
 import { toast, Toaster } from "sonner";
 import {
   Flame, Footprints, UtensilsCrossed, Settings, Trash2, Shuffle,
   CheckCircle2, Sparkles, Loader2, Watch, Wand2, ArrowLeft, ChevronDown,
+  Compass,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -229,6 +232,9 @@ function App() {
           fatTarget={t.fat_g}
           activeTarget={t.active_burn}
         />
+
+        {/* Personal coach — 7-day guidance */}
+        <CoachCard profile={profile} movements={movements} foods={foods} />
 
         {/* Nudge (today only) */}
         {viewingToday && <NudgeCard weight={profile.weight_kg} onLogged={invalidate} />}
@@ -491,6 +497,97 @@ function fmtSigned(n: number) {
   const r = Math.round(n);
   return r > 0 ? `+${r}` : `${r}`;
 }
+
+function CoachCard({ profile, movements, foods }: {
+  profile: Profile;
+  movements: Movement[];
+  foods: Food[];
+}) {
+  const [open, setOpen] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const advice = useMemo<CoachAdvice[]>(() => {
+    const signals = computeSignals(profile, movements, foods, 7);
+    return generateAdvice(signals, 4);
+  }, [profile, movements, foods]);
+
+  const headline = advice[0];
+  const rest = advice.slice(1);
+  const empty = advice.length === 0;
+
+  return (
+    <section className="rounded-2xl p-5 border border-border/50 bg-gradient-to-br from-card via-card to-oasis/5 shadow-[var(--shadow-card)]">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between mb-1 text-left"
+        aria-expanded={open}
+      >
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+          <Compass size={12} /> Your coach · last 7 days
+        </span>
+        <span className="flex items-center gap-2">
+          {headline && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border border-oasis/40 text-oasis bg-oasis/10">
+              {headline.category}
+            </span>
+          )}
+          <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+
+      {open && (
+        <>
+          {empty ? (
+            <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+              Log a few days of food and movement — I'll start giving you personalized guidance from day 3.
+            </p>
+          ) : (
+            <>
+              <p className="font-display text-base leading-snug mt-2 mb-3">{headline.headline}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{headline.detail}</p>
+              <button
+                onClick={() => setExpanded(expanded === headline.id ? null : headline.id)}
+                className="text-[11px] font-mono uppercase tracking-wider text-oasis/80 hover:text-oasis transition"
+              >
+                {expanded === headline.id ? "Hide math" : "Why?"}
+              </button>
+              {expanded === headline.id && (
+                <p className="mt-2 text-xs font-mono text-muted-foreground bg-background/40 rounded-lg p-2 border border-border/40">
+                  {headline.why}
+                </p>
+              )}
+
+              {rest.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-border/40 space-y-2">
+                  {rest.map((a) => (
+                    <div key={a.id} className="rounded-xl border border-border/40 bg-background/40 p-3">
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <span className="text-sm font-semibold leading-snug">{a.headline}</span>
+                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground shrink-0">{a.category}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{a.detail}</p>
+                      <button
+                        onClick={() => setExpanded(expanded === a.id ? null : a.id)}
+                        className="mt-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition"
+                      >
+                        {expanded === a.id ? "Hide" : "Why?"}
+                      </button>
+                      {expanded === a.id && (
+                        <p className="mt-1.5 text-[11px] font-mono text-muted-foreground/90">{a.why}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+
 
 
 function Card({ title, hint, right, children }: {
