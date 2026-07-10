@@ -233,6 +233,9 @@ function App() {
           activeTarget={t.active_burn}
         />
 
+        {/* Personal coach — 7-day guidance */}
+        <CoachCard profile={profile} movements={movements} foods={foods} />
+
         {/* Nudge (today only) */}
         {viewingToday && <NudgeCard weight={profile.weight_kg} onLogged={invalidate} />}
 
