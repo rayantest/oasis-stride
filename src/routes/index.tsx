@@ -1021,12 +1021,15 @@ function SettingsSheet({ profile, onClose, onSaved }: {
 }) {
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
+  const [goalOpen, setGoalOpen] = useState(false);
 
   useEffect(() => {
     const orig = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = orig; };
   }, []);
+
+  useEffect(() => { setForm(profile); }, [profile]);
 
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setForm(f => ({ ...f, [k]: v }));
 
@@ -1035,14 +1038,27 @@ function SettingsSheet({ profile, onClose, onSaved }: {
     const { error } = await supabase.from("profile").update({
       height_cm: form.height_cm, weight_kg: form.weight_kg, age: form.age,
       gender: form.gender, resting_hr: form.resting_hr,
-      activity_level: form.activity_level, fat_loss_pace: form.fat_loss_pace,
-      active_burn_goal_kcal: form.active_burn_goal_kcal,
       updated_at: new Date().toISOString(),
     }).eq("id", 1);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Profile saved");
     onSaved();
+  };
+
+  const t = targets(form);
+  const answers = form.goal_answers ?? {};
+  const projection = projectionText(answers.targetLossKg, t.kg_per_week);
+  const misses = eventLikelyMisses(answers.deadline, answers.targetLossKg, t.kg_per_week);
+  const paceLabel: Record<string, string> = {
+    modest: "Modest (0.5%/wk)",
+    moderate: "Moderate (0.75%/wk)",
+    aggressive: "Aggressive (1%/wk)",
+  };
+  const actLabel: Record<string, string> = {
+    barely_moving: "Barely moving",
+    lightly_active: "Lightly active",
+    moderately_active: "Moderately active",
   };
 
   return (
@@ -1054,6 +1070,12 @@ function SettingsSheet({ profile, onClose, onSaved }: {
           <button onClick={onClose} className="text-muted-foreground text-sm">Close</button>
         </div>
 
+        {form.caution_flag && (
+          <div className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/40 px-3 py-2 text-xs text-amber-200">
+            ⚠️ Caution noted{form.caution_note ? `: ${form.caution_note}` : ""} — consider checking with a doctor before high-strain training.
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="Height (cm)"><NumInput value={form.height_cm} onChange={v => set("height_cm", v)} /></Field>
           <Field label="Weight (kg)"><NumInput value={form.weight_kg} onChange={v => set("weight_kg", v)} step={0.1} /></Field>
@@ -1063,44 +1085,80 @@ function SettingsSheet({ profile, onClose, onSaved }: {
             <Select value={form.gender} onChange={v => set("gender", v)}
               options={[["male", "Male"], ["female", "Female"], ["other", "Other"]]} />
           </Field>
-          <Field label="Active burn goal (kcal)">
-            <NumInput value={form.active_burn_goal_kcal} onChange={v => set("active_burn_goal_kcal", v)} />
-          </Field>
         </div>
 
-        <Field label="Baseline activity" className="mt-3">
-          <Select value={form.activity_level} onChange={v => set("activity_level", v)}
-            options={[
-              ["barely_moving", "Barely moving (×1.15)"],
-              ["lightly_active", "Lightly active (×1.25)"],
-              ["moderately_active", "Moderately active (×1.4)"],
-            ]} />
-        </Field>
-
-        <Field label="Fat-loss pace" className="mt-3">
-          <Select value={form.fat_loss_pace} onChange={v => set("fat_loss_pace", v)}
-            options={[
-              ["modest", "Modest (−300 kcal)"],
-              ["moderate", "Moderate (−500 kcal)"],
-              ["aggressive", "Aggressive (−700 kcal)"],
-            ]} />
-        </Field>
+        <div className="mt-5 rounded-2xl border border-border/60 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Your goal</div>
+              <div className="text-sm font-medium">{paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} · {actLabel[form.activity_level] ?? form.activity_level}</div>
+            </div>
+            <button onClick={() => setGoalOpen(true)}
+              className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+              Update your goal
+            </button>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Active burn target: {form.active_burn_goal_kcal} kcal/day · derived from your questionnaire.
+          </div>
+          {projection && (
+            <div className="text-xs text-foreground/80 rounded-lg bg-secondary/50 px-3 py-2">
+              {projection}
+            </div>
+          )}
+          {misses && (
+            <div className="text-xs text-amber-200 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
+              This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a faster pace manually by re-running the questionnaire.
+            </div>
+          )}
+          {(answers.dietary && answers.dietary !== "none") && (
+            <div className="text-[11px] text-muted-foreground">
+              Dietary: {answers.dietary === "other" ? (answers.dietaryOther || "other") : answers.dietary}
+            </div>
+          )}
+        </div>
 
         <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
-          {(() => {
-            const t = targets(form);
-            return `BMR ${t.bmr} · TDEE ${t.tdee} · target ${t.calories} kcal · ${t.protein_g}p / ${t.carbs_g}c / ${t.fat_g}f`;
-          })()}
+          BMR {t.bmr} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c / {t.fat_g}f
         </div>
 
         <button onClick={save} disabled={saving}
           className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50">
           {saving ? "Saving…" : "Save"}
         </button>
+
+        {goalOpen && (
+          <GoalQuestionnaire
+            profile={form}
+            onClose={() => setGoalOpen(false)}
+            onSaved={() => { setGoalOpen(false); onSaved(); }}
+          />
+        )}
       </div>
     </div>
   );
 }
+
+function WeeklyRollup({ movements, foods, weeklyActiveTarget }: {
+  movements: Movement[]; foods: Food[]; weeklyActiveTarget: number;
+}) {
+  const now = new Date();
+  const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 6); cutoff.setHours(0, 0, 0, 0);
+  const wm = movements.filter(m => new Date(m.created_at) >= cutoff);
+  const wf = foods.filter(f => new Date(f.created_at) >= cutoff);
+  const days = new Set<string>();
+  wf.forEach(f => days.add(dayKey(new Date(f.created_at))));
+  const daysN = Math.max(1, days.size);
+  const avgKcal = Math.round(wf.reduce((s, f) => s + Number(f.kcal), 0) / daysN);
+  const totalBurn = Math.round(wm.reduce((s, m) => s + Number(m.kcal), 0));
+  const pct = weeklyActiveTarget > 0 ? Math.round((totalBurn / weeklyActiveTarget) * 100) : 0;
+  return (
+    <div className="mt-3 rounded-xl bg-secondary/50 px-3 py-2 text-[11px] text-muted-foreground">
+      <span className="font-medium text-foreground/90">This week:</span> avg {avgKcal} kcal/day eaten · {totalBurn} kcal active burn ({pct}% of {Math.round(weeklyActiveTarget)} weekly target)
+    </div>
+  );
+}
+
 
 function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return (
