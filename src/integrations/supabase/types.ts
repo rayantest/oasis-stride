@@ -76,8 +76,11 @@ export type Database = {
           active_burn_goal_kcal: number
           activity_level: string
           age: number
+          caution_flag: boolean
+          caution_note: string
           fat_loss_pace: string
           gender: string
+          goal_answers: Json
           height_cm: number
           id: number
           resting_hr: number
@@ -88,8 +91,11 @@ export type Database = {
           active_burn_goal_kcal?: number
           activity_level?: string
           age?: number
+          caution_flag?: boolean
+          caution_note?: string
           fat_loss_pace?: string
           gender?: string
+          goal_answers?: Json
           height_cm?: number
           id?: number
           resting_hr?: number
@@ -100,8 +106,11 @@ export type Database = {
           active_burn_goal_kcal?: number
           activity_level?: string
           age?: number
+          caution_flag?: boolean
+          caution_note?: string
           fat_loss_pace?: string
           gender?: string
+          goal_answers?: Json
           height_cm?: number
           id?: number
           resting_hr?: number
