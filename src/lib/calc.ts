@@ -1,3 +1,30 @@
+export type GoalAnswers = {
+  // Health screen
+  parq?: {
+    heart_condition?: boolean;
+    pain_dizziness?: boolean;
+    bone_joint?: boolean;
+    bp_meds?: boolean;
+    other_reason?: boolean;
+  };
+  injuries?: string;
+  // Lifestyle
+  sleepHours?: "<5" | "5-6" | "7-8" | "8+";
+  stressLevel?: "low" | "moderate" | "high";
+  preferredMovement?: "padel" | "walk_run_cycle" | "crossfit" | "not_picky";
+  // Goal
+  successLooksLike?: "scale_number" | "clothes_fit" | "more_energy" | "mix";
+  deadline?: "specific_event" | "soft" | "open_ended";
+  weekdayShape?: "desk" | "some_walking" | "on_feet";
+  recentMoveDays?: "0-2" | "3-5" | "6-7";
+  eatingPatterns?: string[]; // undereat_crash, overeat_night, skip_meals, graze, none
+  dietary?: "none" | "halal" | "vegetarian" | "other";
+  dietaryOther?: string;
+  derailers?: string[]; // time, motivation, injury, social_eating, travel
+  realisticDays?: "3" | "4-5" | "6-7";
+  targetLossKg?: "2-3" | "5-7" | "8-10" | "none";
+};
+
 export type Profile = {
   id: number;
   height_cm: number;
@@ -8,6 +35,9 @@ export type Profile = {
   activity_level: string;
   fat_loss_pace: string;
   active_burn_goal_kcal: number;
+  goal_answers?: GoalAnswers;
+  caution_flag?: boolean;
+  caution_note?: string;
 };
 
 const ACTIVITY_MULT: Record<string, number> = {
@@ -16,11 +46,27 @@ const ACTIVITY_MULT: Record<string, number> = {
   moderately_active: 1.4,
 };
 
-const PACE_DEFICIT: Record<string, number> = {
-  modest: 300,
-  moderate: 500,
-  aggressive: 700,
+// Deficit as % of bodyweight per week (kg fat/week) => daily kcal deficit.
+// Uses ~7000 kcal/kg fat, simplified so 76kg gives ~300/450/600.
+const PACE_PCT: Record<string, number> = {
+  modest: 0.005,      // 0.5%/week
+  moderate: 0.0075,   // 0.75%/week
+  aggressive: 0.01,   // 1%/week — safety ceiling
 };
+
+export function paceDeficitKcal(p: Pick<Profile, "weight_kg" | "fat_loss_pace">) {
+  const pct = PACE_PCT[p.fat_loss_pace] ?? PACE_PCT.moderate;
+  // kg/week * 7000 kcal/kg / 7 days
+  const daily = pct * p.weight_kg * 7000 / 7;
+  // Hard cap at 1%/week regardless
+  const cap = PACE_PCT.aggressive * p.weight_kg * 7000 / 7;
+  return Math.round(Math.min(daily, cap));
+}
+
+export function paceKgPerWeek(p: Pick<Profile, "weight_kg" | "fat_loss_pace">) {
+  const pct = PACE_PCT[p.fat_loss_pace] ?? PACE_PCT.moderate;
+  return pct * p.weight_kg;
+}
 
 export function bmr(p: Profile) {
   const base = 10 * p.weight_kg + 6.25 * p.height_cm - 5 * p.age;
@@ -34,10 +80,14 @@ export function tdee(p: Profile) {
 
 export function targets(p: Profile) {
   const dailyTdee = tdee(p);
-  const deficit = PACE_DEFICIT[p.fat_loss_pace] ?? 500;
+  const deficit = paceDeficitKcal(p);
   const cals = Math.max(1500, Math.round(dailyTdee - deficit));
   const protein_g = Math.round(p.weight_kg * 1.8);
-  const fat_g = Math.round(p.weight_kg * 0.8);
+  // Fat: 0.8 g/kg default, hard floor 0.6 g/kg
+  const fat_g = Math.max(
+    Math.round(p.weight_kg * 0.6),
+    Math.round(p.weight_kg * 0.8),
+  );
   const remaining = cals - protein_g * 4 - fat_g * 9;
   const carbs_g = Math.max(0, Math.round(remaining / 4));
   return {
@@ -48,5 +98,7 @@ export function targets(p: Profile) {
     fat_g,
     carbs_g,
     active_burn: p.active_burn_goal_kcal,
+    deficit,
+    kg_per_week: paceKgPerWeek(p),
   };
 }
