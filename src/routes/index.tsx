@@ -286,6 +286,7 @@ function App() {
             <Stat label="Carbs" value={Math.round(carbsG)} unit="g" small />
             <Stat label="Fat" value={Math.round(fatG)} unit="g" small />
           </div>
+          <WeeklyRollup movements={movements} foods={foods} weeklyActiveTarget={(profile.goal_answers as any)?.weekly_active_burn ?? t.active_burn * 7} />
           <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
             Rough estimates for tracking trends — not medical advice. Burn includes BMR ({t.bmr} kcal) + logged movement.
           </p>
