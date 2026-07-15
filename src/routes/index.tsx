@@ -256,6 +256,10 @@ function App() {
         {/* Personal coach — 7-day guidance */}
         <CoachCard profile={profile} movements={movements} foods={foods} />
 
+        {/* Body composition — trend from InBody / manual scans */}
+        <BodyCompSection gender={profile.gender} />
+
+
         {/* Nudge (today only) */}
         {viewingToday && <NudgeCard weight={profile.weight_kg} onLogged={invalidate} />}
 
