@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      body_scans: {
+        Row: {
+          bmi: number | null
+          bmr_kcal: number | null
+          body_fat_mass_kg: number | null
+          body_fat_percent: number | null
+          created_at: string
+          id: string
+          muscle_mass_kg: number | null
+          scan_date: string
+          source: string
+          visceral_fat_level: number | null
+          waist_hip_ratio: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          bmi?: number | null
+          bmr_kcal?: number | null
+          body_fat_mass_kg?: number | null
+          body_fat_percent?: number | null
+          created_at?: string
+          id?: string
+          muscle_mass_kg?: number | null
+          scan_date?: string
+          source?: string
+          visceral_fat_level?: number | null
+          waist_hip_ratio?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          bmi?: number | null
+          bmr_kcal?: number | null
+          body_fat_mass_kg?: number | null
+          body_fat_percent?: number | null
+          created_at?: string
+          id?: string
+          muscle_mass_kg?: number | null
+          scan_date?: string
+          source?: string
+          visceral_fat_level?: number | null
+          waist_hip_ratio?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       food_entries: {
         Row: {
           carbs_g: number
