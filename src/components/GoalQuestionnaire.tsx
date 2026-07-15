@@ -25,8 +25,10 @@ const STEPS = [
   "derailers",
   "realistic_days",
   "target_loss",
+  "body_comp",
   "review",
 ] as const;
+
 type Step = typeof STEPS[number];
 
 export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
