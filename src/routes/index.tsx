@@ -1139,9 +1139,21 @@ function SettingsSheet({ profile, onClose, onSaved }: {
           )}
         </div>
 
+        {scanWeightMismatch && latestScan?.weight_kg && (
+          <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 px-3 py-2 text-[11px] flex items-center justify-between gap-2">
+            <span>Latest scan weight is {latestScan.weight_kg}kg (profile: {form.weight_kg}kg).</span>
+            <button
+              onClick={() => set("weight_kg", latestScan.weight_kg as number)}
+              className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0">
+              Sync
+            </button>
+          </div>
+        )}
+
         <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
-          BMR {t.bmr} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c / {t.fat_g}f
+          BMR {t.bmr}{t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c / {t.fat_g}f
         </div>
+
 
         <button onClick={save} disabled={saving}
           className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50">
