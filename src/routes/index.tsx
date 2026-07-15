@@ -194,11 +194,12 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
-        {profile.caution_flag && (
+        {combinedCaution && (
           <div className="rounded-xl bg-amber-500/10 border border-amber-500/40 px-4 py-3 text-xs text-amber-200">
-            ⚠️ Caution noted{profile.caution_note ? `: ${profile.caution_note}` : ""} — consider checking with a doctor before high-strain training.
+            ⚠️ Caution noted{combinedCautionNote ? `: ${combinedCautionNote}` : ""} — consider checking with a doctor before high-strain training.
           </div>
         )}
+
         {/* Hero snapshot */}
         <section className="text-center space-y-1">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">{dateLabel}</div>
