@@ -86,3 +86,66 @@ Rules:
       fat_g: Math.max(0, Math.round(Number(out.fat_g) || 0)),
     };
   });
+
+export const parseBodyScan = createServerFn({ method: "POST" })
+  .inputValidator((input: { imageDataUrl: string }) => {
+    if (!input?.imageDataUrl || typeof input.imageDataUrl !== "string") throw new Error("imageDataUrl required");
+    if (!input.imageDataUrl.startsWith("data:image/")) throw new Error("must be a data:image/... URL");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const system = `You extract structured data from a photo of a body composition scan printout (e.g. InBody, Tanita, or similar bioimpedance scan).
+Return STRICT JSON with EXACTLY these keys and nothing else:
+{"weight_kg": number|null, "muscle_mass_kg": number|null, "body_fat_mass_kg": number|null, "body_fat_percent": number|null, "bmi": number|null, "bmr_kcal": number|null, "waist_hip_ratio": number|null, "visceral_fat_level": number|null, "scan_date": "YYYY-MM-DD"|null}
+
+Rules:
+- If a field is not clearly present or legible on the scan, return null for it. Do NOT guess.
+- Numbers must be plain numbers (no units, no strings).
+- "muscle_mass_kg" refers to Skeletal Muscle Mass (SMM) if shown, otherwise total muscle mass.
+- Return ONLY the JSON object, no markdown, no preamble, no code fences.`;
+    const res = await fetch(GATEWAY, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: [
+            { type: "text", text: "Extract the values from this body composition scan." },
+            { type: "image_url", image_url: { url: data.imageDataUrl } },
+          ] },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      if (res.status === 429) throw new Error("AI rate limit — try again shortly.");
+      if (res.status === 402) throw new Error("AI credits exhausted. Add credits in workspace settings.");
+      throw new Error(`AI error ${res.status}: ${txt.slice(0, 200)}`);
+    }
+    const j = await res.json();
+    const content = j.choices?.[0]?.message?.content ?? "{}";
+    let out: any = {};
+    try { out = JSON.parse(content); } catch {
+      const m = content.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error("Couldn't read the scan. Try a clearer photo or enter values manually.");
+      out = JSON.parse(m[0]);
+    }
+    const num = (v: any) => (v === null || v === undefined || v === "" || Number.isNaN(Number(v)) ? null : Number(v));
+    const dateStr = typeof out.scan_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(out.scan_date) ? out.scan_date : null;
+    return {
+      weight_kg: num(out.weight_kg),
+      muscle_mass_kg: num(out.muscle_mass_kg),
+      body_fat_mass_kg: num(out.body_fat_mass_kg),
+      body_fat_percent: num(out.body_fat_percent),
+      bmi: num(out.bmi),
+      bmr_kcal: num(out.bmr_kcal),
+      waist_hip_ratio: num(out.waist_hip_ratio),
+      visceral_fat_level: num(out.visceral_fat_level),
+      scan_date: dateStr,
+    };
+  });
+
