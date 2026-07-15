@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { GoalAnswers, Profile } from "@/lib/calc";
 import { deriveFromAnswers } from "@/lib/goal-derive";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { BodyCompStep } from "./BodyCompStep";
+
 
 type Props = {
   profile: Profile;
