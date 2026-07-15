@@ -160,14 +160,15 @@ export function BodyCompStep({ onSaved, onSkip }: {
       <div className="space-y-3">
         <NumField label="Scan date" type="date" value={values.scan_date}
           onChange={v => set("scan_date", v as string)} />
-        <NumField label="Weight (kg) *" value={values.weight_kg} onChange={v => set("weight_kg", v)} step={0.1} required />
-        <NumField label="Skeletal muscle mass (kg)" value={values.muscle_mass_kg} onChange={v => set("muscle_mass_kg", v)} step={0.1} />
-        <NumField label="Body fat mass (kg)" value={values.body_fat_mass_kg} onChange={v => set("body_fat_mass_kg", v)} step={0.1} />
-        <NumField label="Body fat %" value={values.body_fat_percent} onChange={v => set("body_fat_percent", v)} step={0.1} />
-        <NumField label="BMI" value={values.bmi} onChange={v => set("bmi", v)} step={0.1} />
-        <NumField label="BMR (kcal)" value={values.bmr_kcal} onChange={v => set("bmr_kcal", v)} />
-        <NumField label="Waist-hip ratio" value={values.waist_hip_ratio} onChange={v => set("waist_hip_ratio", v)} step={0.01} />
-        <NumField label="Visceral fat level" value={values.visceral_fat_level} onChange={v => set("visceral_fat_level", v)} />
+        <NumField label="Weight (kg) *" value={values.weight_kg} onChange={v => set("weight_kg", v as number | null)} step={0.1} required />
+        <NumField label="Skeletal muscle mass (kg)" value={values.muscle_mass_kg} onChange={v => set("muscle_mass_kg", v as number | null)} step={0.1} />
+        <NumField label="Body fat mass (kg)" value={values.body_fat_mass_kg} onChange={v => set("body_fat_mass_kg", v as number | null)} step={0.1} />
+        <NumField label="Body fat %" value={values.body_fat_percent} onChange={v => set("body_fat_percent", v as number | null)} step={0.1} />
+        <NumField label="BMI" value={values.bmi} onChange={v => set("bmi", v as number | null)} step={0.1} />
+        <NumField label="BMR (kcal)" value={values.bmr_kcal} onChange={v => set("bmr_kcal", v as number | null)} />
+        <NumField label="Waist-hip ratio" value={values.waist_hip_ratio} onChange={v => set("waist_hip_ratio", v as number | null)} step={0.01} />
+        <NumField label="Visceral fat level" value={values.visceral_fat_level} onChange={v => set("visceral_fat_level", v as number | null)} />
+
       </div>
 
       <div className="flex gap-2 mt-5">
