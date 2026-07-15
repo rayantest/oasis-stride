@@ -133,7 +133,13 @@ function App() {
   }
 
   const profile = profileQ.data!;
-  const t = targets(profile);
+  const scans = (scansQ.data ?? []) as BodyScan[];
+  const latestScan = scans[0] ?? null;
+  const t = targets(profile, latestScan ? { weight_kg: latestScan.weight_kg, bmr_kcal: latestScan.bmr_kcal } : null);
+  const scanNotes = scanCautionNotes(latestScan, profile.gender);
+  const combinedCaution = profile.caution_flag || scanNotes.length > 0;
+  const combinedCautionNote = [profile.caution_note, ...scanNotes].filter(Boolean).join("; ");
+
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
   const viewingToday = isToday(selectedDate);
