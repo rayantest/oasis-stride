@@ -68,37 +68,48 @@ export function paceKgPerWeek(p: Pick<Profile, "weight_kg" | "fat_loss_pace">) {
   return pct * p.weight_kg;
 }
 
-export function bmr(p: Profile) {
-  const base = 10 * p.weight_kg + 6.25 * p.height_cm - 5 * p.age;
+export function bmr(p: Profile, scan?: LatestScan | null) {
+  if (scan?.bmr_kcal && scan.bmr_kcal > 0) return scan.bmr_kcal;
+  const w = scan?.weight_kg ?? p.weight_kg;
+  const base = 10 * w + 6.25 * p.height_cm - 5 * p.age;
   return p.gender === "female" ? base - 161 : base + 5;
 }
 
-export function tdee(p: Profile) {
+export function tdee(p: Profile, scan?: LatestScan | null) {
   const mult = ACTIVITY_MULT[p.activity_level] ?? 1.25;
-  return bmr(p) * mult;
+  return bmr(p, scan) * mult;
 }
 
-export function targets(p: Profile) {
-  const dailyTdee = tdee(p);
-  const deficit = paceDeficitKcal(p);
+export type LatestScan = {
+  weight_kg?: number | null;
+  bmr_kcal?: number | null;
+};
+
+export function targets(p: Profile, scan?: LatestScan | null) {
+  const currentWeight = scan?.weight_kg ?? p.weight_kg;
+  const dailyTdee = tdee(p, scan);
+  const deficit = paceDeficitKcal({ weight_kg: currentWeight, fat_loss_pace: p.fat_loss_pace });
   const cals = Math.max(1500, Math.round(dailyTdee - deficit));
-  const protein_g = Math.round(p.weight_kg * 1.8);
+  const protein_g = Math.round(currentWeight * 1.8);
   // Fat: 0.8 g/kg default, hard floor 0.6 g/kg
   const fat_g = Math.max(
-    Math.round(p.weight_kg * 0.6),
-    Math.round(p.weight_kg * 0.8),
+    Math.round(currentWeight * 0.6),
+    Math.round(currentWeight * 0.8),
   );
   const remaining = cals - protein_g * 4 - fat_g * 9;
   const carbs_g = Math.max(0, Math.round(remaining / 4));
   return {
     tdee: Math.round(dailyTdee),
-    bmr: Math.round(bmr(p)),
+    bmr: Math.round(bmr(p, scan)),
     calories: cals,
     protein_g,
     fat_g,
     carbs_g,
     active_burn: p.active_burn_goal_kcal,
     deficit,
-    kg_per_week: paceKgPerWeek(p),
+    kg_per_week: paceKgPerWeek({ weight_kg: currentWeight, fat_loss_pace: p.fat_loss_pace }),
+    current_weight_kg: currentWeight,
+    used_scan_bmr: !!(scan?.bmr_kcal && scan.bmr_kcal > 0),
   };
 }
+

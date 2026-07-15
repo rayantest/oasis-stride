@@ -8,7 +8,9 @@ import { targets, type Profile } from "@/lib/calc";
 import { computeSignals } from "@/lib/coach-signals";
 import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
 import { GoalQuestionnaire } from "@/components/GoalQuestionnaire";
+import { BodyCompSection, useBodyScans, scanCautionNotes, type BodyScan } from "@/components/BodyCompSection";
 import { deriveFromAnswers, projectionText, eventLikelyMisses } from "@/lib/goal-derive";
+
 import { toast, Toaster } from "sonner";
 import {
   Flame, Footprints, UtensilsCrossed, Settings, Trash2, Shuffle,
@@ -107,10 +109,14 @@ function App() {
     },
   });
 
+  const scansQ = useBodyScans();
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["movement"] });
     qc.invalidateQueries({ queryKey: ["food"] });
+    qc.invalidateQueries({ queryKey: ["body_scans"] });
   };
+
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -127,7 +133,13 @@ function App() {
   }
 
   const profile = profileQ.data!;
-  const t = targets(profile);
+  const scans = (scansQ.data ?? []) as BodyScan[];
+  const latestScan = scans[0] ?? null;
+  const t = targets(profile, latestScan ? { weight_kg: latestScan.weight_kg, bmr_kcal: latestScan.bmr_kcal } : null);
+  const scanNotes = scanCautionNotes(latestScan, profile.gender);
+  const combinedCaution = profile.caution_flag || scanNotes.length > 0;
+  const combinedCautionNote = [profile.caution_note, ...scanNotes].filter(Boolean).join("; ");
+
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
   const viewingToday = isToday(selectedDate);
@@ -182,11 +194,12 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
-        {profile.caution_flag && (
+        {combinedCaution && (
           <div className="rounded-xl bg-amber-500/10 border border-amber-500/40 px-4 py-3 text-xs text-amber-200">
-            ⚠️ Caution noted{profile.caution_note ? `: ${profile.caution_note}` : ""} — consider checking with a doctor before high-strain training.
+            ⚠️ Caution noted{combinedCautionNote ? `: ${combinedCautionNote}` : ""} — consider checking with a doctor before high-strain training.
           </div>
         )}
+
         {/* Hero snapshot */}
         <section className="text-center space-y-1">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">{dateLabel}</div>
@@ -242,6 +255,10 @@ function App() {
 
         {/* Personal coach — 7-day guidance */}
         <CoachCard profile={profile} movements={movements} foods={foods} />
+
+        {/* Body composition — trend from InBody / manual scans */}
+        <BodyCompSection gender={profile.gender} />
+
 
         {/* Nudge (today only) */}
         {viewingToday && <NudgeCard weight={profile.weight_kg} onLogged={invalidate} />}
@@ -1046,7 +1063,11 @@ function SettingsSheet({ profile, onClose, onSaved }: {
     onSaved();
   };
 
-  const t = targets(form);
+  const scansQ = useBodyScans();
+  const latestScan = (scansQ.data ?? [])[0] as BodyScan | undefined;
+  const t = targets(form, latestScan ? { weight_kg: latestScan.weight_kg, bmr_kcal: latestScan.bmr_kcal } : null);
+  const scanWeightMismatch = latestScan?.weight_kg && Math.abs(latestScan.weight_kg - form.weight_kg) >= 0.5;
+
   const answers = form.goal_answers ?? {};
   const projection = projectionText(answers.targetLossKg, t.kg_per_week);
   const misses = eventLikelyMisses(answers.deadline, answers.targetLossKg, t.kg_per_week);
@@ -1118,9 +1139,21 @@ function SettingsSheet({ profile, onClose, onSaved }: {
           )}
         </div>
 
+        {scanWeightMismatch && latestScan?.weight_kg && (
+          <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 px-3 py-2 text-[11px] flex items-center justify-between gap-2">
+            <span>Latest scan weight is {latestScan.weight_kg}kg (profile: {form.weight_kg}kg).</span>
+            <button
+              onClick={() => set("weight_kg", latestScan.weight_kg as number)}
+              className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0">
+              Sync
+            </button>
+          </div>
+        )}
+
         <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
-          BMR {t.bmr} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c / {t.fat_g}f
+          BMR {t.bmr}{t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c / {t.fat_g}f
         </div>
+
 
         <button onClick={save} disabled={saving}
           className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50">

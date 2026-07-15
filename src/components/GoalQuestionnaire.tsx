@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { GoalAnswers, Profile } from "@/lib/calc";
 import { deriveFromAnswers } from "@/lib/goal-derive";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { BodyCompStep } from "./BodyCompStep";
+
 
 type Props = {
   profile: Profile;
@@ -23,8 +25,10 @@ const STEPS = [
   "derailers",
   "realistic_days",
   "target_loss",
+  "body_comp",
   "review",
 ] as const;
+
 type Step = typeof STEPS[number];
 
 export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
@@ -212,28 +216,34 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
               ]} />
           </Q>
         )}
+        {step === "body_comp" && (
+          <BodyCompStep onSaved={next} onSkip={next} />
+        )}
         {step === "review" && (
           <ReviewStep derived={derived} />
         )}
 
-        <div className="flex gap-2 mt-6">
-          {stepIdx > 0 && (
-            <button onClick={back} className="flex-1 py-3 rounded-full bg-secondary text-foreground text-sm">
-              Back
-            </button>
-          )}
-          {stepIdx < STEPS.length - 1 ? (
-            <button onClick={next}
-              className="flex-1 py-3 rounded-full bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-1">
-              Continue <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button onClick={save} disabled={saving}
-              className="flex-1 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50 flex items-center justify-center gap-1">
-              {saving ? "Saving…" : <>Save goal <Check className="w-4 h-4" /></>}
-            </button>
-          )}
-        </div>
+        {step !== "body_comp" && (
+          <div className="flex gap-2 mt-6">
+            {stepIdx > 0 && (
+              <button onClick={back} className="flex-1 py-3 rounded-full bg-secondary text-foreground text-sm">
+                Back
+              </button>
+            )}
+            {stepIdx < STEPS.length - 1 ? (
+              <button onClick={next}
+                className="flex-1 py-3 rounded-full bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-1">
+                Continue <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button onClick={save} disabled={saving}
+                className="flex-1 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50 flex items-center justify-center gap-1">
+                {saving ? "Saving…" : <>Save goal <Check className="w-4 h-4" /></>}
+              </button>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
