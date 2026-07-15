@@ -109,10 +109,14 @@ function App() {
     },
   });
 
+  const scansQ = useBodyScans();
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["movement"] });
     qc.invalidateQueries({ queryKey: ["food"] });
+    qc.invalidateQueries({ queryKey: ["body_scans"] });
   };
+
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
