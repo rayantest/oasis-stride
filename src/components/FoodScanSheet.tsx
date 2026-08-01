@@ -32,7 +32,8 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
   onLogged: () => void;
 }) {
   const analyze = useServerFn(analyzeFoodPhoto);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const uploadRef = useRef<HTMLInputElement>(null);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [comment, setComment] = useState("");
   const [followUp, setFollowUp] = useState("");
