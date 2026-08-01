@@ -10,12 +10,13 @@ import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
 import { GoalQuestionnaire } from "@/components/GoalQuestionnaire";
 import { BodyCompSection, useBodyScans, scanCautionNotes, type BodyScan } from "@/components/BodyCompSection";
 import { deriveFromAnswers, projectionText, eventLikelyMisses } from "@/lib/goal-derive";
+import { FoodScanSheet } from "@/components/FoodScanSheet";
 
 import { toast, Toaster } from "sonner";
 import {
   Flame, Footprints, UtensilsCrossed, Settings, Trash2, Shuffle,
   CheckCircle2, Sparkles, Loader2, Watch, Wand2, ArrowLeft, ChevronDown,
-  Compass,
+  Compass, Camera,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
