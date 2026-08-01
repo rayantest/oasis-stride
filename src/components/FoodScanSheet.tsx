@@ -1,0 +1,269 @@
+import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
+import { analyzeFoodPhoto, type FoodPhotoResult } from "@/lib/ai-parse.functions";
+import { toast } from "sonner";
+import {
+  Camera, Loader2, X, Send, Plus, Bookmark, ImagePlus, Sparkles,
+} from "lucide-react";
+
+type ChatTurn = { role: "user" | "assistant"; content: string };
+
+async function fileToDataUrl(file: File): Promise<string> {
+  // Downscale to keep the payload small
+  const bitmap = await createImageBitmap(file);
+  const max = 1280;
+  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable");
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
+
+export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged }: {
+  open: boolean;
+  onClose: () => void;
+  logTimestamp: () => string;
+  dateHint: string;
+  onLogged: () => void;
+}) {
+  const analyze = useServerFn(analyzeFoodPhoto);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
+  const [followUp, setFollowUp] = useState("");
+  const [history, setHistory] = useState<ChatTurn[]>([]);
+  const [result, setResult] = useState<FoodPhotoResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [saveToLibrary, setSaveToLibrary] = useState(false);
+
+  const reset = () => {
+    setImageDataUrl(null); setComment(""); setFollowUp("");
+    setHistory([]); setResult(null); setSaveToLibrary(false);
+  };
+
+  const close = () => { reset(); onClose(); };
+
+  const pick = async (f: File | undefined) => {
+    if (!f) return;
+    try {
+      const url = await fileToDataUrl(f);
+      setImageDataUrl(url);
+      setResult(null);
+      setHistory([]);
+    } catch {
+      toast.error("Couldn't read that image.");
+    }
+  };
+
+  const run = async (nextHistory: ChatTurn[]) => {
+    if (!imageDataUrl) return;
+    setBusy(true);
+    try {
+      const out = await analyze({
+        data: { imageDataUrl, comment: comment.trim() || undefined, history: nextHistory },
+      });
+      setResult(out);
+      setHistory([...nextHistory, { role: "assistant", content: JSON.stringify(out) }]);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally { setBusy(false); }
+  };
+
+  const sendFollowUp = async () => {
+    if (!followUp.trim() || busy) return;
+    const turn: ChatTurn = { role: "user", content: followUp.trim() };
+    setFollowUp("");
+    await run([...history, turn]);
+  };
+
+  const add = async () => {
+    if (!result || busy) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("food_entries").insert({
+        label: result.label,
+        kcal: result.kcal,
+        protein_g: result.protein_g,
+        carbs_g: result.carbs_g,
+        fat_g: result.fat_g,
+        created_at: logTimestamp(),
+      });
+      if (error) throw error;
+      if (saveToLibrary) {
+        await supabase.from("saved_foods").insert({
+          label: result.label,
+          grams: result.total_grams,
+          kcal: result.kcal,
+          protein_g: result.protein_g,
+          carbs_g: result.carbs_g,
+          fat_g: result.fat_g,
+          breakdown: result.items as unknown as never,
+        });
+      }
+      toast.success(`Logged ${result.label} · ${result.kcal} kcal`);
+      close();
+      onLogged();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally { setBusy(false); }
+  };
+
+  if (!open) return null;
+
+  const userTurns = history.filter(h => h.role === "user");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm p-0 sm:p-4">
+      <div className="w-full sm:max-w-md max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-card border border-border/60 shadow-[var(--shadow-card)]">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-card/95 backdrop-blur border-b border-border/40">
+          <span className="text-[11px] uppercase tracking-widest text-sand flex items-center gap-1.5">
+            <Camera size={13} /> Scan food
+          </span>
+          <button onClick={close} className="p-1.5 rounded-full hover:bg-muted/50" aria-label="Close">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-3">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={e => pick(e.target.files?.[0])}
+          />
+
+          {imageDataUrl ? (
+            <div className="relative">
+              <img src={imageDataUrl} alt="Food to analyse" className="w-full rounded-2xl object-cover max-h-64" />
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/90 border border-border/60 text-[11px]">
+                <ImagePlus size={12} /> Retake
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="w-full aspect-[4/3] rounded-2xl border border-dashed border-border/70 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-sand/60 hover:text-sand transition-colors">
+              <Camera size={28} />
+              <span className="text-xs">Take a photo or pick from library</span>
+            </button>
+          )}
+
+          <textarea
+            rows={2}
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            placeholder='Optional notes — e.g. "grilled chicken breast, cooked in olive oil, no rice"'
+            className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
+          />
+
+          {!result && (
+            <button
+              onClick={() => run([])}
+              disabled={!imageDataUrl || busy}
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sand text-primary-foreground text-sm font-semibold disabled:opacity-40">
+              {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+              Analyse
+            </button>
+          )}
+
+          {result && (
+            <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-sm font-semibold">{result.label}</h3>
+                <span className={`shrink-0 text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  result.confidence === "high" ? "border-oasis/50 text-oasis"
+                  : result.confidence === "low" ? "border-destructive/50 text-destructive"
+                  : "border-sand/50 text-sand"}`}>
+                  {result.confidence} confidence
+                </span>
+              </div>
+
+              <ul className="space-y-1">
+                {result.items.map((it, i) => (
+                  <li key={i} className="text-[11px] leading-snug text-muted-foreground">
+                    <span className="text-foreground">{it.name}</span>
+                    {it.grams ? ` (${it.grams}g)` : ""}: {it.kcal} kcal · {it.protein_g}P / {it.carbs_g}C / {it.fat_g}F
+                  </li>
+                ))}
+              </ul>
+
+              <div className="pt-2 border-t border-border/40 grid grid-cols-5 gap-1 text-center">
+                {[
+                  ["Grams", `${result.total_grams}g`],
+                  ["Kcal", `${result.kcal}`],
+                  ["Protein", `${result.protein_g}g`],
+                  ["Carbs", `${result.carbs_g}g`],
+                  ["Fat", `${result.fat_g}g`],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <div className="text-sm font-semibold">{v}</div>
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{k}</div>
+                  </div>
+                ))}
+              </div>
+
+              {result.note && <p className="text-[10px] text-muted-foreground italic">{result.note}</p>}
+
+              {userTurns.length > 0 && (
+                <div className="pt-2 border-t border-border/40 space-y-1">
+                  {userTurns.map((t, i) => (
+                    <div key={i} className="text-[10px] text-sand">↳ you: {t.content}</div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  value={followUp}
+                  onChange={e => setFollowUp(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); sendFollowUp(); } }}
+                  placeholder='Correct it — e.g. "I used 2 tbsp olive oil"'
+                  className="flex-1 bg-input/50 border border-border/50 rounded-full px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
+                />
+                <button
+                  onClick={sendFollowUp}
+                  disabled={busy || !followUp.trim()}
+                  className="p-2 rounded-full bg-muted/60 disabled:opacity-40" aria-label="Send correction">
+                  {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {result && (
+            <>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={saveToLibrary}
+                  onChange={e => setSaveToLibrary(e.target.checked)}
+                  className="accent-[hsl(var(--sand,40_50%_60%))]"
+                />
+                <Bookmark size={13} /> Save to my foods for one-tap logging later
+              </label>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] text-muted-foreground">{dateHint}</span>
+                <button
+                  onClick={add}
+                  disabled={busy}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-sand text-primary-foreground text-xs font-semibold disabled:opacity-40">
+                  {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                  Add
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
