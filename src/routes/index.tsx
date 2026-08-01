@@ -10,12 +10,13 @@ import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
 import { GoalQuestionnaire } from "@/components/GoalQuestionnaire";
 import { BodyCompSection, useBodyScans, scanCautionNotes, type BodyScan } from "@/components/BodyCompSection";
 import { deriveFromAnswers, projectionText, eventLikelyMisses } from "@/lib/goal-derive";
+import { FoodScanSheet } from "@/components/FoodScanSheet";
 
 import { toast, Toaster } from "sonner";
 import {
   Flame, Footprints, UtensilsCrossed, Settings, Trash2, Shuffle,
   CheckCircle2, Sparkles, Loader2, Watch, Wand2, ArrowLeft, ChevronDown,
-  Compass,
+  Compass, Camera,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -799,12 +800,33 @@ function MovementInput({ weight, logDate, viewingToday, onLogged }: {
   );
 }
 
+type SavedFood = {
+  id: string; label: string; grams: number | null;
+  kcal: number; protein_g: number; carbs_g: number; fat_g: number;
+};
+
 function FoodInput({ logDate, viewingToday, onLogged }: {
   logDate: Date; viewingToday: boolean; onLogged: () => void;
 }) {
   const [text, setText] = useState("");
   const parse = useServerFn(parseFood);
   const [busy, setBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
+  const qc = useQueryClient();
+
+  const saved = useQuery({
+    queryKey: ["saved_foods"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("saved_foods").select("*").order("created_at", { ascending: false }).limit(12);
+      if (error) throw error;
+      return (data ?? []) as unknown as SavedFood[];
+    },
+  });
+
+  const dateHint = viewingToday
+    ? " "
+    : `Back-filling to ${logDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -825,11 +847,34 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
     } finally { setBusy(false); }
   };
 
+  const logSaved = async (s: SavedFood) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("food_entries").insert({
+        label: s.label, kcal: s.kcal, protein_g: s.protein_g,
+        carbs_g: s.carbs_g, fat_g: s.fat_g,
+        created_at: timestampForDay(logDate),
+      });
+      if (error) throw error;
+      toast.success(`Logged ${s.label} · ${s.kcal} kcal`);
+      onLogged();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally { setBusy(false); }
+  };
+
   return (
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
-      <label className="text-[10px] uppercase tracking-widest text-sand/80 flex items-center gap-1.5 mb-2">
-        <UtensilsCrossed size={12} /> Log food or drink {!viewingToday && <span className="text-sand">· past day</span>}
-      </label>
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <label className="text-[10px] uppercase tracking-widest text-sand/80 flex items-center gap-1.5">
+          <UtensilsCrossed size={12} /> Log food or drink {!viewingToday && <span className="text-sand">· past day</span>}
+        </label>
+        <button type="button" onClick={() => setScanOpen(true)}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-sand/40 text-sand text-[11px] font-semibold">
+          <Camera size={12} /> Scan
+        </button>
+      </div>
       <textarea
         rows={2}
         value={text}
@@ -837,21 +882,39 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
         placeholder='e.g. "chicken shawarma wrap" or "flat white with oat milk"'
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
       />
+      {(saved.data?.length ?? 0) > 0 && (
+        <div className="mt-2">
+          <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">My foods</div>
+          <div className="flex flex-wrap gap-1.5">
+            {saved.data!.map(s => (
+              <button key={s.id} type="button" onClick={() => logSaved(s)} disabled={busy}
+                className="px-2.5 py-1 rounded-full bg-muted/40 border border-border/50 text-[11px] hover:border-sand/50 disabled:opacity-40">
+                {s.label} <span className="text-muted-foreground">· {s.kcal}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mt-2 gap-2">
-        <span className="text-[10px] text-muted-foreground">
-          {viewingToday
-            ? " "
-            : `Back-filling to ${logDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`}
-        </span>
+        <span className="text-[10px] text-muted-foreground">{dateHint}</span>
         <button type="submit" disabled={busy || !text.trim()}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-sand text-primary-foreground text-xs font-semibold disabled:opacity-40">
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
           Log it
         </button>
       </div>
+
+      <FoodScanSheet
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        logTimestamp={() => timestampForDay(logDate)}
+        dateHint={dateHint}
+        onLogged={() => { onLogged(); qc.invalidateQueries({ queryKey: ["saved_foods"] }); }}
+      />
     </form>
   );
 }
+
 
 function DayLog({ movements, foods, onChange }: {
   movements: Movement[]; foods: Food[]; onChange: () => void;

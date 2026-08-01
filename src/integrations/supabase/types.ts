@@ -164,6 +164,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_foods: {
+        Row: {
+          breakdown: Json | null
+          carbs_g: number
+          created_at: string
+          fat_g: number
+          grams: number | null
+          id: string
+          kcal: number
+          label: string
+          protein_g: number
+        }
+        Insert: {
+          breakdown?: Json | null
+          carbs_g?: number
+          created_at?: string
+          fat_g?: number
+          grams?: number | null
+          id?: string
+          kcal?: number
+          label: string
+          protein_g?: number
+        }
+        Update: {
+          breakdown?: Json | null
+          carbs_g?: number
+          created_at?: string
+          fat_g?: number
+          grams?: number | null
+          id?: string
+          kcal?: number
+          label?: string
+          protein_g?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

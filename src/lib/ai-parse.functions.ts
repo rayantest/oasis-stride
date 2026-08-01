@@ -149,3 +149,120 @@ Rules:
     };
   });
 
+
+export type FoodPhotoItem = {
+  name: string;
+  grams: number;
+  kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+};
+export type FoodPhotoResult = {
+  label: string;
+  items: FoodPhotoItem[];
+  total_grams: number;
+  kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  note: string;
+  confidence: "low" | "medium" | "high";
+};
+
+const FOOD_PHOTO_SYSTEM = `You are a nutrition estimator. The user shows you a photo of food (and may add comments).
+Identify every distinct food component visible, estimate its cooked weight in grams using plate/utensil/hand scale references, and give macros per component.
+
+Return STRICT JSON, no markdown, with EXACTLY these keys:
+{"label": string, "items": [{"name": string, "grams": number, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number}], "total_grams": number, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number, "note": string, "confidence": "low"|"medium"|"high"}
+
+Rules:
+- "label" is a short human title of the whole meal, 2-6 words (e.g. "Chicken stir-fry with peppers").
+- Include hidden ingredients that are clearly implied (cooking oil, sauce, dressing) as their own item.
+- If the user names a packaged product, use its published nutrition facts for the stated serving.
+- Totals MUST equal the sum of the items, rounded to whole numbers (grams may have one decimal).
+- "note" is one short sentence about assumptions made, or "" if none.
+- When the user sends a follow-up correction, REVISE your previous estimate accordingly and return the full updated JSON again.
+- Return ONLY the JSON object.`;
+
+export const analyzeFoodPhoto = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    imageDataUrl?: string;
+    comment?: string;
+    history?: { role: "user" | "assistant"; content: string }[];
+  }) => {
+    if (input?.imageDataUrl && !input.imageDataUrl.startsWith("data:image/")) {
+      throw new Error("must be a data:image/... URL");
+    }
+    if (!input?.imageDataUrl && !(input?.history?.length)) throw new Error("image required");
+    return input;
+  })
+  .handler(async ({ data }): Promise<FoodPhotoResult> => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+
+    const messages: any[] = [{ role: "system", content: FOOD_PHOTO_SYSTEM }];
+    const firstUser: any[] = [];
+    firstUser.push({
+      type: "text",
+      text: data.comment?.trim()
+        ? `Estimate the nutrition of this food. User notes: ${data.comment.trim()}`
+        : "Estimate the nutrition of this food.",
+    });
+    if (data.imageDataUrl) {
+      firstUser.push({ type: "image_url", image_url: { url: data.imageDataUrl } });
+    }
+    messages.push({ role: "user", content: firstUser });
+    for (const m of data.history ?? []) {
+      messages.push({ role: m.role, content: m.content });
+    }
+
+    const res = await fetch(GATEWAY, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      if (res.status === 429) throw new Error("AI rate limit — try again shortly.");
+      if (res.status === 402) throw new Error("AI credits exhausted. Add credits in workspace settings.");
+      throw new Error(`AI error ${res.status}: ${txt.slice(0, 200)}`);
+    }
+    const j = await res.json();
+    const content = j.choices?.[0]?.message?.content ?? "{}";
+    let out: any = {};
+    try { out = JSON.parse(content); } catch {
+      const m = content.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error("Couldn't read the AI response. Try again or log it as text.");
+      out = JSON.parse(m[0]);
+    }
+    const n = (v: any) => Math.max(0, Math.round(Number(v) || 0));
+    const g = (v: any) => Math.max(0, Math.round((Number(v) || 0) * 10) / 10);
+    const items: FoodPhotoItem[] = Array.isArray(out.items)
+      ? out.items.slice(0, 12).map((it: any) => ({
+          name: String(it?.name ?? "Item").slice(0, 60),
+          grams: g(it?.grams),
+          kcal: n(it?.kcal),
+          protein_g: n(it?.protein_g),
+          carbs_g: n(it?.carbs_g),
+          fat_g: n(it?.fat_g),
+        }))
+      : [];
+    const sum = (k: keyof FoodPhotoItem) => items.reduce((a, b) => a + (b[k] as number), 0);
+    const conf = ["low", "medium", "high"].includes(out.confidence) ? out.confidence : "medium";
+    return {
+      label: String(out.label ?? "Meal").slice(0, 80),
+      items,
+      total_grams: out.total_grams != null ? g(out.total_grams) : g(sum("grams")),
+      kcal: out.kcal != null ? n(out.kcal) : sum("kcal"),
+      protein_g: out.protein_g != null ? n(out.protein_g) : sum("protein_g"),
+      carbs_g: out.carbs_g != null ? n(out.carbs_g) : sum("carbs_g"),
+      fat_g: out.fat_g != null ? n(out.fat_g) : sum("fat_g"),
+      note: String(out.note ?? "").slice(0, 300),
+      confidence: conf,
+    };
+  });
