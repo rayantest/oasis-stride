@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { analyzeFoodPhoto, type FoodPhotoResult } from "@/lib/ai-parse.functions";
 import { toast } from "sonner";
 import {
-  Camera, Loader2, X, Send, Plus, Bookmark, ImagePlus, Sparkles,
+  Camera, Loader2, X, Send, Plus, Bookmark, ImagePlus, Sparkles, Upload,
 } from "lucide-react";
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
@@ -32,7 +32,8 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
   onLogged: () => void;
 }) {
   const analyze = useServerFn(analyzeFoodPhoto);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const uploadRef = useRef<HTMLInputElement>(null);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [comment, setComment] = useState("");
   const [followUp, setFollowUp] = useState("");
@@ -131,30 +132,52 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
 
         <div className="p-4 space-y-3">
           <input
-            ref={fileRef}
+            ref={cameraRef}
             type="file"
             accept="image/*"
             capture="environment"
             className="hidden"
-            onChange={e => pick(e.target.files?.[0])}
+            onChange={e => { pick(e.target.files?.[0]); if (cameraRef.current) cameraRef.current.value = ""; }}
+          />
+          <input
+            ref={uploadRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => { pick(e.target.files?.[0]); if (uploadRef.current) uploadRef.current.value = ""; }}
           />
 
           {imageDataUrl ? (
             <div className="relative">
               <img src={imageDataUrl} alt="Food to analyse" className="w-full rounded-2xl object-cover max-h-64" />
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/90 border border-border/60 text-[11px]">
-                <ImagePlus size={12} /> Retake
-              </button>
+              <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
+                <button
+                  onClick={() => cameraRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/90 border border-border/60 text-[11px]">
+                  <Camera size={12} /> Camera
+                </button>
+                <button
+                  onClick={() => uploadRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/90 border border-border/60 text-[11px]">
+                  <Upload size={12} /> Upload
+                </button>
+              </div>
             </div>
           ) : (
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="w-full aspect-[4/3] rounded-2xl border border-dashed border-border/70 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-sand/60 hover:text-sand transition-colors">
-              <Camera size={28} />
-              <span className="text-xs">Take a photo or pick from library</span>
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => cameraRef.current?.click()}
+                className="aspect-[4/3] rounded-2xl border border-dashed border-border/70 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-sand/60 hover:text-sand transition-colors">
+                <Camera size={28} />
+                <span className="text-xs font-medium">Camera</span>
+              </button>
+              <button
+                onClick={() => uploadRef.current?.click()}
+                className="aspect-[4/3] rounded-2xl border border-dashed border-border/70 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-sand/60 hover:text-sand transition-colors">
+                <Upload size={28} />
+                <span className="text-xs font-medium">Upload</span>
+              </button>
+            </div>
           )}
 
           <textarea
