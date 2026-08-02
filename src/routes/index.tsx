@@ -7,6 +7,7 @@ import { parseMovement, parseFood } from "@/lib/ai-parse.functions";
 import { targets, type Profile } from "@/lib/calc";
 import { computeSignals } from "@/lib/coach-signals";
 import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
+import { bodyCompAdvice } from "@/lib/body-comp-advice";
 import { GoalQuestionnaire } from "@/components/GoalQuestionnaire";
 import { BodyCompSection, useBodyScans, scanCautionNotes, type BodyScan } from "@/components/BodyCompSection";
 import { deriveFromAnswers, projectionText, eventLikelyMisses } from "@/lib/goal-derive";
@@ -237,25 +238,9 @@ function App() {
           </div>
         </Card>
 
-        {/* Daily AI Insights */}
-        <DailyInsights
-          dateLabel={dateLabel}
-          bmr={t.bmr}
-          activeBurn={activeBurn}
-          eaten={eaten}
-          proteinG={proteinG}
-          carbsG={carbsG}
-          fatG={fatG}
-          weightKg={profile.weight_kg}
-          calorieTarget={t.calories}
-          proteinTarget={t.protein_g}
-          carbTarget={t.carbs_g}
-          fatTarget={t.fat_g}
-          activeTarget={t.active_burn}
-        />
+        {/* Personal coach — 7-day guidance + body composition */}
+        <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
 
-        {/* Personal coach — 7-day guidance */}
-        <CoachCard profile={profile} movements={movements} foods={foods} />
 
         {/* Body composition — trend from InBody / manual scans */}
         <BodyCompSection gender={profile.gender} />
@@ -329,213 +314,27 @@ function App() {
 
 /* ---------- Components ---------- */
 
-function DailyInsights({
-  dateLabel, bmr, activeBurn, eaten, proteinG, carbsG, fatG, weightKg,
-  calorieTarget, proteinTarget, carbTarget, fatTarget, activeTarget,
-}: {
-  dateLabel: string; bmr: number; activeBurn: number; eaten: number;
-  proteinG: number; carbsG: number; fatG: number; weightKg: number;
-  calorieTarget: number; proteinTarget: number; carbTarget: number; fatTarget: number; activeTarget: number;
-}) {
-  const [open, setOpen] = useState(true);
-  const netCals = eaten - (bmr + activeBurn);
-  const calDelta = eaten - calorieTarget;
-  const proDelta = proteinG - proteinTarget;
-  const carbDelta = carbsG - carbTarget;
-  const fatDelta = fatG - fatTarget;
-  const actDelta = activeBurn - activeTarget;
-
-  let status: string;
-  let tone: "oasis" | "sand" | "coral";
-  let text: string;
-  if (netCals < -500) {
-    status = "Deep Deficit"; tone = "oasis";
-    text = "You created a significant energy deficit today, accelerating fat loss.";
-  } else if (netCals < -100) {
-    status = "Moderate Deficit"; tone = "oasis";
-    text = "A steady, sustainable deficit for fat loss.";
-  } else if (netCals <= 100) {
-    status = "Maintenance"; tone = "sand";
-    text = "Perfectly balanced day. You fueled your body exactly what it burned.";
-  } else {
-    status = "Surplus"; tone = "coral";
-    text = "You gave your body extra energy today, ideal for recovery or muscle growth.";
-  }
-
-  const nuances: string[] = [];
-  if (actDelta > 200 && calDelta > 0) {
-    nuances.push("Don't worry about going over your food target — your high activity level completely offset it.");
-  }
-  if (actDelta > 200 && proDelta < -15) {
-    nuances.push("However, because activity was high and protein was low, prioritize recovery meals tomorrow to protect lean muscle.");
-  }
-  if (actDelta < -100 && calDelta > 150) {
-    nuances.push("A lower movement day combined with a food surplus means extra energy storage. Try to hit your step goal tomorrow.");
-  }
-
-  // Macro impact — how protein / carbs / fat affected the body today
-  const proteinPerKg = weightKg > 0 ? proteinG / weightKg : 0;
-  const macros = [
-    macroImpact({
-      key: "protein",
-      label: "Protein",
-      grams: proteinG,
-      delta: proDelta,
-      kcal: proteinG * 4,
-      eaten,
-      extra: { proteinPerKg, weightKg, netCals },
-    }),
-    macroImpact({
-      key: "carbs",
-      label: "Carbs",
-      grams: carbsG,
-      delta: carbDelta,
-      kcal: carbsG * 4,
-      eaten,
-      extra: { actDelta },
-    }),
-    macroImpact({
-      key: "fat",
-      label: "Fat",
-      grams: fatG,
-      delta: fatDelta,
-      kcal: fatG * 9,
-      eaten,
-      extra: {},
-    }),
-  ];
-
-  const toneColor = tone === "oasis" ? "var(--oasis)" : tone === "coral" ? "var(--coral)" : "var(--sand)";
-
-  return (
-    <section className="rounded-2xl p-5 border border-border/50 bg-gradient-to-br from-card via-card to-secondary/30 shadow-[var(--shadow-card)]">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between mb-1 text-left"
-        aria-expanded={open}
-      >
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-          <Sparkles size={12} /> Daily insight · {dateLabel}
-        </span>
-        <span className="flex items-center gap-2">
-          <span
-            className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border"
-            style={{ color: toneColor, borderColor: toneColor, background: `color-mix(in oklch, ${toneColor} 12%, transparent)` }}
-          >
-            {status}
-          </span>
-          <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-        </span>
-      </button>
-
-      {open && (
-        <>
-          <p className="font-display text-base leading-snug mb-3">{text}</p>
-          {nuances.map((n, i) => (
-            <p key={i} className="text-sm text-muted-foreground leading-relaxed mt-2">{n}</p>
-          ))}
-
-          <div className="mt-4 pt-3 border-t border-border/40">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Macro impact on your body</div>
-            <div className="space-y-2">
-              {macros.map((m) => (
-                <div key={m.key} className="rounded-xl border border-border/40 bg-background/40 p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-semibold">{m.label}</span>
-                    <span className="font-mono text-[11px] text-muted-foreground">
-                      {Math.round(m.grams)}g · {Math.round(m.kcal)} kcal ({m.pctOfEaten}%) · Δ {fmtSigned(m.delta)}g
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{m.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-border/40">
-            <MiniStat label="Net" value={fmtSigned(netCals)} unit="kcal" />
-            <MiniStat label="Food Δ" value={fmtSigned(calDelta)} unit="kcal" />
-            <MiniStat label="Protein Δ" value={fmtSigned(proDelta)} unit="g" />
-            <MiniStat label="Active Δ" value={fmtSigned(actDelta)} unit="kcal" />
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
-
-type MacroExtra = { proteinPerKg?: number; weightKg?: number; netCals?: number; actDelta?: number };
-function macroImpact(args: {
-  key: string; label: string; grams: number; delta: number; kcal: number; eaten: number; extra: MacroExtra;
-}) {
-  const { key, label, grams, delta, kcal, eaten, extra } = args;
-  const pctOfEaten = eaten > 0 ? Math.round((kcal / eaten) * 100) : 0;
-  let text = "";
-
-  if (key === "protein") {
-    const ppk = extra.proteinPerKg ?? 0;
-    if (delta < -20) {
-      text = `Low protein today (${ppk.toFixed(1)} g/kg). Your body has less material to repair muscle — expect slower recovery and more lean-mass risk if you're in a deficit.`;
-    } else if (delta < -5) {
-      text = `Slightly under target (${ppk.toFixed(1)} g/kg). Recovery is okay but not optimal — aim a bit higher tomorrow.`;
-    } else if (delta <= 20) {
-      text = `On point (${ppk.toFixed(1)} g/kg). Enough amino acids to protect muscle, keep you full, and support recovery.`;
-    } else {
-      text = `Well above target (${ppk.toFixed(1)} g/kg). Great for satiety and muscle protection; excess is used for energy, not stored as fat easily.`;
-    }
-    if ((extra.netCals ?? 0) < -300 && delta < 0) {
-      text += " In a deficit, hitting protein matters most — prioritize it tomorrow.";
-    }
-  } else if (key === "carbs") {
-    if (delta < -30) {
-      text = `Low carbs today. Glycogen stores are being drawn down — you may feel flatter workouts and lower energy, but this pushes the body toward using fat for fuel.`;
-    } else if (delta <= 30) {
-      text = `Carbs in a healthy range. Steady blood sugar, replenished glycogen for tomorrow's movement, and stable energy.`;
-    } else {
-      text = `Carbs over target. Extra glycogen is topped up; if activity was low today, the surplus becomes the easiest route to fat storage.`;
-      if ((extra.actDelta ?? 0) > 100) {
-        text += " Your high activity absorbed most of it — less of a concern today.";
-      }
-    }
-  } else if (key === "fat") {
-    if (delta < -15) {
-      text = `Fat intake low. Watch hormone health and fat-soluble vitamin absorption (A, D, E, K) if this repeats — aim for at least ~0.6 g/kg.`;
-    } else if (delta <= 15) {
-      text = `Fat in a healthy range. Supports hormones, cell membranes, and keeps meals satisfying.`;
-    } else {
-      text = `Fat over target. Fat is calorie-dense (9 kcal/g), so overshooting quickly adds surplus energy — the biggest lever for tomorrow if you want a tighter deficit.`;
-    }
-  }
-
-  return { key, label, grams, delta, kcal, pctOfEaten, text };
-}
-
-function MiniStat({ label, value, unit }: { label: string; value: string; unit: string }) {
-  return (
-    <div className="text-center">
-      <div className="font-mono text-sm font-semibold">{value}</div>
-      <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">{label} {unit}</div>
-    </div>
-  );
-}
-
-function fmtSigned(n: number) {
-  const r = Math.round(n);
-  return r > 0 ? `+${r}` : `${r}`;
-}
-
-function CoachCard({ profile, movements, foods }: {
+function CoachCard({ profile, movements, foods, scans }: {
   profile: Profile;
   movements: Movement[];
   foods: Food[];
+  scans: BodyScan[];
 }) {
   const [open, setOpen] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const advice = useMemo<CoachAdvice[]>(() => {
     const signals = computeSignals(profile, movements, foods, 7);
-    return generateAdvice(signals, 4);
-  }, [profile, movements, foods]);
+    const base = generateAdvice(signals, 4);
+    const body = bodyCompAdvice(scans, {
+      gender: profile.gender,
+      proteinPerKg: signals.proteinPerKg,
+      avgNetCals: signals.avgNetCals,
+      daysLogged: signals.daysLogged,
+    });
+    return [...base, ...body].sort((a, b) => b.priority - a.priority).slice(0, 6);
+  }, [profile, movements, foods, scans]);
+
 
   const headline = advice[0];
   const rest = advice.slice(1);
