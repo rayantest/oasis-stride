@@ -1,7 +1,7 @@
 import type { CoachSignals } from "./coach-signals";
 
 export type CoachCategory =
-  | "protein" | "calories" | "activity" | "consistency" | "recovery" | "trend" | "logging";
+  | "protein" | "calories" | "activity" | "consistency" | "recovery" | "trend" | "logging" | "body";
 
 export type CoachAdvice = {
   id: string;
