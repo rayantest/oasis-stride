@@ -237,25 +237,9 @@ function App() {
           </div>
         </Card>
 
-        {/* Daily AI Insights */}
-        <DailyInsights
-          dateLabel={dateLabel}
-          bmr={t.bmr}
-          activeBurn={activeBurn}
-          eaten={eaten}
-          proteinG={proteinG}
-          carbsG={carbsG}
-          fatG={fatG}
-          weightKg={profile.weight_kg}
-          calorieTarget={t.calories}
-          proteinTarget={t.protein_g}
-          carbTarget={t.carbs_g}
-          fatTarget={t.fat_g}
-          activeTarget={t.active_burn}
-        />
+        {/* Personal coach — 7-day guidance + body composition */}
+        <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
 
-        {/* Personal coach — 7-day guidance */}
-        <CoachCard profile={profile} movements={movements} foods={foods} />
 
         {/* Body composition — trend from InBody / manual scans */}
         <BodyCompSection gender={profile.gender} />
