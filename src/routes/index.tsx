@@ -152,13 +152,7 @@ function App() {
       <Toaster theme="dark" position="top-center" richColors />
 
       <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/70 border-b border-border/50">
-        <div className="mx-auto max-w-xl px-5 py-4 flex items-center justify-between">
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Personal log</div>
-            <h1 className="font-display text-2xl font-bold">
-              revert<span className="text-primary">V</span>
-            </h1>
-          </div>
+        <div className="mx-auto max-w-xl px-5 py-3 flex items-center justify-end">
           <button
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
@@ -276,7 +270,7 @@ function CoachCard({ profile, movements, foods, scans }: {
   foods: Food[];
   scans: BodyScan[];
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const advice = useMemo<CoachAdvice[]>(() => {

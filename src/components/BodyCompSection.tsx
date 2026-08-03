@@ -78,7 +78,7 @@ const METRICS: MetricDef[] = [
 ];
 
 export function BodyCompSection({ gender }: { gender: string }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [metric, setMetric] = useState<MetricKey>("weight_kg");
   const qc = useQueryClient();
