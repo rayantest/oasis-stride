@@ -912,22 +912,6 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 
 /* ---------- Helpers ---------- */
 
-function computeStreak(movements: Movement[]): number {
-  if (movements.length === 0) return 0;
-  const daysWithMove = new Set<string>();
-  for (const m of movements) {
-    daysWithMove.add(dayKey(new Date(m.created_at)));
-  }
-  let streak = 0;
-  const cursor = new Date();
-  cursor.setHours(0, 0, 0, 0);
-  while (daysWithMove.has(dayKey(cursor))) {
-    streak++;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
-}
-
 function last7Days(
   movements: Movement[],
   foods: Food[],
