@@ -125,9 +125,6 @@ function App() {
   const scans = (scansQ.data ?? []) as BodyScan[];
   const latestScan = scans[0] ?? null;
   const t = targets(profile, latestScan ? { weight_kg: latestScan.weight_kg, bmr_kcal: latestScan.bmr_kcal } : null);
-  const scanNotes = scanCautionNotes(latestScan, profile.gender);
-  const combinedCaution = profile.caution_flag || scanNotes.length > 0;
-  const combinedCautionNote = [profile.caution_note, ...scanNotes].filter(Boolean).join("; ");
 
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
@@ -137,7 +134,7 @@ function App() {
   const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
   const totalMinutes = dayMovements.reduce((s, m) => s + Number(m.minutes), 0);
   const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0);
-  const totalBurn = Math.round(t.bmr + activeBurn);
+  
   const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
   const proteinG = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0);
   const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
