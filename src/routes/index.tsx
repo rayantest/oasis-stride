@@ -15,7 +15,7 @@ import { FoodScanSheet } from "@/components/FoodScanSheet";
 
 import { toast, Toaster } from "sonner";
 import {
-  Flame, Footprints, UtensilsCrossed, Settings, Trash2, Loader2, Watch,
+  Footprints, UtensilsCrossed, Settings, Trash2, Loader2, Watch,
   Wand2, ArrowLeft, ChevronDown, Compass, Camera,
 } from "lucide-react";
 
@@ -132,7 +132,6 @@ function App() {
 
   const dayMovements = movements.filter(m => isSameDay(new Date(m.created_at), selectedDate));
   const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
-  const totalMinutes = dayMovements.reduce((s, m) => s + Number(m.minutes), 0);
   const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0);
   
   const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
@@ -140,7 +139,6 @@ function App() {
   const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
   const fatG = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
 
-  const streak = computeStreak(movements);
   const last7 = last7Days(movements, foods, metric, t);
 
   const dateLabel = viewingToday
