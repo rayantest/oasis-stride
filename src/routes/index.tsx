@@ -175,49 +175,6 @@ function App() {
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
 
-        {/* Hero snapshot */}
-        <section className="text-center space-y-1">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">{dateLabel}</div>
-          <div className="flex items-baseline justify-center gap-4">
-            <div>
-              <div className="font-display font-bold text-5xl text-sand">{totalMinutes}</div>
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">min moved</div>
-            </div>
-            <div className="text-muted-foreground text-2xl font-mono">·</div>
-            <div>
-              <div className="font-display font-bold text-5xl text-oasis">{Math.round(activeBurn)}</div>
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">kcal active</div>
-            </div>
-          </div>
-          {viewingToday && (
-            <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-sand/10 border border-sand/20">
-              <Flame size={14} className="text-sand" />
-              <span className="text-xs font-mono">{streak} day streak</span>
-            </div>
-          )}
-        </section>
-
-
-        {/* Daily benchmark */}
-        <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
-          <div className="space-y-3">
-            <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
-            <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
-            <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under" />
-            <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under" />
-            <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
-          </div>
-        </Card>
-
-        {/* Personal coach — 7-day guidance + body composition */}
-        <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
-
-
-        {/* Body composition — trend from InBody / manual scans */}
-        <BodyCompSection gender={profile.gender} />
-
-
-
         {/* Log inputs — allow back-filling on any day */}
         <MovementInput
           weight={profile.weight_kg}
@@ -236,6 +193,23 @@ function App() {
           <DayLog movements={dayMovements} foods={dayFoods} onChange={invalidate} />
         </Card>
 
+        {/* Daily benchmark */}
+        <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
+          <div className="space-y-3">
+            <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
+            <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
+            <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under" />
+            <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under" />
+            <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
+          </div>
+        </Card>
+
+        {/* Personal coach — 7-day guidance + body composition */}
+        <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
+
+        {/* Body composition — trend from InBody / manual scans */}
+        <BodyCompSection gender={profile.gender} />
+
         {/* Last 7 days */}
         <Card
           title="Last 7 days"
@@ -248,7 +222,6 @@ function App() {
             onSelect={(d) => setSelectedDate(dayStart(d))}
           />
         </Card>
-
 
       </main>
 
