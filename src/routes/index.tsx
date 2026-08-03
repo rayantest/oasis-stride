@@ -15,9 +15,8 @@ import { FoodScanSheet } from "@/components/FoodScanSheet";
 
 import { toast, Toaster } from "sonner";
 import {
-  Flame, Footprints, UtensilsCrossed, Settings, Trash2, Shuffle,
-  CheckCircle2, Sparkles, Loader2, Watch, Wand2, ArrowLeft, ChevronDown,
-  Compass, Camera,
+  Flame, Footprints, UtensilsCrossed, Settings, Trash2, Loader2, Watch,
+  Wand2, ArrowLeft, ChevronDown, Compass, Camera,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -36,18 +35,6 @@ type Food = {
 
 type MetricKey = "minutes" | "active_kcal" | "eaten_kcal" | "protein" | "carbs" | "fat";
 
-const NUDGES = [
-  { icon: "💪", text: "10 push-ups", minutes: 3, met: 5 },
-  { icon: "🧘", text: "2 min stretch", minutes: 2, met: 2.5 },
-  { icon: "🚶", text: "Walk a lap around the room", minutes: 3, met: 3.5 },
-  { icon: "🏋️", text: "20 bodyweight squats", minutes: 3, met: 5 },
-  { icon: "🧱", text: "1 min plank", minutes: 2, met: 4 },
-  { icon: "🚶‍♂️", text: "5 min walk break", minutes: 5, met: 3.5 },
-  { icon: "🪜", text: "Take the stairs 2x", minutes: 3, met: 6 },
-  { icon: "🧎", text: "15 glute bridges", minutes: 3, met: 4 },
-  { icon: "🤸", text: "30 jumping jacks", minutes: 2, met: 7 },
-  { icon: "🦵", text: "20 calf raises", minutes: 2, met: 3.5 },
-];
 
 function dayStart(d: Date) {
   const x = new Date(d);
@@ -138,9 +125,6 @@ function App() {
   const scans = (scansQ.data ?? []) as BodyScan[];
   const latestScan = scans[0] ?? null;
   const t = targets(profile, latestScan ? { weight_kg: latestScan.weight_kg, bmr_kcal: latestScan.bmr_kcal } : null);
-  const scanNotes = scanCautionNotes(latestScan, profile.gender);
-  const combinedCaution = profile.caution_flag || scanNotes.length > 0;
-  const combinedCautionNote = [profile.caution_note, ...scanNotes].filter(Boolean).join("; ");
 
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
@@ -150,7 +134,7 @@ function App() {
   const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
   const totalMinutes = dayMovements.reduce((s, m) => s + Number(m.minutes), 0);
   const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0);
-  const totalBurn = Math.round(t.bmr + activeBurn);
+  
   const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
   const proteinG = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0);
   const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
@@ -196,11 +180,6 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
-        {combinedCaution && (
-          <div className="rounded-xl bg-amber-500/10 border border-amber-500/40 px-4 py-3 text-xs text-amber-200">
-            ⚠️ Caution noted{combinedCautionNote ? `: ${combinedCautionNote}` : ""} — consider checking with a doctor before high-strain training.
-          </div>
-        )}
 
         {/* Hero snapshot */}
         <section className="text-center space-y-1">
@@ -224,8 +203,6 @@ function App() {
           )}
         </section>
 
-        {/* Oasis meter */}
-        <OasisMeter minutes={totalMinutes} />
 
         {/* Daily benchmark */}
         <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
@@ -246,8 +223,6 @@ function App() {
         <BodyCompSection gender={profile.gender} />
 
 
-        {/* Nudge (today only) */}
-        {viewingToday && <NudgeCard weight={profile.weight_kg} onLogged={invalidate} />}
 
         {/* Log inputs — allow back-filling on any day */}
         <MovementInput
@@ -280,26 +255,7 @@ function App() {
           />
         </Card>
 
-        {/* Balance */}
-        <Card title={viewingToday ? "Estimated balance" : `Balance · ${dateLabel}`}>
-          <div className="grid grid-cols-2 gap-3">
-            <Stat label="Eaten" value={Math.round(eaten)} unit="kcal" tone="warm" />
-            <Stat label="Burned" value={totalBurn} unit="kcal" tone="cool" />
-          </div>
-          <div className="grid grid-cols-3 gap-3 mt-3">
-            <Stat label="Protein" value={Math.round(proteinG)} unit="g" small />
-            <Stat label="Carbs" value={Math.round(carbsG)} unit="g" small />
-            <Stat label="Fat" value={Math.round(fatG)} unit="g" small />
-          </div>
-          <WeeklyRollup movements={movements} foods={foods} weeklyActiveTarget={(profile.goal_answers as any)?.weekly_active_burn ?? t.active_burn * 7} />
-          <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
-            Rough estimates for tracking trends — not medical advice. Burn includes BMR ({t.bmr} kcal) + logged movement.
-          </p>
-        </Card>
 
-        <footer className="text-center text-[10px] text-muted-foreground/60 uppercase tracking-widest pt-4">
-          Riyadh · Indoor-friendly · Steady wins
-        </footer>
       </main>
 
       {settingsOpen && (
@@ -429,36 +385,6 @@ function Card({ title, hint, right, children }: {
   );
 }
 
-function OasisMeter({ minutes }: { minutes: number }) {
-  const pct = Math.min(100, Math.round((minutes / 60) * 100));
-  return (
-    <div className="relative rounded-2xl border border-border/50 overflow-hidden bg-card shadow-[var(--shadow-card)]">
-      <div className="relative h-40">
-        <div
-          className="absolute inset-x-0 bottom-0 transition-[height] duration-1000 ease-out"
-          style={{
-            height: `${pct}%`,
-            background: "var(--gradient-oasis)",
-            boxShadow: "0 -8px 40px -4px oklch(0.7 0.13 200 / 0.5)",
-          }}
-        >
-          <div className="absolute -top-3 left-0 right-0 h-6 opacity-80 oasis-wave"
-            style={{
-              backgroundImage: "radial-gradient(ellipse at 25% 100%, oklch(0.85 0.1 195) 0 15%, transparent 16%), radial-gradient(ellipse at 75% 100%, oklch(0.85 0.1 195) 0 15%, transparent 16%)",
-              backgroundSize: "80px 24px",
-              backgroundRepeat: "repeat-x",
-            }}
-          />
-        </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="font-mono text-xs uppercase tracking-widest text-foreground/80 mix-blend-plus-lighter">Oasis fill</div>
-          <div className="font-display font-bold text-4xl">{pct}%</div>
-          <div className="text-[11px] text-foreground/70 mt-1">{minutes} / 60 min</div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function BenchmarkRow({ label, value, target, unit, mode }: {
   label: string; value: number; target: number; unit: string; mode: "over" | "under";
@@ -495,55 +421,6 @@ function BenchmarkRow({ label, value, target, unit, mode }: {
   );
 }
 
-function NudgeCard({ weight, onLogged }: { weight: number; onLogged: () => void }) {
-  const [idx, setIdx] = useState(() => Math.floor(Math.random() * NUDGES.length));
-  const [logging, setLogging] = useState(false);
-  const n = NUDGES[idx];
-
-  const shuffle = () => {
-    let next = idx;
-    while (next === idx) next = Math.floor(Math.random() * NUDGES.length);
-    setIdx(next);
-  };
-
-  const log = async () => {
-    setLogging(true);
-    const hours = n.minutes / 60;
-    const kcal = Math.round(n.met * weight * hours);
-    const { error } = await supabase.from("movement_entries").insert({
-      label: n.text, minutes: n.minutes, kcal, source: "estimate",
-    });
-    setLogging(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Logged: ${n.text}`);
-    onLogged();
-  };
-
-  return (
-    <section className="rounded-2xl p-5 border border-sand/20 bg-gradient-to-br from-sand/10 via-card to-card shadow-[var(--shadow-glow-sand)]">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] uppercase tracking-widest text-sand/80 flex items-center gap-1.5">
-          <Sparkles size={12} /> Right now you could
-        </span>
-        <button onClick={shuffle} className="p-1.5 rounded-full hover:bg-sand/10 text-sand" aria-label="Shuffle">
-          <Shuffle size={14} />
-        </button>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="text-3xl">{n.icon}</div>
-        <div className="flex-1 font-display text-lg leading-tight">{n.text}</div>
-        <button
-          onClick={log}
-          disabled={logging}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-sand text-primary-foreground text-xs font-semibold hover:brightness-110 transition disabled:opacity-50"
-        >
-          {logging ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-          Did it
-        </button>
-      </div>
-    </section>
-  );
-}
 
 function MovementInput({ weight, logDate, viewingToday, onLogged }: {
   weight: number; logDate: Date; viewingToday: boolean; onLogged: () => void;
@@ -879,19 +756,6 @@ function SevenDayStrip({ data, metric, selectedDate, onSelect }: {
   );
 }
 
-function Stat({ label, value, unit, tone, small }: {
-  label: string; value: number; unit: string; tone?: "warm" | "cool"; small?: boolean;
-}) {
-  const color = tone === "cool" ? "text-oasis" : tone === "warm" ? "text-sand" : "text-foreground";
-  return (
-    <div className="rounded-xl bg-secondary/50 border border-border/40 p-3">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`font-mono font-semibold ${small ? "text-lg" : "text-2xl"} ${color}`}>
-        {value}<span className="text-xs text-muted-foreground ml-0.5">{unit}</span>
-      </div>
-    </div>
-  );
-}
 
 /* ---------- Settings sheet ---------- */
 
