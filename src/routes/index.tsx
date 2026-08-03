@@ -15,7 +15,7 @@ import { FoodScanSheet } from "@/components/FoodScanSheet";
 
 import { toast, Toaster } from "sonner";
 import {
-  Flame, Footprints, UtensilsCrossed, Settings, Trash2, Loader2, Watch,
+  Footprints, UtensilsCrossed, Settings, Trash2, Loader2, Watch,
   Wand2, ArrowLeft, ChevronDown, Compass, Camera,
 } from "lucide-react";
 
@@ -132,7 +132,6 @@ function App() {
 
   const dayMovements = movements.filter(m => isSameDay(new Date(m.created_at), selectedDate));
   const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
-  const totalMinutes = dayMovements.reduce((s, m) => s + Number(m.minutes), 0);
   const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0);
   
   const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
@@ -140,7 +139,6 @@ function App() {
   const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
   const fatG = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
 
-  const streak = computeStreak(movements);
   const last7 = last7Days(movements, foods, metric, t);
 
   const dateLabel = viewingToday
@@ -152,13 +150,7 @@ function App() {
       <Toaster theme="dark" position="top-center" richColors />
 
       <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/70 border-b border-border/50">
-        <div className="mx-auto max-w-xl px-5 py-4 flex items-center justify-between">
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Personal log</div>
-            <h1 className="font-display text-2xl font-bold">
-              revert<span className="text-primary">V</span>
-            </h1>
-          </div>
+        <div className="mx-auto max-w-xl px-5 py-3 flex items-center justify-end">
           <button
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
@@ -181,49 +173,6 @@ function App() {
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
 
-        {/* Hero snapshot */}
-        <section className="text-center space-y-1">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">{dateLabel}</div>
-          <div className="flex items-baseline justify-center gap-4">
-            <div>
-              <div className="font-display font-bold text-5xl text-sand">{totalMinutes}</div>
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">min moved</div>
-            </div>
-            <div className="text-muted-foreground text-2xl font-mono">·</div>
-            <div>
-              <div className="font-display font-bold text-5xl text-oasis">{Math.round(activeBurn)}</div>
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">kcal active</div>
-            </div>
-          </div>
-          {viewingToday && (
-            <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-sand/10 border border-sand/20">
-              <Flame size={14} className="text-sand" />
-              <span className="text-xs font-mono">{streak} day streak</span>
-            </div>
-          )}
-        </section>
-
-
-        {/* Daily benchmark */}
-        <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
-          <div className="space-y-3">
-            <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
-            <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
-            <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under" />
-            <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under" />
-            <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
-          </div>
-        </Card>
-
-        {/* Personal coach — 7-day guidance + body composition */}
-        <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
-
-
-        {/* Body composition — trend from InBody / manual scans */}
-        <BodyCompSection gender={profile.gender} />
-
-
-
         {/* Log inputs — allow back-filling on any day */}
         <MovementInput
           weight={profile.weight_kg}
@@ -242,6 +191,23 @@ function App() {
           <DayLog movements={dayMovements} foods={dayFoods} onChange={invalidate} />
         </Card>
 
+        {/* Daily benchmark */}
+        <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
+          <div className="space-y-3">
+            <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
+            <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
+            <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under" />
+            <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under" />
+            <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
+          </div>
+        </Card>
+
+        {/* Personal coach — 7-day guidance + body composition */}
+        <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
+
+        {/* Body composition — trend from InBody / manual scans */}
+        <BodyCompSection gender={profile.gender} />
+
         {/* Last 7 days */}
         <Card
           title="Last 7 days"
@@ -254,7 +220,6 @@ function App() {
             onSelect={(d) => setSelectedDate(dayStart(d))}
           />
         </Card>
-
 
       </main>
 
@@ -276,7 +241,7 @@ function CoachCard({ profile, movements, foods, scans }: {
   foods: Food[];
   scans: BodyScan[];
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const advice = useMemo<CoachAdvice[]>(() => {
@@ -946,22 +911,6 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 }
 
 /* ---------- Helpers ---------- */
-
-function computeStreak(movements: Movement[]): number {
-  if (movements.length === 0) return 0;
-  const daysWithMove = new Set<string>();
-  for (const m of movements) {
-    daysWithMove.add(dayKey(new Date(m.created_at)));
-  }
-  let streak = 0;
-  const cursor = new Date();
-  cursor.setHours(0, 0, 0, 0);
-  while (daysWithMove.has(dayKey(cursor))) {
-    streak++;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
-}
 
 function last7Days(
   movements: Movement[],
