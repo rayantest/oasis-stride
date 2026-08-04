@@ -149,18 +149,9 @@ function App() {
     <div className="min-h-screen pb-24">
       <Toaster theme="dark" position="top-center" richColors />
 
-      <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/70 border-b border-border/50">
-        <div className="mx-auto max-w-xl px-5 py-3 flex items-center justify-end">
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            className="p-2 rounded-full hover:bg-secondary transition"
-          >
-            <Settings size={20} />
-          </button>
-        </div>
-        {!viewingToday && (
-          <div className="mx-auto max-w-xl px-5 pb-3">
+      {!viewingToday && (
+        <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/70 border-b border-border/50">
+          <div className="mx-auto max-w-xl px-5 py-3">
             <button
               onClick={() => setSelectedDate(dayStart(new Date()))}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sand/15 border border-sand/30 text-sand text-xs font-semibold hover:bg-sand/25 transition"
@@ -168,8 +159,9 @@ function App() {
               <ArrowLeft size={12} /> Back to today
             </button>
           </div>
-        )}
-      </header>
+        </header>
+      )}
+
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
 
