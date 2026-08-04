@@ -107,7 +107,6 @@ function App() {
   };
 
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (profileQ.isLoading || movementQ.isLoading || foodQ.isLoading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">
