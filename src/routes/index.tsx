@@ -197,8 +197,13 @@ function App() {
         {/* Personal coach — 7-day guidance + body composition */}
         <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
 
-        {/* Body composition — trend from InBody / manual scans */}
-        <BodyCompSection gender={profile.gender} />
+        {/* Body & profile — scans, profile data and goal */}
+        <BodyCompSection gender={profile.gender}>
+          <ProfilePanel
+            profile={profile}
+            onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })}
+          />
+        </BodyCompSection>
 
         {/* History chart */}
         <Card
@@ -216,12 +221,6 @@ function App() {
 
       </main>
 
-      {settingsOpen && (
-        <SettingsSheet profile={profile} onClose={() => setSettingsOpen(false)} onSaved={() => {
-          qc.invalidateQueries({ queryKey: ["profile"] });
-          setSettingsOpen(false);
-        }} />
-      )}
     </div>
   );
 }
