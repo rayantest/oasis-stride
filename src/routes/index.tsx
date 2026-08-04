@@ -208,18 +208,19 @@ function App() {
         {/* Body composition — trend from InBody / manual scans */}
         <BodyCompSection gender={profile.gender} />
 
-        {/* Last 7 days */}
+        {/* History chart */}
         <Card
-          title="Last 7 days"
+          title="History"
           right={<MetricPicker value={metric} onChange={setMetric} />}
         >
-          <SevenDayStrip
-            data={last7}
+          <HistoryChart
+            data={history}
             metric={metric}
             selectedDate={selectedDate}
-            onSelect={(d) => setSelectedDate(dayStart(d))}
+            onSelect={(d: Date) => setSelectedDate(dayStart(d))}
           />
         </Card>
+
 
       </main>
 
