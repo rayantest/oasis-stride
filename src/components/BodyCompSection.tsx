@@ -77,7 +77,7 @@ const METRICS: MetricDef[] = [
   { key: "visceral_fat_level", label: "Visceral fat", unit: "", color: "var(--coral)", good: "down", decimals: 0 },
 ];
 
-export function BodyCompSection({ gender }: { gender: string }) {
+export function BodyCompSection({ gender, children }: { gender: string; children?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [metric, setMetric] = useState<MetricKey>("weight_kg");
@@ -102,7 +102,8 @@ export function BodyCompSection({ gender }: { gender: string }) {
         <button onClick={() => setOpen(!open)} className="flex items-center gap-2 text-left flex-1"
           aria-expanded={open}>
           <Activity size={16} className="text-primary" />
-          <span className="text-sm font-semibold">Body composition</span>
+          <span className="text-sm font-semibold">Body &amp; profile</span>
+
           {latest && (
             <span className="text-[10px] text-muted-foreground ml-1">
               latest {latest.scan_date}
@@ -152,8 +153,10 @@ export function BodyCompSection({ gender }: { gender: string }) {
               </p>
             </>
           )}
+          {children}
         </div>
       )}
+
 
       {adding && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6">

@@ -15,7 +15,7 @@ import { FoodScanSheet } from "@/components/FoodScanSheet";
 
 import { toast, Toaster } from "sonner";
 import {
-  Footprints, UtensilsCrossed, Settings, Trash2, Loader2, Watch,
+  Footprints, UtensilsCrossed, Trash2, Loader2, Watch,
   Wand2, ArrowLeft, ChevronDown, Compass, Camera,
 } from "lucide-react";
 
@@ -107,7 +107,6 @@ function App() {
   };
 
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (profileQ.isLoading || movementQ.isLoading || foodQ.isLoading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">
@@ -149,18 +148,9 @@ function App() {
     <div className="min-h-screen pb-24">
       <Toaster theme="dark" position="top-center" richColors />
 
-      <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/70 border-b border-border/50">
-        <div className="mx-auto max-w-xl px-5 py-3 flex items-center justify-end">
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            className="p-2 rounded-full hover:bg-secondary transition"
-          >
-            <Settings size={20} />
-          </button>
-        </div>
-        {!viewingToday && (
-          <div className="mx-auto max-w-xl px-5 pb-3">
+      {!viewingToday && (
+        <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/70 border-b border-border/50">
+          <div className="mx-auto max-w-xl px-5 py-3">
             <button
               onClick={() => setSelectedDate(dayStart(new Date()))}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sand/15 border border-sand/30 text-sand text-xs font-semibold hover:bg-sand/25 transition"
@@ -168,8 +158,9 @@ function App() {
               <ArrowLeft size={12} /> Back to today
             </button>
           </div>
-        )}
-      </header>
+        </header>
+      )}
+
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
 
@@ -205,8 +196,13 @@ function App() {
         {/* Personal coach — 7-day guidance + body composition */}
         <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
 
-        {/* Body composition — trend from InBody / manual scans */}
-        <BodyCompSection gender={profile.gender} />
+        {/* Body & profile — scans, profile data and goal */}
+        <BodyCompSection gender={profile.gender}>
+          <ProfilePanel
+            profile={profile}
+            onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })}
+          />
+        </BodyCompSection>
 
         {/* History chart */}
         <Card
@@ -224,12 +220,6 @@ function App() {
 
       </main>
 
-      {settingsOpen && (
-        <SettingsSheet profile={profile} onClose={() => setSettingsOpen(false)} onSaved={() => {
-          qc.invalidateQueries({ queryKey: ["profile"] });
-          setSettingsOpen(false);
-        }} />
-      )}
     </div>
   );
 }
@@ -747,20 +737,14 @@ function HistoryChart({ data, metric, selectedDate, onSelect }: {
 
 
 
-/* ---------- Settings sheet ---------- */
+/* ---------- Profile & goal panel (inline, inside Body & profile) ---------- */
 
-function SettingsSheet({ profile, onClose, onSaved }: {
-  profile: Profile; onClose: () => void; onSaved: () => void;
+function ProfilePanel({ profile, onSaved }: {
+  profile: Profile; onSaved: () => void;
 }) {
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
-
-  useEffect(() => {
-    const orig = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = orig; };
-  }, []);
 
   useEffect(() => { setForm(profile); }, [profile]);
 
@@ -799,94 +783,88 @@ function SettingsSheet({ profile, onClose, onSaved }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="w-full max-w-xl bg-card border-t sm:border border-border rounded-t-3xl sm:rounded-3xl p-6 max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-bold">Profile</h2>
-          <button onClick={onClose} className="text-muted-foreground text-sm">Close</button>
-        </div>
+    <div className="rounded-xl border border-border/40 bg-background/40 p-4">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Profile & goal</div>
 
-        {form.caution_flag && (
-          <div className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/40 px-3 py-2 text-xs text-amber-200">
-            ⚠️ Caution noted{form.caution_note ? `: ${form.caution_note}` : ""} — consider checking with a doctor before high-strain training.
+      {form.caution_flag && (
+        <div className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/40 px-3 py-2 text-xs text-amber-200">
+          ⚠️ Caution noted{form.caution_note ? `: ${form.caution_note}` : ""} — consider checking with a doctor before high-strain training.
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Height (cm)"><NumInput value={form.height_cm} onChange={v => set("height_cm", v)} /></Field>
+        <Field label="Weight (kg)"><NumInput value={form.weight_kg} onChange={v => set("weight_kg", v)} step={0.1} /></Field>
+        <Field label="Age"><NumInput value={form.age} onChange={v => set("age", v)} /></Field>
+        <Field label="Resting HR"><NumInput value={form.resting_hr} onChange={v => set("resting_hr", v)} /></Field>
+        <Field label="Gender">
+          <Select value={form.gender} onChange={v => set("gender", v)}
+            options={[["male", "Male"], ["female", "Female"], ["other", "Other"]]} />
+        </Field>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-border/60 p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Your goal</div>
+            <div className="text-sm font-medium">{paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} · {actLabel[form.activity_level] ?? form.activity_level}</div>
+          </div>
+          <button onClick={() => setGoalOpen(true)}
+            className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shrink-0">
+            Update your goal
+          </button>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Active burn target: {form.active_burn_goal_kcal} kcal/day · derived from your questionnaire.
+        </div>
+        {projection && (
+          <div className="text-xs text-foreground/80 rounded-lg bg-secondary/50 px-3 py-2">
+            {projection}
           </div>
         )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Height (cm)"><NumInput value={form.height_cm} onChange={v => set("height_cm", v)} /></Field>
-          <Field label="Weight (kg)"><NumInput value={form.weight_kg} onChange={v => set("weight_kg", v)} step={0.1} /></Field>
-          <Field label="Age"><NumInput value={form.age} onChange={v => set("age", v)} /></Field>
-          <Field label="Resting HR"><NumInput value={form.resting_hr} onChange={v => set("resting_hr", v)} /></Field>
-          <Field label="Gender">
-            <Select value={form.gender} onChange={v => set("gender", v)}
-              options={[["male", "Male"], ["female", "Female"], ["other", "Other"]]} />
-          </Field>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-border/60 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Your goal</div>
-              <div className="text-sm font-medium">{paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} · {actLabel[form.activity_level] ?? form.activity_level}</div>
-            </div>
-            <button onClick={() => setGoalOpen(true)}
-              className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-              Update your goal
-            </button>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Active burn target: {form.active_burn_goal_kcal} kcal/day · derived from your questionnaire.
-          </div>
-          {projection && (
-            <div className="text-xs text-foreground/80 rounded-lg bg-secondary/50 px-3 py-2">
-              {projection}
-            </div>
-          )}
-          {misses && (
-            <div className="text-xs text-amber-200 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
-              This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a faster pace manually by re-running the questionnaire.
-            </div>
-          )}
-          {(answers.dietary && answers.dietary !== "none") && (
-            <div className="text-[11px] text-muted-foreground">
-              Dietary: {answers.dietary === "other" ? (answers.dietaryOther || "other") : answers.dietary}
-            </div>
-          )}
-        </div>
-
-        {scanWeightMismatch && latestScan?.weight_kg && (
-          <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 px-3 py-2 text-[11px] flex items-center justify-between gap-2">
-            <span>Latest scan weight is {latestScan.weight_kg}kg (profile: {form.weight_kg}kg).</span>
-            <button
-              onClick={() => set("weight_kg", latestScan.weight_kg as number)}
-              className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0">
-              Sync
-            </button>
+        {misses && (
+          <div className="text-xs text-amber-200 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
+            This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a faster pace manually by re-running the questionnaire.
           </div>
         )}
-
-        <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
-          BMR {t.bmr}{t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c / {t.fat_g}f
-        </div>
-
-
-        <button onClick={save} disabled={saving}
-          className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50">
-          {saving ? "Saving…" : "Save"}
-        </button>
-
-        {goalOpen && (
-          <GoalQuestionnaire
-            profile={form}
-            onClose={() => setGoalOpen(false)}
-            onSaved={() => { setGoalOpen(false); onSaved(); }}
-          />
+        {(answers.dietary && answers.dietary !== "none") && (
+          <div className="text-[11px] text-muted-foreground">
+            Dietary: {answers.dietary === "other" ? (answers.dietaryOther || "other") : answers.dietary}
+          </div>
         )}
       </div>
+
+      {scanWeightMismatch && latestScan?.weight_kg && (
+        <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 px-3 py-2 text-[11px] flex items-center justify-between gap-2">
+          <span>Latest scan weight is {latestScan.weight_kg}kg (profile: {form.weight_kg}kg).</span>
+          <button
+            onClick={() => set("weight_kg", latestScan.weight_kg as number)}
+            className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0">
+            Sync
+          </button>
+        </div>
+      )}
+
+      <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
+        BMR {t.bmr}{t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c / {t.fat_g}f
+      </div>
+
+      <button onClick={save} disabled={saving}
+        className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50">
+        {saving ? "Saving…" : "Save"}
+      </button>
+
+      {goalOpen && (
+        <GoalQuestionnaire
+          profile={form}
+          onClose={() => setGoalOpen(false)}
+          onSaved={() => { setGoalOpen(false); onSaved(); }}
+        />
+      )}
     </div>
   );
 }
+
 
 function WeeklyRollup({ movements, foods, weeklyActiveTarget }: {
   movements: Movement[]; foods: Food[]; weeklyActiveTarget: number;
