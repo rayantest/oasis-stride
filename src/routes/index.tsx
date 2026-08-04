@@ -15,7 +15,7 @@ import { FoodScanSheet } from "@/components/FoodScanSheet";
 
 import { toast, Toaster } from "sonner";
 import {
-  Footprints, UtensilsCrossed, Settings, Trash2, Loader2, Watch,
+  Footprints, UtensilsCrossed, Trash2, Loader2, Watch,
   Wand2, ArrowLeft, ChevronDown, Compass, Camera,
 } from "lucide-react";
 
