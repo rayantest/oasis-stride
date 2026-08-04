@@ -33,7 +33,7 @@ type Food = {
   protein_g: number; carbs_g: number; fat_g: number; created_at: string;
 };
 
-type MetricKey = "minutes" | "active_kcal" | "eaten_kcal" | "protein" | "carbs" | "fat";
+type MetricKey = "eaten_kcal" | "protein" | "carbs" | "fat";
 
 
 function dayStart(d: Date) {
@@ -61,7 +61,7 @@ function timestampForDay(d: Date) {
 function App() {
   const qc = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(() => dayStart(new Date()));
-  const [metric, setMetric] = useState<MetricKey>("minutes");
+  const [metric, setMetric] = useState<MetricKey>("eaten_kcal");
 
   const profileQ = useQuery({
     queryKey: ["profile"],
@@ -76,7 +76,7 @@ function App() {
     queryKey: ["movement"],
     queryFn: async (): Promise<Movement[]> => {
       const since = new Date();
-      since.setDate(since.getDate() - 30);
+      since.setDate(since.getDate() - 365);
       const { data, error } = await supabase.from("movement_entries")
         .select("*").gte("created_at", since.toISOString())
         .order("created_at", { ascending: false });
@@ -89,7 +89,7 @@ function App() {
     queryKey: ["food"],
     queryFn: async (): Promise<Food[]> => {
       const since = new Date();
-      since.setDate(since.getDate() - 30);
+      since.setDate(since.getDate() - 365);
       const { data, error } = await supabase.from("food_entries")
         .select("*").gte("created_at", since.toISOString())
         .order("created_at", { ascending: false });
@@ -139,7 +139,7 @@ function App() {
   const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
   const fatG = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
 
-  const last7 = last7Days(movements, foods, metric, t);
+  const history = historyDays(movements, foods, metric, t);
 
   const dateLabel = viewingToday
     ? "Today"
@@ -634,11 +634,9 @@ function LogRow({ icon, label, sub, value, tone, onDelete }: {
   );
 }
 
-/* ---------- 7-day strip ---------- */
+/* ---------- History chart ---------- */
 
 const METRIC_META: Record<MetricKey, { label: string; unit: string; mode: "over" | "under" }> = {
-  minutes: { label: "Movement min", unit: "min", mode: "over" },
-  active_kcal: { label: "Active kcal", unit: "kcal", mode: "over" },
   eaten_kcal: { label: "Calories eaten", unit: "kcal", mode: "under" },
   protein: { label: "Protein", unit: "g", mode: "over" },
   carbs: { label: "Carbs", unit: "g", mode: "under" },
@@ -939,7 +937,7 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 
 /* ---------- Helpers ---------- */
 
-function last7Days(
+function historyDays(
   movements: Movement[],
   foods: Food[],
   metric: MetricKey,
@@ -948,7 +946,18 @@ function last7Days(
   const out: DayPoint[] = [];
   const today = dayStart(new Date());
   const target = metricTarget(metric, t);
-  for (let i = 6; i >= 0; i--) {
+
+  // Start from the earliest logged entry (min 14 days of context).
+  const stamps = [...movements.map(m => m.created_at), ...foods.map(f => f.created_at)];
+  let start = new Date(today);
+  start.setDate(start.getDate() - 13);
+  for (const s of stamps) {
+    const d = dayStart(new Date(s));
+    if (d < start) start = d;
+  }
+
+  const totalDays = Math.round((today.getTime() - start.getTime()) / 86400000);
+  for (let i = totalDays; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = dayKey(d);
@@ -956,13 +965,12 @@ function last7Days(
     const dayFoods = foods.filter(f => dayKey(new Date(f.created_at)) === key);
     let value = 0;
     switch (metric) {
-      case "minutes": value = dayMoves.reduce((s, m) => s + Number(m.minutes), 0); break;
-      case "active_kcal": value = dayMoves.reduce((s, m) => s + Number(m.kcal), 0); break;
       case "eaten_kcal": value = dayFoods.reduce((s, f) => s + Number(f.kcal), 0); break;
       case "protein": value = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0); break;
       case "carbs": value = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0); break;
       case "fat": value = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0); break;
     }
+    void dayMoves;
     out.push({ date: d, value: Math.round(value), target, isToday: i === 0 });
   }
   return out;
@@ -970,8 +978,6 @@ function last7Days(
 
 function metricTarget(metric: MetricKey, t: ReturnType<typeof targets>): number {
   switch (metric) {
-    case "minutes": return 60;
-    case "active_kcal": return t.active_burn;
     case "eaten_kcal": return t.calories;
     case "protein": return t.protein_g;
     case "carbs": return t.carbs_g;
