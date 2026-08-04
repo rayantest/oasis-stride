@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +33,7 @@ type Food = {
   protein_g: number; carbs_g: number; fat_g: number; created_at: string;
 };
 
-type MetricKey = "minutes" | "active_kcal" | "eaten_kcal" | "protein" | "carbs" | "fat";
+type MetricKey = "eaten_kcal" | "protein" | "carbs" | "fat";
 
 
 function dayStart(d: Date) {
@@ -61,7 +61,7 @@ function timestampForDay(d: Date) {
 function App() {
   const qc = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(() => dayStart(new Date()));
-  const [metric, setMetric] = useState<MetricKey>("minutes");
+  const [metric, setMetric] = useState<MetricKey>("eaten_kcal");
 
   const profileQ = useQuery({
     queryKey: ["profile"],
@@ -76,7 +76,7 @@ function App() {
     queryKey: ["movement"],
     queryFn: async (): Promise<Movement[]> => {
       const since = new Date();
-      since.setDate(since.getDate() - 30);
+      since.setDate(since.getDate() - 365);
       const { data, error } = await supabase.from("movement_entries")
         .select("*").gte("created_at", since.toISOString())
         .order("created_at", { ascending: false });
@@ -89,7 +89,7 @@ function App() {
     queryKey: ["food"],
     queryFn: async (): Promise<Food[]> => {
       const since = new Date();
-      since.setDate(since.getDate() - 30);
+      since.setDate(since.getDate() - 365);
       const { data, error } = await supabase.from("food_entries")
         .select("*").gte("created_at", since.toISOString())
         .order("created_at", { ascending: false });
@@ -139,7 +139,7 @@ function App() {
   const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
   const fatG = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
 
-  const last7 = last7Days(movements, foods, metric, t);
+  const history = historyDays(movements, foods, metric, t);
 
   const dateLabel = viewingToday
     ? "Today"
@@ -208,18 +208,19 @@ function App() {
         {/* Body composition — trend from InBody / manual scans */}
         <BodyCompSection gender={profile.gender} />
 
-        {/* Last 7 days */}
+        {/* History chart */}
         <Card
-          title="Last 7 days"
+          title="History"
           right={<MetricPicker value={metric} onChange={setMetric} />}
         >
-          <SevenDayStrip
-            data={last7}
+          <HistoryChart
+            data={history}
             metric={metric}
             selectedDate={selectedDate}
-            onSelect={(d) => setSelectedDate(dayStart(d))}
+            onSelect={(d: Date) => setSelectedDate(dayStart(d))}
           />
         </Card>
+
 
       </main>
 
@@ -633,11 +634,9 @@ function LogRow({ icon, label, sub, value, tone, onDelete }: {
   );
 }
 
-/* ---------- 7-day strip ---------- */
+/* ---------- History chart ---------- */
 
 const METRIC_META: Record<MetricKey, { label: string; unit: string; mode: "over" | "under" }> = {
-  minutes: { label: "Movement min", unit: "min", mode: "over" },
-  active_kcal: { label: "Active kcal", unit: "kcal", mode: "over" },
   eaten_kcal: { label: "Calories eaten", unit: "kcal", mode: "under" },
   protein: { label: "Protein", unit: "g", mode: "over" },
   carbs: { label: "Carbs", unit: "g", mode: "under" },
@@ -660,66 +659,92 @@ function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: Met
   );
 }
 
-function SevenDayStrip({ data, metric, selectedDate, onSelect }: {
+function HistoryChart({ data, metric, selectedDate, onSelect }: {
   data: DayPoint[]; metric: MetricKey; selectedDate: Date; onSelect: (d: Date) => void;
 }) {
   const meta = METRIC_META[metric];
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const target = data[0]?.target ?? 0;
+  const maxVal = Math.max(target, ...data.map(d => d.value), 1);
+  const scale = maxVal * 1.15;
+  const H = 150;
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [metric, data.length]);
+
   return (
     <div>
-      <div className="flex items-end justify-between gap-1.5 h-32">
-        {data.map((d, i) => {
-          const pct = d.target > 0 ? Math.min(100, (d.value / d.target) * 100) : 0;
-          const overPct = d.target > 0 && d.value > d.target ? Math.min(30, ((d.value - d.target) / d.target) * 100) : 0;
-          const good = meta.mode === "under" ? d.value <= d.target : d.value >= d.target;
-          const selected = isSameDay(d.date, selectedDate);
-          const barColor = d.value === 0
-            ? "oklch(0.35 0.02 210 / 0.5)"
-            : good ? "var(--oasis)" : "var(--coral)";
-          return (
-            <button
-              key={i}
-              onClick={() => onSelect(d.date)}
-              className={`flex-1 flex flex-col items-center gap-1 rounded-lg p-1 transition ${
-                selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
-              }`}
-              aria-label={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}`}
-            >
-              <div className={`text-[10px] font-mono tabular-nums ${selected ? "text-sand" : "text-muted-foreground"}`}>
-                {Math.round(d.value)}
-              </div>
-              <div className="flex-1 flex items-end w-full min-h-[60px]">
-                <div className="relative w-full bg-secondary/60 rounded-md overflow-hidden" style={{ height: "100%" }}>
-                  <div className="absolute inset-x-0 bottom-0 rounded-md transition-all duration-500"
-                    style={{
-                      height: `${Math.max(3, pct)}%`,
-                      background: barColor,
-                      opacity: d.value === 0 ? 0.4 : 0.9,
-                    }}
-                  />
-                  {overPct > 0 && meta.mode === "under" && (
-                    <div className="absolute inset-x-0 top-0 bg-coral/60"
-                      style={{ height: `${overPct}%` }} />
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col items-center leading-tight">
-                <div className={`text-[10px] font-mono ${d.isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}>
-                  {d.isToday ? "Today" : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
-                </div>
-                <div className={`text-[9px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
-                  {d.date.getDate()}/{d.date.getMonth() + 1}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+      <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Benchmark {target} {meta.unit}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> On track
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> Off target
+        </span>
+      </div>
+
+      <div ref={scrollRef} className="overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="relative" style={{ minWidth: `${data.length * 34}px` }}>
+          {/* benchmark line across the whole chart */}
+          <div
+            className="absolute left-0 right-0 z-10 pointer-events-none"
+            style={{
+              bottom: `${28 + (target / scale) * H}px`,
+              borderTop: "2px dashed var(--sand)",
+              opacity: 0.85,
+            }}
+          />
+          <div className="flex items-end gap-1.5" style={{ height: `${H + 28}px` }}>
+            {data.map((d, i) => {
+              const h = Math.max(2, (d.value / scale) * H);
+              const good = meta.mode === "under" ? d.value <= d.target : d.value >= d.target;
+              const selected = isSameDay(d.date, selectedDate);
+              const barColor = d.value === 0
+                ? "oklch(0.35 0.02 210 / 0.5)"
+                : good ? "var(--oasis)" : "var(--coral)";
+              return (
+                <button
+                  key={i}
+                  onClick={() => onSelect(d.date)}
+                  title={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit} (target ${d.target})`}
+                  className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
+                    selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
+                  }`}
+                  style={{ height: `${H + 28}px` }}
+                  aria-label={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}`}
+                >
+                  <div className="flex-1 w-full flex items-end justify-center">
+                    <div
+                      className="w-[16px] rounded-t transition-all duration-500"
+                      style={{ height: `${h}px`, background: barColor, opacity: d.value === 0 ? 0.4 : 0.9 }}
+                    />
+                  </div>
+                  <div className="h-[28px] flex flex-col items-center justify-center leading-tight">
+                    <div className={`text-[9px] font-mono ${d.isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}>
+                      {d.date.getDate()}/{d.date.getMonth() + 1}
+                    </div>
+                    <div className={`text-[8px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
+                      {d.isToday ? "now" : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
       <div className="text-[10px] text-muted-foreground/70 mt-2 text-center">
-        Tap any day to view its numbers · target {data[0]?.target ?? 0} {meta.unit}
+        Scroll for older days · tap a day to view its numbers
       </div>
     </div>
   );
 }
+
 
 
 /* ---------- Settings sheet ---------- */
@@ -912,7 +937,7 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 
 /* ---------- Helpers ---------- */
 
-function last7Days(
+function historyDays(
   movements: Movement[],
   foods: Food[],
   metric: MetricKey,
@@ -921,7 +946,18 @@ function last7Days(
   const out: DayPoint[] = [];
   const today = dayStart(new Date());
   const target = metricTarget(metric, t);
-  for (let i = 6; i >= 0; i--) {
+
+  // Start from the earliest logged entry (min 14 days of context).
+  const stamps = [...movements.map(m => m.created_at), ...foods.map(f => f.created_at)];
+  let start = new Date(today);
+  start.setDate(start.getDate() - 13);
+  for (const s of stamps) {
+    const d = dayStart(new Date(s));
+    if (d < start) start = d;
+  }
+
+  const totalDays = Math.round((today.getTime() - start.getTime()) / 86400000);
+  for (let i = totalDays; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = dayKey(d);
@@ -929,13 +965,12 @@ function last7Days(
     const dayFoods = foods.filter(f => dayKey(new Date(f.created_at)) === key);
     let value = 0;
     switch (metric) {
-      case "minutes": value = dayMoves.reduce((s, m) => s + Number(m.minutes), 0); break;
-      case "active_kcal": value = dayMoves.reduce((s, m) => s + Number(m.kcal), 0); break;
       case "eaten_kcal": value = dayFoods.reduce((s, f) => s + Number(f.kcal), 0); break;
       case "protein": value = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0); break;
       case "carbs": value = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0); break;
       case "fat": value = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0); break;
     }
+    void dayMoves;
     out.push({ date: d, value: Math.round(value), target, isToday: i === 0 });
   }
   return out;
@@ -943,8 +978,6 @@ function last7Days(
 
 function metricTarget(metric: MetricKey, t: ReturnType<typeof targets>): number {
   switch (metric) {
-    case "minutes": return 60;
-    case "active_kcal": return t.active_burn;
     case "eaten_kcal": return t.calories;
     case "protein": return t.protein_g;
     case "carbs": return t.carbs_g;
