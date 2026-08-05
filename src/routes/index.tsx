@@ -341,9 +341,10 @@ function CoachCard({ profile, movements, foods, scans }: {
         aria-expanded={open}
       >
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-          <Compass size={12} /> Your coach · last 7 days
+          <Compass size={12} /> Your coach · personalised
         </span>
         <span className="flex items-center gap-2">
+          {open && ai.isFetching && <Loader2 size={13} className="animate-spin text-oasis" />}
           {headline && (
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border border-oasis/40 text-oasis bg-oasis/10">
               {headline.category}
@@ -355,6 +356,12 @@ function CoachCard({ profile, movements, foods, scans }: {
 
       {open && (
         <>
+          {ai.isFetching && !ai.data && (
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
+              <Loader2 size={12} className="animate-spin" /> Reading your logs, scans and goal…
+            </p>
+          )}
+
           {empty ? (
             <p className="text-sm text-muted-foreground leading-relaxed mt-2">
               Log a few days of food and movement — I'll start giving you personalized guidance from day 3.
