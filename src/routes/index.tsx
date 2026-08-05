@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { parseMovement, parseFood } from "@/lib/ai-parse.functions";
-import { targets, type Profile } from "@/lib/calc";
+import { targets, bmr, type Profile } from "@/lib/calc";
+import { generateCoachAdvice, type AiCoachTip } from "@/lib/coach-ai.functions";
+
 import { computeSignals } from "@/lib/coach-signals";
 import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
 import { bodyCompAdvice } from "@/lib/body-comp-advice";
