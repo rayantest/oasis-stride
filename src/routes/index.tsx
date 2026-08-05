@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { parseMovement, parseFood } from "@/lib/ai-parse.functions";
-import { targets, type Profile } from "@/lib/calc";
+import { targets, bmr, type Profile } from "@/lib/calc";
+import { generateCoachAdvice, type AiCoachTip } from "@/lib/coach-ai.functions";
+
 import { computeSignals } from "@/lib/coach-signals";
 import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
 import { bodyCompAdvice } from "@/lib/body-comp-advice";
@@ -235,8 +237,9 @@ function CoachCard({ profile, movements, foods, scans }: {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const advice = useMemo<CoachAdvice[]>(() => {
-    const signals = computeSignals(profile, movements, foods, 7);
+  const signals = useMemo(() => computeSignals(profile, movements, foods, 7), [profile, movements, foods]);
+
+  const fallback = useMemo<CoachAdvice[]>(() => {
     const base = generateAdvice(signals, 4);
     const body = bodyCompAdvice(scans, {
       gender: profile.gender,
@@ -245,12 +248,90 @@ function CoachCard({ profile, movements, foods, scans }: {
       daysLogged: signals.daysLogged,
     });
     return [...base, ...body].sort((a, b) => b.priority - a.priority).slice(0, 6);
-  }, [profile, movements, foods, scans]);
+  }, [signals, scans, profile.gender]);
 
+  // Full personalised context: profile + goal + scans + daily food & movement history.
+  const context = useMemo(() => {
+    const t = targets(profile);
+    const byDay = new Map<string, { date: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number; active_kcal: number; active_min: number }>();
+    const bucket = (iso: string) => {
+      const k = dayKey(new Date(iso));
+      let row = byDay.get(k);
+      if (!row) { row = { date: k, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, active_kcal: 0, active_min: 0 }; byDay.set(k, row); }
+      return row;
+    };
+    for (const f of foods) {
+      const r = bucket(f.created_at);
+      r.kcal += Math.round(Number(f.kcal) || 0);
+      r.protein_g += Math.round(Number(f.protein_g) || 0);
+      r.carbs_g += Math.round(Number(f.carbs_g) || 0);
+      r.fat_g += Math.round(Number(f.fat_g) || 0);
+    }
+    for (const m of movements) {
+      const r = bucket(m.created_at);
+      r.active_kcal += Math.round(Number(m.kcal) || 0);
+      r.active_min += Math.round(Number(m.minutes) || 0);
+    }
+    const days = [...byDay.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
+
+    return {
+      profile: {
+        age: profile.age,
+        gender: profile.gender,
+        height_cm: profile.height_cm,
+        weight_kg: profile.weight_kg,
+        resting_hr: profile.resting_hr,
+        activity_level: profile.activity_level,
+        fat_loss_pace: profile.fat_loss_pace,
+        active_burn_goal_kcal: profile.active_burn_goal_kcal,
+        goal_answers: (profile.goal_answers ?? {}) as Record<string, unknown>,
+      },
+      targets: t,
+      bmr: bmr(profile),
+      signals: Object.fromEntries(
+        Object.entries(signals).map(([k, v]) => [k, Math.round((v as number) * 100) / 100]),
+      ) as Record<string, number>,
+      scans: scans.slice(0, 8).map((s) => ({
+        scan_date: s.scan_date,
+        weight_kg: s.weight_kg,
+        muscle_mass_kg: s.muscle_mass_kg,
+        body_fat_mass_kg: s.body_fat_mass_kg,
+        body_fat_percent: s.body_fat_percent,
+        bmi: s.bmi,
+        bmr_kcal: s.bmr_kcal,
+        waist_hip_ratio: s.waist_hip_ratio,
+        visceral_fat_level: s.visceral_fat_level,
+      })),
+      days,
+    };
+  }, [profile, foods, movements, scans, signals]);
+
+  const contextKey = useMemo(() => JSON.stringify(context).length + ":" + (context.days[0]?.date ?? "none") + ":" + context.days.length, [context]);
+
+  const coachFn = useServerFn(generateCoachAdvice);
+  const ai = useQuery({
+    queryKey: ["coach-ai", contextKey],
+    queryFn: () => coachFn({ data: { context } }),
+    enabled: open,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
+
+  const advice: CoachAdvice[] = ai.data?.tips?.length
+    ? ai.data.tips.map((t: AiCoachTip, i: number) => ({
+        id: t.id,
+        category: t.category as CoachAdvice["category"],
+        priority: 100 - i,
+        headline: t.headline,
+        detail: t.detail,
+        why: t.why,
+      }))
+    : fallback;
 
   const headline = advice[0];
   const rest = advice.slice(1);
   const empty = advice.length === 0;
+
 
   return (
     <section className="rounded-2xl p-5 border border-border/50 bg-gradient-to-br from-card via-card to-oasis/5 shadow-[var(--shadow-card)]">
@@ -260,9 +341,10 @@ function CoachCard({ profile, movements, foods, scans }: {
         aria-expanded={open}
       >
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-          <Compass size={12} /> Your coach · last 7 days
+          <Compass size={12} /> Your coach · personalised
         </span>
         <span className="flex items-center gap-2">
+          {open && ai.isFetching && <Loader2 size={13} className="animate-spin text-oasis" />}
           {headline && (
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border border-oasis/40 text-oasis bg-oasis/10">
               {headline.category}
@@ -274,6 +356,12 @@ function CoachCard({ profile, movements, foods, scans }: {
 
       {open && (
         <>
+          {ai.isFetching && !ai.data && (
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
+              <Loader2 size={12} className="animate-spin" /> Reading your logs, scans and goal…
+            </p>
+          )}
+
           {empty ? (
             <p className="text-sm text-muted-foreground leading-relaxed mt-2">
               Log a few days of food and movement — I'll start giving you personalized guidance from day 3.
