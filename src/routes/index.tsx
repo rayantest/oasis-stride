@@ -318,7 +318,7 @@ function CoachCard({ profile, movements, foods, scans }: {
   });
 
   const advice: CoachAdvice[] = ai.data?.tips?.length
-    ? ai.data.tips.map((t, i) => ({
+    ? ai.data.tips.map((t: AiCoachTip, i: number) => ({
         id: t.id,
         category: t.category as CoachAdvice["category"],
         priority: 100 - i,
