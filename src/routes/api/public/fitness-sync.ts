@@ -4,8 +4,6 @@ import { z } from "zod";
 const bodySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD"),
   active_calories: z.coerce.number().min(0).max(30000),
-  exercise_minutes: z.coerce.number().min(0).max(1440),
-  stand_hours: z.coerce.number().min(0).max(24),
   steps: z.coerce.number().min(0).max(500000),
 });
 
