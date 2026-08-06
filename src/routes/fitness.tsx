@@ -5,12 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 type Ring = {
   date: string;
   active_calories: number;
-  exercise_minutes: number;
-  stand_hours: number;
   steps: number;
 };
 
-const GOALS = { move: 500, exercise: 30, stand: 12 };
+const GOALS = { move: 500, steps: 10000 };
 
 export const Route = createFileRoute("/fitness")({
   component: FitnessPage,
@@ -20,13 +18,13 @@ export const Route = createFileRoute("/fitness")({
       {
         name: "description",
         content:
-          "Daily Move, Exercise and Stand rings synced from Apple Watch, plus steps and a 7-day calories and steps trend.",
+          "Daily Move ring and steps synced from Apple Watch, plus a 7-day active calories and steps trend.",
       },
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Fitness Rings · revertV" },
       {
         property: "og:description",
-        content: "Move, Exercise, Stand rings and a 7-day calories and steps trend.",
+        content: "Move ring, steps and a 7-day calories and steps trend.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -39,15 +37,10 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function Ring3({
-  values,
-}: {
-  values: { move: number; exercise: number; stand: number };
-}) {
+function Ring2({ values }: { values: { move: number; steps: number } }) {
   const rings = [
     { key: "move", r: 68, color: "hsl(var(--destructive))", pct: values.move / GOALS.move },
-    { key: "exercise", r: 52, color: "hsl(var(--primary))", pct: values.exercise / GOALS.exercise },
-    { key: "stand", r: 36, color: "hsl(var(--accent))", pct: values.stand / GOALS.stand },
+    { key: "steps", r: 50, color: "hsl(var(--primary))", pct: values.steps / GOALS.steps },
   ];
   return (
     <svg viewBox="0 0 160 160" className="h-44 w-44">
@@ -114,7 +107,7 @@ function FitnessPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fitness_rings")
-        .select("date, active_calories, exercise_minutes, stand_hours, steps")
+        .select("date, active_calories, steps")
         .order("date", { ascending: false })
         .limit(30);
       if (error) throw error;
@@ -125,8 +118,6 @@ function FitnessPage() {
   const rows = data ?? [];
   const today = rows.find((r) => r.date === todayISO());
   const move = Number(today?.active_calories ?? 0);
-  const exercise = Number(today?.exercise_minutes ?? 0);
-  const stand = Number(today?.stand_hours ?? 0);
   const steps = Number(today?.steps ?? 0);
   const last7 = rows.slice(0, 7).slice().reverse();
 
@@ -141,7 +132,7 @@ function FitnessPage() {
 
       <section className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-center gap-5">
-          <Ring3 values={{ move, exercise, stand }} />
+          <Ring2 values={{ move, steps }} />
           <div className="space-y-3 text-sm">
             <div>
               <p className="text-xs uppercase tracking-wide text-destructive">Move</p>
@@ -151,24 +142,13 @@ function FitnessPage() {
               </p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-primary">Exercise</p>
+              <p className="text-xs uppercase tracking-wide text-primary">Steps</p>
               <p className="font-semibold">
-                {Math.round(exercise)}
-                <span className="text-muted-foreground">/{GOALS.exercise} min</span>
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-accent">Stand</p>
-              <p className="font-semibold">
-                {Math.round(stand)}
-                <span className="text-muted-foreground">/{GOALS.stand} hrs</span>
+                {Math.round(steps).toLocaleString()}
+                <span className="text-muted-foreground">/{GOALS.steps.toLocaleString()}</span>
               </p>
             </div>
           </div>
-        </div>
-        <div className="mt-4 border-t border-border pt-3">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Steps today</p>
-          <p className="text-2xl font-semibold">{Math.round(steps).toLocaleString()}</p>
         </div>
       </section>
 
