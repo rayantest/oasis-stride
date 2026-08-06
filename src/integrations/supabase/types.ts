@@ -59,6 +59,36 @@ export type Database = {
         }
         Relationships: []
       }
+      fitness_rings: {
+        Row: {
+          active_calories: number
+          created_at: string
+          date: string
+          exercise_minutes: number
+          id: string
+          stand_hours: number
+          steps: number
+        }
+        Insert: {
+          active_calories?: number
+          created_at?: string
+          date: string
+          exercise_minutes?: number
+          id?: string
+          stand_hours?: number
+          steps?: number
+        }
+        Update: {
+          active_calories?: number
+          created_at?: string
+          date?: string
+          exercise_minutes?: number
+          id?: string
+          stand_hours?: number
+          steps?: number
+        }
+        Relationships: []
+      }
       food_entries: {
         Row: {
           carbs_g: number
