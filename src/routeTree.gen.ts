@@ -9,65 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as FitnessRouteImport } from './routes/fitness'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiPublicFitnessSyncRouteImport } from './routes/api/public/fitness-sync'
 
-const FitnessRoute = FitnessRouteImport.update({
-  id: '/fitness',
-  path: '/fitness',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicFitnessSyncRoute = ApiPublicFitnessSyncRouteImport.update({
-  id: '/api/public/fitness-sync',
-  path: '/api/public/fitness-sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/fitness': typeof FitnessRoute
-  '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/fitness': typeof FitnessRoute
-  '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/fitness': typeof FitnessRoute
-  '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/fitness' | '/api/public/fitness-sync'
+  fullPaths: '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/fitness' | '/api/public/fitness-sync'
-  id: '__root__' | '/' | '/fitness' | '/api/public/fitness-sync'
+  to: '/'
+  id: '__root__' | '/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  FitnessRoute: typeof FitnessRoute
-  ApiPublicFitnessSyncRoute: typeof ApiPublicFitnessSyncRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/fitness': {
-      id: '/fitness'
-      path: '/fitness'
-      fullPath: '/fitness'
-      preLoaderRoute: typeof FitnessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -75,31 +48,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/fitness-sync': {
-      id: '/api/public/fitness-sync'
-      path: '/api/public/fitness-sync'
-      fullPath: '/api/public/fitness-sync'
-      preLoaderRoute: typeof ApiPublicFitnessSyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  FitnessRoute: FitnessRoute,
-  ApiPublicFitnessSyncRoute: ApiPublicFitnessSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
