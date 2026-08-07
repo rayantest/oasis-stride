@@ -466,7 +466,7 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, r
       })),
       days,
     };
-  }, [profile, foods, movements, scans, signals, focus, exerciseSummary]);
+  }, [profile, foods, movements, scans, signals, focus, exerciseSummary, rings]);
 
   const contextKey = useMemo(() => focus + ":" + JSON.stringify(context).length + ":" + (context.days[0]?.date ?? "none") + ":" + context.days.length, [context, focus]);
 
