@@ -82,7 +82,7 @@ export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
 /* ---------- Section ---------- */
 
 export function ExerciseSection({
-  entries, benchmarks, selectedDate, logTimestamp, benchContext, onChange,
+  entries, benchmarks, selectedDate, logTimestamp, benchContext, onChange, onSelectDate,
 }: {
   entries: ExerciseEntry[];
   benchmarks: BenchmarkRow[];
@@ -90,6 +90,7 @@ export function ExerciseSection({
   logTimestamp: () => string;
   benchContext: BenchmarkContext;
   onChange: () => void;
+  onSelectDate?: (d: Date) => void;
 }) {
   const qc = useQueryClient();
   const [visible, setVisible] = useState<ExerciseKey[]>([...EXERCISES]);
