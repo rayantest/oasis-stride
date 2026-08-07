@@ -806,13 +806,18 @@ function DayLog({ movements, foods, exercises = [], onChange }: {
     return [...mRows, ...fRows].sort((a, b) => b.ts.localeCompare(a.ts));
   }, [movements, foods, del]);
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && exercises.length === 0) {
     return <div className="text-sm text-muted-foreground text-center py-6">
       Nothing logged for this day yet.
     </div>;
   }
 
-  return <div className="divide-y divide-border/40">{rows.map(r => r.el)}</div>;
+  return (
+    <div className="divide-y divide-border/40">
+      {rows.map(r => r.el)}
+      <ExerciseLogRows entries={exercises} onChange={onChange} />
+    </div>
+  );
 }
 
 function LogRow({ icon, label, sub, value, tone, onDelete }: {
