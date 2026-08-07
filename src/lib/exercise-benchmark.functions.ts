@@ -28,19 +28,23 @@ export const generateExerciseBenchmarks = createServerFn({ method: "POST" })
     const key = process.env['LOVABLE_API_KEY'];
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
-    const system = `You set realistic DAILY rep targets for exactly four bodyweight exercises: pushups, pullups, situps, squats.
+    const system = `You set DAILY rep targets for exactly four bodyweight exercises: pushups, pullups, situps, squats.
 
-You get the user's profile (age, gender, height, weight, resting HR, activity level, fat-loss pace, goal answers), their body-composition scans (weight, muscle mass, body fat %, BMI), and their recent logged reps per exercise.
+You get the user's profile (age, gender, height, weight, resting HR, activity level, fat-loss pace, goal answers), their body-composition (InBody) scans (weight, muscle mass, body fat %, BMI, BMR), and their recent logged reps.
+
+The target is a TRAINING PRESCRIPTION, not a description of what they already do. It must be big enough to actually change the InBody numbers they care about: preserve/build muscle mass while losing fat, and move body fat % toward their stated goal.
 
 Rules:
-- Targets must be achievable EVERY day with no rest-day commitment — daily volume, not a max test.
-- Anchor on what they already do: if they log reps, nudge ~10-20% above their recent average; if they log nothing, start conservative and beginner-safe.
-- Respect body weight, age and any health caution in the goal answers (pullups especially: a heavier or untrained user may need a very low target).
-- Whole numbers only. Pullups may be as low as 1-3.
-- rationale: max 15 words, plain language, mention the number you based it on.
+- Derive the target from body composition + goal first. Recent logs are only a safety check to avoid an unsafe jump — never the anchor. Do NOT simply add 10-20% to what they logged.
+- Aim for real daily volume: a meaningful session is typically 3-5 sets. Push-ups, sit-ups and squats should normally land in the tens (e.g. 30-100+) for a healthy adult unless their data says otherwise.
+- Pullups are the exception: they are strength-limited by body weight. If they can only do a couple, still prescribe enough total work to progress (multiple singles/negatives across the day), so the number should be clearly above their current max, not one rep above it.
+- Cap the jump at roughly double their recent daily best so it stays reachable, but never sandbag: if they are barely training, the target should still be a challenge.
+- Respect age, body weight and any health caution in the goal answers — scale down when injury/caution is flagged.
+- Whole numbers only.
+- rationale: max 15 words, plain language, tie the number to their body data or goal.
 
 Return STRICT JSON only:
-{"benchmarks":[{"exercise":"pushups","target_reps":30,"rationale":"..."},{"exercise":"pullups",...},{"exercise":"situps",...},{"exercise":"squats",...}]}`;
+{"benchmarks":[{"exercise":"pushups","target_reps":40,"rationale":"..."},{"exercise":"pullups",...},{"exercise":"situps",...},{"exercise":"squats",...}]}`;
 
     const res = await fetch(GATEWAY, {
       method: "POST",
