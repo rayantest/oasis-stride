@@ -463,7 +463,7 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary }:
         aria-expanded={open}
       >
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-          <Compass size={12} /> Your coach · personalised
+          <Compass size={12} /> Your coach · {focus === "movement" ? "movement" : "diet"}
         </span>
         <span className="flex items-center gap-2">
           {open && ai.isFetching && <Loader2 size={13} className="animate-spin text-oasis" />}
