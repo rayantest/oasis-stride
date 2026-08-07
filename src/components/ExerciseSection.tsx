@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dumbbell, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Dumbbell, Loader2, Plus, Trash2 } from "lucide-react";
 import {
   EXERCISES, generateExerciseBenchmarks,
   type ExerciseKey, type BenchmarkContext,
@@ -167,15 +167,9 @@ export function ExerciseSection({
         <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
           <Dumbbell size={13} /> Daily strength
         </h2>
-        <button
-          onClick={() => regenerate()}
-          disabled={generating}
-          className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground transition disabled:opacity-50"
-        >
-          {generating ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
-          Refresh targets
-        </button>
+        {generating && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
       </div>
+
 
       {/* Loggers */}
       <div className="grid grid-cols-2 gap-2.5">
@@ -219,7 +213,7 @@ export function ExerciseSection({
 
       {benchmarks.length === 0 && (
         <div className="mt-4 text-[11px] text-muted-foreground flex items-center gap-1.5">
-          {generating ? <><Loader2 size={11} className="animate-spin" /> Setting your daily targets…</> : "No targets yet — tap Refresh targets."}
+          {generating ? <><Loader2 size={11} className="animate-spin" /> Setting your daily targets…</> : "Targets will be set from your InBody scan and goal answers."}
         </div>
       )}
 
