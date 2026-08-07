@@ -68,13 +68,44 @@ Return STRICT JSON only:
 
     const json = await res.json();
     const content: string = json.choices?.[0]?.message?.content ?? "{}";
+    const extractFirstJsonObject = (s: string): string | null => {
+      const start = s.indexOf("{");
+      if (start === -1) return null;
+      let depth = 0;
+      let inStr = false;
+      let esc = false;
+      for (let i = start; i < s.length; i++) {
+        const ch = s[i];
+        if (inStr) {
+          if (esc) esc = false;
+          else if (ch === "\\") esc = true;
+          else if (ch === '"') inStr = false;
+          continue;
+        }
+        if (ch === '"') inStr = true;
+        else if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth === 0) return s.slice(start, i + 1);
+        }
+      }
+      return null;
+    };
+
     let parsed: any = {};
     try {
       parsed = JSON.parse(content);
     } catch {
-      const m = content.match(/\{[\s\S]*\}/);
-      parsed = m ? JSON.parse(m[0]) : {};
+      const candidate = extractFirstJsonObject(content);
+      if (candidate) {
+        try {
+          parsed = JSON.parse(candidate);
+        } catch {
+          parsed = {};
+        }
+      }
     }
+
 
     const valid = new Set<string>(EXERCISES as unknown as string[]);
     const benchmarks: ExerciseBenchmark[] = Array.isArray(parsed.benchmarks)
