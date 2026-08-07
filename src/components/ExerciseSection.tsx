@@ -93,7 +93,7 @@ export function ExerciseSection({
   onSelectDate?: (d: Date) => void;
 }) {
   const qc = useQueryClient();
-  const [visible, setVisible] = useState<ExerciseKey[]>([...EXERCISES]);
+  const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
   const genFn = useServerFn(generateExerciseBenchmarks);
   const [generating, setGenerating] = useState(false);
