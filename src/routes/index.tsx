@@ -425,7 +425,14 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, r
       r.active_kcal += Math.round(Number(m.kcal) || 0);
       r.active_min += Math.round(Number(m.minutes) || 0);
     }
+    // Watch-synced active calories, keyed by their own calendar date.
+    for (const ring of rings) {
+      let row = byDay.get(ring.date);
+      if (!row) { row = { date: ring.date, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, active_kcal: 0, active_min: 0 }; byDay.set(ring.date, row); }
+      row.active_kcal += Math.round(Number(ring.active_calories) || 0);
+    }
     const days = [...byDay.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
+
 
     return {
       focus,
