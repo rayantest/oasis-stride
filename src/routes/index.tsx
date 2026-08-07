@@ -395,6 +395,8 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary }:
     const days = [...byDay.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
 
     return {
+      focus,
+      exercises: exerciseSummary,
       profile: {
         age: profile.age,
         gender: profile.gender,
@@ -424,9 +426,9 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary }:
       })),
       days,
     };
-  }, [profile, foods, movements, scans, signals]);
+  }, [profile, foods, movements, scans, signals, focus, exerciseSummary]);
 
-  const contextKey = useMemo(() => JSON.stringify(context).length + ":" + (context.days[0]?.date ?? "none") + ":" + context.days.length, [context]);
+  const contextKey = useMemo(() => focus + ":" + JSON.stringify(context).length + ":" + (context.days[0]?.date ?? "none") + ":" + context.days.length, [context, focus]);
 
   const coachFn = useServerFn(generateCoachAdvice);
   const ai = useQuery({
