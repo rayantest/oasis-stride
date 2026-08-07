@@ -65,10 +65,13 @@ function timestampForDay(d: Date) {
   return x.toISOString();
 }
 
+type Tab = "diet" | "movement";
+
 function App() {
   const qc = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(() => dayStart(new Date()));
   const [metric, setMetric] = useState<MetricKey>("eaten_kcal");
+  const [tab, setTab] = useState<Tab>("diet");
 
   const profileQ = useQuery({
     queryKey: ["profile"],
@@ -106,11 +109,14 @@ function App() {
   });
 
   const scansQ = useBodyScans();
+  const exercisesQ = useExerciseEntries();
+  const benchQ = useExerciseBenchmarks();
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["movement"] });
     qc.invalidateQueries({ queryKey: ["food"] });
     qc.invalidateQueries({ queryKey: ["body_scans"] });
+    qc.invalidateQueries({ queryKey: ["exercise_entries"] });
   };
 
 
@@ -134,18 +140,64 @@ function App() {
 
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
+  const exercises = (exercisesQ.data ?? []) as ExerciseEntry[];
+  const benchmarks = (benchQ.data ?? []) as BenchmarkRow[];
   const viewingToday = isToday(selectedDate);
 
   const dayMovements = movements.filter(m => isSameDay(new Date(m.created_at), selectedDate));
   const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
+  const dayExercises = exercises.filter(e => isSameDay(new Date(e.created_at), selectedDate));
   const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0);
-  
+
   const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
   const proteinG = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0);
   const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
   const fatG = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
 
   const history = historyDays(movements, foods, metric, t);
+
+  const benchTargets = new Map(benchmarks.map(b => [b.exercise, b.target_reps] as const));
+
+  const exerciseSummary = EXERCISES.map(ex => {
+    const rows = exercises.filter(e => e.exercise === ex);
+    const byDay = new Map<string, number>();
+    rows.forEach(r => {
+      const k = dayKey(new Date(r.created_at));
+      byDay.set(k, (byDay.get(k) ?? 0) + Number(r.reps));
+    });
+    const vals = [...byDay.values()];
+    return {
+      exercise: ex as string,
+      avg_reps: vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : 0,
+      best_reps: vals.length ? Math.max(...vals) : 0,
+      days_logged: vals.length,
+      target_reps: benchTargets.get(ex) ?? 0,
+    };
+  });
+
+  const benchContext = {
+    profile: {
+      age: profile.age, gender: profile.gender, height_cm: profile.height_cm,
+      weight_kg: profile.weight_kg, resting_hr: profile.resting_hr,
+      activity_level: profile.activity_level, fat_loss_pace: profile.fat_loss_pace,
+      active_burn_goal_kcal: profile.active_burn_goal_kcal,
+      goal_answers: (profile.goal_answers ?? {}) as Record<string, unknown>,
+    },
+    latest_scan: latestScan
+      ? {
+          scan_date: latestScan.scan_date, weight_kg: latestScan.weight_kg,
+          muscle_mass_kg: latestScan.muscle_mass_kg, body_fat_percent: latestScan.body_fat_percent,
+          bmi: latestScan.bmi, bmr_kcal: latestScan.bmr_kcal,
+        }
+      : null,
+    scans: scans.slice(0, 5).map(s => ({
+      scan_date: s.scan_date, weight_kg: s.weight_kg,
+      muscle_mass_kg: s.muscle_mass_kg, body_fat_percent: s.body_fat_percent,
+    })),
+    recent: exerciseSummary.map(({ exercise, avg_reps, best_reps, days_logged }) => ({
+      exercise, avg_reps, best_reps, days_logged,
+    })),
+  };
 
   const dateLabel = viewingToday
     ? "Today"
@@ -171,63 +223,124 @@ function App() {
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
 
-        {/* Log inputs — allow back-filling on any day */}
-        <MovementInput
-          weight={profile.weight_kg}
-          logDate={selectedDate}
-          viewingToday={viewingToday}
-          onLogged={invalidate}
-        />
-        <FoodInput
-          logDate={selectedDate}
-          viewingToday={viewingToday}
-          onLogged={invalidate}
-        />
+        {/* Diet / Movement switch */}
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-full bg-secondary/60 border border-border/50">
+          <TabButton active={tab === "diet"} onClick={() => setTab("diet")}
+            icon={<UtensilsCrossed size={14} />} label="Diet" />
+          <TabButton active={tab === "movement"} onClick={() => setTab("movement")}
+            icon={<Footprints size={14} />} label="Movement" />
+        </div>
 
-        {/* Day's log */}
-        <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
-          <DayLog movements={dayMovements} foods={dayFoods} onChange={invalidate} />
-        </Card>
+        {tab === "diet" ? (
+          <>
+            <FoodInput
+              logDate={selectedDate}
+              viewingToday={viewingToday}
+              onLogged={invalidate}
+            />
 
-        {/* Daily benchmark */}
-        <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
-          <div className="space-y-3">
-            <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
-            <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
-            <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under" />
-            <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under" />
-            <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
-          </div>
-        </Card>
+            <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
+              <DayLog movements={[]} foods={dayFoods} exercises={[]} onChange={invalidate} />
+            </Card>
 
-        {/* Personal coach — 7-day guidance + body composition */}
-        <CoachCard profile={profile} movements={movements} foods={foods} scans={scans} />
+            <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
+              <div className="space-y-3">
+                <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
+                <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
+                <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under" />
+                <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under" />
+              </div>
+            </Card>
 
-        {/* Body & profile — scans, profile data and goal */}
-        <BodyCompSection gender={profile.gender}>
-          <ProfilePanel
-            profile={profile}
-            onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })}
-          />
-        </BodyCompSection>
+            <Card
+              title="History"
+              right={<MetricPicker value={metric} onChange={setMetric} />}
+            >
+              <HistoryChart
+                data={history}
+                metric={metric}
+                selectedDate={selectedDate}
+                onSelect={(d: Date) => setSelectedDate(dayStart(d))}
+              />
+            </Card>
 
-        {/* History chart */}
-        <Card
-          title="History"
-          right={<MetricPicker value={metric} onChange={setMetric} />}
-        >
-          <HistoryChart
-            data={history}
-            metric={metric}
-            selectedDate={selectedDate}
-            onSelect={(d: Date) => setSelectedDate(dayStart(d))}
-          />
-        </Card>
+            <CoachCard focus="diet" profile={profile} movements={movements} foods={foods} scans={scans} exerciseSummary={exerciseSummary} />
 
+            <BodyCompSection gender={profile.gender}>
+              <ProfilePanel
+                profile={profile}
+                onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })}
+              />
+            </BodyCompSection>
+          </>
+        ) : (
+          <>
+            <MovementInput
+              weight={profile.weight_kg}
+              logDate={selectedDate}
+              viewingToday={viewingToday}
+              onLogged={invalidate}
+            />
+
+            <ExerciseSection
+              entries={exercises}
+              benchmarks={benchmarks}
+              selectedDate={selectedDate}
+              logTimestamp={() => timestampForDay(selectedDate)}
+              benchContext={benchContext}
+              onChange={invalidate}
+            />
+
+            <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
+              <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
+            </Card>
+
+            <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
+              <div className="space-y-3">
+                <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
+                {EXERCISES.map(ex => (
+                  <BenchmarkRow
+                    key={ex}
+                    label={EXERCISE_LABELS[ex as ExerciseKey]}
+                    value={repsFor(exercises, ex, selectedDate)}
+                    target={benchTargets.get(ex) ?? 0}
+                    unit="reps"
+                    mode="over"
+                  />
+                ))}
+              </div>
+            </Card>
+
+            <CoachCard focus="movement" profile={profile} movements={movements} foods={foods} scans={scans} exerciseSummary={exerciseSummary} />
+
+            <BodyCompSection gender={profile.gender}>
+              <ProfilePanel
+                profile={profile}
+                onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })}
+              />
+            </BodyCompSection>
+          </>
+        )}
 
       </main>
 
     </div>
+  );
+}
+
+function TabButton({ active, onClick, icon, label }: {
+  active: boolean; onClick: () => void; icon: React.ReactNode; label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-semibold transition ${
+        active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {icon} {label}
+    </button>
   );
 }
 
