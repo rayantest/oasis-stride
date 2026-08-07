@@ -213,7 +213,7 @@ export function ExerciseSection({
 
       {benchmarks.length === 0 && (
         <div className="mt-4 text-[11px] text-muted-foreground flex items-center gap-1.5">
-          {generating ? <><Loader2 size={11} className="animate-spin" /> Setting your daily targets…</> : "No targets yet — tap Refresh targets."}
+          {generating ? <><Loader2 size={11} className="animate-spin" /> Setting your daily targets…</> : "Targets will be set from your InBody scan and goal answers."}
         </div>
       )}
 
