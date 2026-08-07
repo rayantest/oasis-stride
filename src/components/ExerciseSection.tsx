@@ -208,20 +208,12 @@ export function ExerciseSection({
         <LineChart series={series} visible={visible} benchMap={benchMap} />
       </div>
 
-      {/* Rationale */}
-      <div className="mt-4 space-y-1.5">
-        {EXERCISES.filter(ex => benchMap.get(ex)?.rationale).map(ex => (
-          <div key={ex} className="text-[11px] text-muted-foreground">
-            <span className="font-medium" style={{ color: EXERCISE_COLORS[ex] }}>{EXERCISE_LABELS[ex]} {benchMap.get(ex)!.target_reps}</span>
-            {" — "}{benchMap.get(ex)!.rationale}
-          </div>
-        ))}
-        {benchmarks.length === 0 && (
-          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-            {generating ? <><Loader2 size={11} className="animate-spin" /> Setting your daily targets…</> : "No targets yet — tap Refresh targets."}
-          </div>
-        )}
-      </div>
+      {benchmarks.length === 0 && (
+        <div className="mt-4 text-[11px] text-muted-foreground flex items-center gap-1.5">
+          {generating ? <><Loader2 size={11} className="animate-spin" /> Setting your daily targets…</> : "No targets yet — tap Refresh targets."}
+        </div>
+      )}
+
     </section>
   );
 }
