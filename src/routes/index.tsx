@@ -314,6 +314,7 @@ function App() {
               logTimestamp={() => timestampForDay(selectedDate)}
               benchContext={benchContext}
               onChange={invalidate}
+              onSelectDate={(d: Date) => setSelectedDate(dayStart(d))}
             />
 
             <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
