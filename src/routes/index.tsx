@@ -14,6 +14,11 @@ import { GoalQuestionnaire } from "@/components/GoalQuestionnaire";
 import { BodyCompSection, useBodyScans, scanCautionNotes, type BodyScan } from "@/components/BodyCompSection";
 import { deriveFromAnswers, projectionText, eventLikelyMisses } from "@/lib/goal-derive";
 import { FoodScanSheet } from "@/components/FoodScanSheet";
+import {
+  ExerciseSection, ExerciseLogRows, useExerciseEntries, useExerciseBenchmarks,
+  repsFor, EXERCISES, EXERCISE_LABELS,
+  type ExerciseEntry, type BenchmarkRow, type ExerciseKey,
+} from "@/components/ExerciseSection";
 
 import { toast, Toaster } from "sonner";
 import {
