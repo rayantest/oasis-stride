@@ -346,11 +346,13 @@ function TabButton({ active, onClick, icon, label }: {
 
 /* ---------- Components ---------- */
 
-function CoachCard({ profile, movements, foods, scans }: {
+function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary }: {
   profile: Profile;
   movements: Movement[];
   foods: Food[];
   scans: BodyScan[];
+  focus: "diet" | "movement";
+  exerciseSummary: Array<{ exercise: string; avg_reps: number; best_reps: number; days_logged: number; target_reps: number }>;
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
