@@ -168,7 +168,11 @@ function App() {
   const dayMovements = movements.filter(m => isSameDay(new Date(m.created_at), selectedDate));
   const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
   const dayExercises = exercises.filter(e => isSameDay(new Date(e.created_at), selectedDate));
-  const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0);
+  const rings = ringsQ.data ?? [];
+  const ringByDate = new Map(rings.map(r => [r.date, Number(r.active_calories) || 0] as const));
+  const ringBurn = ringByDate.get(localKey(selectedDate)) ?? 0;
+  const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0) + ringBurn;
+
 
   const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
   const proteinG = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0);
