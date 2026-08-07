@@ -49,7 +49,14 @@ export const generateCoachAdvice = createServerFn({ method: "POST" })
     const key = process.env['LOVABLE_API_KEY'];
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
-    const system = `You are a personal fat-loss coach for ONE specific user. You get their full data: profile, goal answers, body composition scans over time (InBody-style), daily food logs (calories, protein, carbs, fat) and daily movement (minutes and active calories), plus their calculated targets and BMR.
+    const focus = data.context.focus ?? "diet";
+    const focusRule = focus === "movement"
+      ? `FOCUS: MOVEMENT ONLY. Advise on activity, active calories, daily strength reps (pushups, pullups, situps, squats) versus their targets, consistency and recovery. Use body scans and goal for context. Do NOT give food, calorie-intake or macro advice. Allowed categories: activity, consistency, body, trend, logging.`
+      : `FOCUS: DIET ONLY. Advise on calories eaten, protein, carbs and fat versus targets, eating patterns and consistency. Use body scans and goal for context. Do NOT give workout or training-volume advice. Allowed categories: protein, calories, consistency, body, trend, logging.`;
+
+    const system = `You are a personal fat-loss coach for ONE specific user. You get their full data: profile, goal answers, body composition scans over time (InBody-style), daily food logs (calories, protein, carbs, fat), daily movement (minutes and active calories) and daily strength reps, plus their calculated targets and BMR.
+
+${focusRule}
 
 Write 3-5 pieces of advice, ordered most important first.
 
