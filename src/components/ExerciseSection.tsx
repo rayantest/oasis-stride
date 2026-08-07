@@ -82,7 +82,7 @@ export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
 /* ---------- Section ---------- */
 
 export function ExerciseSection({
-  entries, benchmarks, selectedDate, logTimestamp, benchContext, onChange,
+  entries, benchmarks, selectedDate, logTimestamp, benchContext, onChange, onSelectDate,
 }: {
   entries: ExerciseEntry[];
   benchmarks: BenchmarkRow[];
@@ -90,9 +90,10 @@ export function ExerciseSection({
   logTimestamp: () => string;
   benchContext: BenchmarkContext;
   onChange: () => void;
+  onSelectDate?: (d: Date) => void;
 }) {
   const qc = useQueryClient();
-  const [visible, setVisible] = useState<ExerciseKey[]>([...EXERCISES]);
+  const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
   const genFn = useServerFn(generateExerciseBenchmarks);
   const [generating, setGenerating] = useState(false);
@@ -185,28 +186,31 @@ export function ExerciseSection({
         ))}
       </div>
 
-      {/* Chart */}
+      {/* History */}
       <div className="mt-5">
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {EXERCISES.map(ex => {
-            const on = visible.includes(ex);
-            return (
-              <button
-                key={ex}
-                onClick={() => setVisible(v => on ? v.filter(x => x !== ex) : [...v, ex])}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition ${
-                  on ? "text-background" : "text-muted-foreground border-border/50"
-                }`}
-                style={on ? { background: EXERCISE_COLORS[ex], borderColor: EXERCISE_COLORS[ex] } : undefined}
-              >
-                {EXERCISE_LABELS[ex]}
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">History</h3>
+          <select
+            value={metric}
+            onChange={e => setMetric(e.target.value as ExerciseKey | "total")}
+            className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            {EXERCISES.map(ex => (
+              <option key={ex} value={ex}>{EXERCISE_LABELS[ex]}</option>
+            ))}
+            <option value="total">All reps</option>
+          </select>
         </div>
 
-        <LineChart series={series} visible={visible} benchMap={benchMap} />
+        <ExerciseHistoryChart
+          series={series}
+          metric={metric}
+          benchMap={benchMap}
+          selectedDate={selectedDate}
+          onSelect={d => onSelectDate?.(d)}
+        />
       </div>
+
 
       {benchmarks.length === 0 && (
         <div className="mt-4 text-[11px] text-muted-foreground flex items-center gap-1.5">
@@ -282,69 +286,107 @@ function buildSeries(entries: ExerciseEntry[]): Point[] {
   return out;
 }
 
-function LineChart({ series, visible, benchMap }: {
-  series: Point[]; visible: ExerciseKey[]; benchMap: Map<ExerciseKey, BenchmarkRow>;
+function ExerciseHistoryChart({ series, metric, benchMap, selectedDate, onSelect }: {
+  series: Point[];
+  metric: ExerciseKey | "total";
+  benchMap: Map<ExerciseKey, BenchmarkRow>;
+  selectedDate: Date;
+  onSelect: (d: Date) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const H = 150;
-  const STEP = 34;
-  const W = Math.max(series.length * STEP, 200);
+  const label = metric === "total" ? "All reps" : EXERCISE_LABELS[metric];
+  const color = metric === "total" ? "var(--oasis)" : EXERCISE_COLORS[metric];
+  const target = metric === "total"
+    ? EXERCISES.reduce((s, ex) => s + (benchMap.get(ex)?.target_reps ?? 0), 0)
+    : (benchMap.get(metric)?.target_reps ?? 0);
 
-  const maxVal = Math.max(
-    1,
-    ...series.flatMap(p => visible.map(ex => p.values[ex])),
-    ...visible.map(ex => benchMap.get(ex)?.target_reps ?? 0),
-  );
+  const data = series.map(p => ({
+    date: p.date,
+    value: metric === "total"
+      ? EXERCISES.reduce((s, ex) => s + p.values[ex], 0)
+      : p.values[metric],
+  }));
+
+  const todayKey = dayKey(new Date());
+  const maxVal = Math.max(target, ...data.map(d => d.value), 1);
   const scale = maxVal * 1.15;
-  const y = (v: number) => H - (v / scale) * H;
-  const x = (i: number) => i * STEP + STEP / 2;
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollLeft = el.scrollWidth;
-  }, [series.length, visible.length]);
+  }, [metric, data.length]);
 
   return (
-    <div ref={scrollRef} className="overflow-x-auto pb-1 -mx-1 px-1">
-      <div style={{ minWidth: `${W}px` }}>
-        <svg width={W} height={H + 24} className="block">
-          {/* benchmark lines */}
-          {visible.map(ex => {
-            const t = benchMap.get(ex)?.target_reps ?? 0;
-            if (!t) return null;
-            return (
-              <line key={"b" + ex} x1={0} x2={W} y1={y(t)} y2={y(t)}
-                stroke={EXERCISE_COLORS[ex]} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.45} />
-            );
-          })}
-          {/* series lines */}
-          {visible.map(ex => {
-            const pts = series.map((p, i) => `${x(i)},${y(p.values[ex])}`).join(" ");
-            return (
-              <g key={ex}>
-                <polyline points={pts} fill="none" stroke={EXERCISE_COLORS[ex]} strokeWidth={2}
-                  strokeLinejoin="round" strokeLinecap="round" />
-                {series.map((p, i) => p.values[ex] > 0 && (
-                  <circle key={i} cx={x(i)} cy={y(p.values[ex])} r={2.5} fill={EXERCISE_COLORS[ex]}>
-                    <title>{`${p.date.toDateString()} — ${p.values[ex]} ${EXERCISE_LABELS[ex]}`}</title>
-                  </circle>
-                ))}
-              </g>
-            );
-          })}
-          {/* x labels */}
-          {series.map((p, i) => (
-            <text key={"t" + i} x={x(i)} y={H + 16} textAnchor="middle"
-              fontSize="9" fontFamily="monospace"
-              fill={i === series.length - 1 ? "var(--sand)" : "var(--muted-foreground)"}>
-              {p.date.getDate()}/{p.date.getMonth() + 1}
-            </text>
-          ))}
-        </svg>
+    <div>
+      <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Target {target || "—"} reps
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} /> {label}
+        </span>
+      </div>
+
+      <div ref={scrollRef} className="overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="relative" style={{ minWidth: `${data.length * 34}px` }}>
+          {target > 0 && (
+            <div
+              className="absolute left-0 right-0 z-10 pointer-events-none"
+              style={{
+                bottom: `${28 + (target / scale) * H}px`,
+                borderTop: "2px dashed var(--sand)",
+                opacity: 0.85,
+              }}
+            />
+          )}
+          <div className="flex items-end gap-1.5" style={{ height: `${H + 28}px` }}>
+            {data.map((d, i) => {
+              const h = Math.max(2, (d.value / scale) * H);
+              const isToday = dayKey(d.date) === todayKey;
+              const selected = dayKey(d.date) === dayKey(selectedDate);
+              const good = target > 0 && d.value >= target;
+              const barColor = d.value === 0
+                ? "oklch(0.35 0.02 210 / 0.5)"
+                : good ? color : "var(--coral)";
+              return (
+                <button
+                  key={i}
+                  onClick={() => onSelect(d.date)}
+                  title={`${d.date.toDateString()} — ${d.value} reps${target ? ` (target ${target})` : ""}`}
+                  className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
+                    selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
+                  }`}
+                  style={{ height: `${H + 28}px` }}
+                  aria-label={`${d.date.toDateString()} — ${d.value} reps`}
+                >
+                  <div className="flex-1 w-full flex items-end justify-center">
+                    <div
+                      className="w-[16px] rounded-t transition-all duration-500"
+                      style={{ height: `${h}px`, background: barColor, opacity: d.value === 0 ? 0.4 : 0.9 }}
+                    />
+                  </div>
+                  <div className="h-[28px] flex flex-col items-center justify-center leading-tight">
+                    <div className={`text-[9px] font-mono ${isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}>
+                      {d.date.getDate()}/{d.date.getMonth() + 1}
+                    </div>
+                    <div className={`text-[8px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
+                      {isToday ? "now" : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="text-[10px] text-muted-foreground/70 mt-2 text-center">
+        Scroll for older days · tap a day to view its numbers
       </div>
     </div>
   );
 }
+
 
 /* ---------- Day log rows ---------- */
 
