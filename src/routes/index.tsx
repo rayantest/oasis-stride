@@ -51,6 +51,12 @@ function dayStart(d: Date) {
 function dayKey(d: Date) {
   return dayStart(d).toISOString().slice(0, 10);
 }
+/** Local calendar date (YYYY-MM-DD) — matches the `date` column synced from the phone. */
+function localKey(d: Date) {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 function isSameDay(a: Date, b: Date) {
   return dayKey(a) === dayKey(b);
 }
@@ -112,6 +118,21 @@ function App() {
   const exercisesQ = useExerciseEntries();
   const benchQ = useExerciseBenchmarks();
 
+  const ringsQ = useQuery({
+    queryKey: ["fitness_rings"],
+    queryFn: async (): Promise<Array<{ date: string; active_calories: number }>> => {
+      const since = new Date();
+      since.setDate(since.getDate() - 365);
+      const { data, error } = await supabase.from("fitness_rings")
+        .select("date, active_calories")
+        .gte("date", localKey(since))
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Array<{ date: string; active_calories: number }>;
+    },
+  });
+
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["movement"] });
     qc.invalidateQueries({ queryKey: ["food"] });
@@ -147,7 +168,11 @@ function App() {
   const dayMovements = movements.filter(m => isSameDay(new Date(m.created_at), selectedDate));
   const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
   const dayExercises = exercises.filter(e => isSameDay(new Date(e.created_at), selectedDate));
-  const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0);
+  const rings = ringsQ.data ?? [];
+  const ringByDate = new Map(rings.map(r => [r.date, Number(r.active_calories) || 0] as const));
+  const ringBurn = ringByDate.get(localKey(selectedDate)) ?? 0;
+  const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0) + ringBurn;
+
 
   const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
   const proteinG = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0);
@@ -298,6 +323,11 @@ function App() {
             <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
               <div className="space-y-3">
                 <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
+                {ringBurn > 0 && (
+                  <div className="-mt-2 text-[11px] text-muted-foreground">
+                    Includes {Math.round(ringBurn)} kcal synced from your watch.
+                  </div>
+                )}
                 {EXERCISES.map(ex => (
                   <BenchmarkRow
                     key={ex}
@@ -311,7 +341,8 @@ function App() {
               </div>
             </Card>
 
-            <CoachCard focus="movement" profile={profile} movements={movements} foods={foods} scans={scans} exerciseSummary={exerciseSummary} />
+            <CoachCard focus="movement" profile={profile} movements={movements} foods={foods} scans={scans} exerciseSummary={exerciseSummary} rings={rings} />
+
 
             <BodyCompSection gender={profile.gender}>
               <ProfilePanel
@@ -346,14 +377,16 @@ function TabButton({ active, onClick, icon, label }: {
 
 /* ---------- Components ---------- */
 
-function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary }: {
+function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, rings = [] }: {
   profile: Profile;
   movements: Movement[];
   foods: Food[];
   scans: BodyScan[];
   focus: "diet" | "movement";
   exerciseSummary: Array<{ exercise: string; avg_reps: number; best_reps: number; days_logged: number; target_reps: number }>;
+  rings?: Array<{ date: string; active_calories: number }>;
 }) {
+
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -392,7 +425,14 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary }:
       r.active_kcal += Math.round(Number(m.kcal) || 0);
       r.active_min += Math.round(Number(m.minutes) || 0);
     }
+    // Watch-synced active calories, keyed by their own calendar date.
+    for (const ring of rings) {
+      let row = byDay.get(ring.date);
+      if (!row) { row = { date: ring.date, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, active_kcal: 0, active_min: 0 }; byDay.set(ring.date, row); }
+      row.active_kcal += Math.round(Number(ring.active_calories) || 0);
+    }
     const days = [...byDay.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
+
 
     return {
       focus,
@@ -426,7 +466,7 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary }:
       })),
       days,
     };
-  }, [profile, foods, movements, scans, signals, focus, exerciseSummary]);
+  }, [profile, foods, movements, scans, signals, focus, exerciseSummary, rings]);
 
   const contextKey = useMemo(() => focus + ":" + JSON.stringify(context).length + ":" + (context.days[0]?.date ?? "none") + ":" + context.days.length, [context, focus]);
 
