@@ -186,28 +186,31 @@ export function ExerciseSection({
         ))}
       </div>
 
-      {/* Chart */}
+      {/* History */}
       <div className="mt-5">
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {EXERCISES.map(ex => {
-            const on = visible.includes(ex);
-            return (
-              <button
-                key={ex}
-                onClick={() => setVisible(v => on ? v.filter(x => x !== ex) : [...v, ex])}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition ${
-                  on ? "text-background" : "text-muted-foreground border-border/50"
-                }`}
-                style={on ? { background: EXERCISE_COLORS[ex], borderColor: EXERCISE_COLORS[ex] } : undefined}
-              >
-                {EXERCISE_LABELS[ex]}
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">History</h3>
+          <select
+            value={metric}
+            onChange={e => setMetric(e.target.value as ExerciseKey | "total")}
+            className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            {EXERCISES.map(ex => (
+              <option key={ex} value={ex}>{EXERCISE_LABELS[ex]}</option>
+            ))}
+            <option value="total">All reps</option>
+          </select>
         </div>
 
-        <LineChart series={series} visible={visible} benchMap={benchMap} />
+        <ExerciseHistoryChart
+          series={series}
+          metric={metric}
+          benchMap={benchMap}
+          selectedDate={selectedDate}
+          onSelect={d => onSelectDate?.(d)}
+        />
       </div>
+
 
       {benchmarks.length === 0 && (
         <div className="mt-4 text-[11px] text-muted-foreground flex items-center gap-1.5">
