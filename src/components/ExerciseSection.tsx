@@ -104,7 +104,12 @@ export function ExerciseSection({
     return m;
   }, [benchmarks]);
 
-  const contextKey = useMemo(() => JSON.stringify(benchContext), [benchContext]);
+  // Targets only auto-refresh when body data (InBody scan) or goal/profile change —
+  // never because of newly logged reps.
+  const contextKey = useMemo(
+    () => JSON.stringify({ profile: benchContext.profile, latest_scan: benchContext.latest_scan }),
+    [benchContext.profile, benchContext.latest_scan],
+  );
 
   const regenerate = async (silent = false) => {
     if (generating) return;
