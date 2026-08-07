@@ -758,8 +758,8 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
 }
 
 
-function DayLog({ movements, foods, onChange }: {
-  movements: Movement[]; foods: Food[]; onChange: () => void;
+function DayLog({ movements, foods, exercises = [], onChange }: {
+  movements: Movement[]; foods: Food[]; exercises?: ExerciseEntry[]; onChange: () => void;
 }) {
   type Row = { kind: "m" | "f"; ts: string; el: React.ReactNode };
   const del = useMutation({
