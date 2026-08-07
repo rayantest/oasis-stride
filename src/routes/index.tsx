@@ -118,6 +118,21 @@ function App() {
   const exercisesQ = useExerciseEntries();
   const benchQ = useExerciseBenchmarks();
 
+  const ringsQ = useQuery({
+    queryKey: ["fitness_rings"],
+    queryFn: async (): Promise<Array<{ date: string; active_calories: number }>> => {
+      const since = new Date();
+      since.setDate(since.getDate() - 365);
+      const { data, error } = await supabase.from("fitness_rings")
+        .select("date, active_calories")
+        .gte("date", localKey(since))
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Array<{ date: string; active_calories: number }>;
+    },
+  });
+
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["movement"] });
     qc.invalidateQueries({ queryKey: ["food"] });
