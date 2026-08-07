@@ -323,6 +323,11 @@ function App() {
             <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
               <div className="space-y-3">
                 <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
+                {ringBurn > 0 && (
+                  <div className="-mt-2 text-[11px] text-muted-foreground">
+                    Includes {Math.round(ringBurn)} kcal synced from your watch.
+                  </div>
+                )}
                 {EXERCISES.map(ex => (
                   <BenchmarkRow
                     key={ex}
@@ -336,7 +341,8 @@ function App() {
               </div>
             </Card>
 
-            <CoachCard focus="movement" profile={profile} movements={movements} foods={foods} scans={scans} exerciseSummary={exerciseSummary} />
+            <CoachCard focus="movement" profile={profile} movements={movements} foods={foods} scans={scans} exerciseSummary={exerciseSummary} rings={rings} />
+
 
             <BodyCompSection gender={profile.gender}>
               <ProfilePanel
