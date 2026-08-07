@@ -51,6 +51,12 @@ function dayStart(d: Date) {
 function dayKey(d: Date) {
   return dayStart(d).toISOString().slice(0, 10);
 }
+/** Local calendar date (YYYY-MM-DD) — matches the `date` column synced from the phone. */
+function localKey(d: Date) {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 function isSameDay(a: Date, b: Date) {
   return dayKey(a) === dayKey(b);
 }
