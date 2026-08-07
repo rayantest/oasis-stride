@@ -59,6 +59,48 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_benchmarks: {
+        Row: {
+          exercise: string
+          rationale: string
+          target_reps: number
+          updated_at: string
+        }
+        Insert: {
+          exercise: string
+          rationale?: string
+          target_reps?: number
+          updated_at?: string
+        }
+        Update: {
+          exercise?: string
+          rationale?: string
+          target_reps?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      exercise_entries: {
+        Row: {
+          created_at: string
+          exercise: string
+          id: string
+          reps: number
+        }
+        Insert: {
+          created_at?: string
+          exercise: string
+          id?: string
+          reps: number
+        }
+        Update: {
+          created_at?: string
+          exercise?: string
+          id?: string
+          reps?: number
+        }
+        Relationships: []
+      }
       fitness_rings: {
         Row: {
           active_calories: number
