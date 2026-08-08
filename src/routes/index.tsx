@@ -593,24 +593,46 @@ function Card({ title, hint, right, children }: {
 }
 
 
-function BenchmarkRow({ label, value, target, unit, mode }: {
-  label: string; value: number; target: number; unit: string; mode: "over" | "under";
+function BenchmarkRow({ label, value, target, unit, mode, info }: {
+  label: string; value: number; target: number; unit: string; mode: "over" | "under"; info?: string;
 }) {
   const v = Math.round(value);
   const pct = Math.min(100, target > 0 ? (v / target) * 100 : 0);
   const overTarget = v > target;
   const good = mode === "under" ? v <= target : v >= target;
   const color = good ? "var(--oasis)" : "var(--coral)";
+  const [open, setOpen] = useState(false);
 
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1.5">
-        <span className="text-sm">{label}</span>
+        <span className="text-sm flex items-center gap-1.5">
+          {label}
+          {info && (
+            <button
+              type="button"
+              onClick={() => setOpen(o => !o)}
+              aria-label={`How the ${label} benchmark is set`}
+              aria-expanded={open}
+              className={`inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border text-[9px] font-bold transition ${
+                open ? "border-sand text-sand bg-sand/15" : "border-border text-muted-foreground hover:text-sand hover:border-sand/60"
+              }`}
+            >
+              !
+            </button>
+          )}
+        </span>
         <span className="font-mono text-xs">
           <span style={{ color: good ? "var(--oasis)" : "var(--coral)" }}>{v}</span>
           <span className="text-muted-foreground"> / {target} {unit}</span>
         </span>
       </div>
+      {info && open && (
+        <div className="mb-2 rounded-lg bg-secondary/50 border border-border/50 px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground">
+          {info}
+        </div>
+      )}
+
       <div className="relative h-2 rounded-full bg-secondary overflow-hidden">
         <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
           style={{ width: `${Math.min(100, pct)}%`, background: color, opacity: 0.85 }}
