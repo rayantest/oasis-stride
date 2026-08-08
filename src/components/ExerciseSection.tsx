@@ -148,11 +148,23 @@ export function ExerciseSection({
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!benchmarksLoaded) return;
-    if (storedKey === null && benchMap.size === 0) {
-      void regenerate(true);
+    if (storedKey === null) {
+      if (benchMap.size === 0) {
+        void regenerate(true);
+      } else {
+        // Targets already exist from before signatures were stored — adopt the
+        // current body/goal data as the baseline instead of regenerating.
+        void supabase
+          .from("exercise_benchmarks" as never)
+          .upsert(
+            [{ exercise: BENCH_SIGNATURE_ROW, target_reps: 0, rationale: contextKey, updated_at: new Date().toISOString() }] as never,
+            { onConflict: "exercise" } as never,
+          )
+          .then(() => qc.invalidateQueries({ queryKey: ["exercise_benchmarks"] }));
+      }
       return;
     }
-    if (storedKey !== null && storedKey !== contextKey) void regenerate(true);
+    if (storedKey !== contextKey) void regenerate(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contextKey, storedKey, benchmarksLoaded]);
 
