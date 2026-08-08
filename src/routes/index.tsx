@@ -328,22 +328,28 @@ function App() {
 
             <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
               <div className="space-y-3">
-                <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
+                <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over"
+                  info={`Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently ${t.active_burn} kcal/day. It counts logged movement${ringBurn > 0 ? " plus active calories synced from your watch" : ""}, and is separate from your ${t.deficit} kcal/day food deficit. Change it by updating your goal answers in Body & profile.`} />
                 {ringBurn > 0 && (
                   <div className="-mt-2 text-[11px] text-muted-foreground">
                     Includes {Math.round(ringBurn)} kcal synced from your watch.
                   </div>
                 )}
-                {EXERCISES.map(ex => (
-                  <BenchmarkRow
-                    key={ex}
-                    label={EXERCISE_LABELS[ex as ExerciseKey]}
-                    value={repsFor(exercises, ex, selectedDate)}
-                    target={benchTargets.get(ex) ?? 0}
-                    unit="reps"
-                    mode="over"
-                  />
-                ))}
+                {EXERCISES.map(ex => {
+                  const row = benchmarks.find(b => b.exercise === ex);
+                  return (
+                    <BenchmarkRow
+                      key={ex}
+                      label={EXERCISE_LABELS[ex as ExerciseKey]}
+                      value={repsFor(exercises, ex, selectedDate)}
+                      target={benchTargets.get(ex) ?? 0}
+                      unit="reps"
+                      mode="over"
+                      info={`AI-prescribed daily volume from your latest InBody scan (${latestScan ? `${latestScan.weight_kg ?? "—"} kg, ${latestScan.body_fat_percent ?? "—"}% fat, ${latestScan.muscle_mass_kg ?? "—"} kg muscle` : "no scan yet"}) and your goal answers, not from your recent logs — those only cap how fast it can jump. It changes only when your scan or goal answers change.${row?.rationale ? ` AI note: ${row.rationale}` : ""}`}
+                    />
+                  );
+                })}
+
               </div>
             </Card>
 
