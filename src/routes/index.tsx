@@ -16,7 +16,7 @@ import { projectionText, eventLikelyMisses } from "@/lib/goal-derive";
 import { FoodScanSheet } from "@/components/FoodScanSheet";
 import {
   ExerciseSection, ExerciseLogRows, useExerciseEntries,
-  repsFor, EXERCISES, EXERCISE_LABELS, STRENGTH_TARGETS,
+  repsFor, EXERCISES, EXERCISE_LABELS, useStrengthTargets, targetsFor, targetInfoText,
   type ExerciseEntry, type ExerciseKey,
 } from "@/components/ExerciseSection";
 
@@ -116,6 +116,7 @@ function App() {
 
   const scansQ = useBodyScans();
   const exercisesQ = useExerciseEntries();
+  const targetsQ = useStrengthTargets();
 
   const ringsQ = useQuery({
     queryKey: ["fitness_rings"],
@@ -137,6 +138,7 @@ function App() {
     qc.invalidateQueries({ queryKey: ["food"] });
     qc.invalidateQueries({ queryKey: ["body_scans"] });
     qc.invalidateQueries({ queryKey: ["exercise_entries"] });
+    qc.invalidateQueries({ queryKey: ["strength_targets"] });
   };
 
 
@@ -179,6 +181,9 @@ function App() {
 
   const history = historyDays(movements, foods, metric, t);
 
+  const targetRows = targetsQ.data ?? [];
+  const strengthTargets = targetsFor(targetRows, selectedDate);
+
   const exerciseSummary = EXERCISES.map(ex => {
     const rows = exercises.filter(e => e.exercise === ex);
     const byDay = new Map<string, number>();
@@ -192,7 +197,7 @@ function App() {
       avg_reps: vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : 0,
       best_reps: vals.length ? Math.max(...vals) : 0,
       days_logged: vals.length,
-      target_reps: STRENGTH_TARGETS[ex],
+      target_reps: strengthTargets[ex],
     };
   });
 
@@ -290,6 +295,9 @@ function App() {
               logTimestamp={() => timestampForDay(selectedDate)}
               onChange={invalidate}
               onSelectDate={(d: Date) => setSelectedDate(dayStart(d))}
+              profile={profile}
+              latestScan={latestScan as unknown as Record<string, number | string | null> | null}
+              targetRows={targetRows}
               burnTarget={t.active_burn}
               burnFor={(d: Date) =>
                 movements
@@ -317,10 +325,10 @@ function App() {
                       key={ex}
                       label={EXERCISE_LABELS[ex as ExerciseKey]}
                       value={repsFor(exercises, ex, selectedDate)}
-                      target={STRENGTH_TARGETS[ex]}
+                      target={strengthTargets[ex]}
                       unit="reps"
                       mode="over"
-                      info={`Fixed daily target: ${STRENGTH_TARGETS[ex]} reps.`}
+                      info={targetInfoText(targetRows, selectedDate, ex as ExerciseKey)}
                     />
                 ))}
 

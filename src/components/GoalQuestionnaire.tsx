@@ -25,6 +25,7 @@ const STEPS = [
   "derailers",
   "realistic_days",
   "target_loss",
+  "best_set",
   "body_comp",
   "review",
 ] as const;
@@ -216,6 +217,7 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
               ]} />
           </Q>
         )}
+        {step === "best_set" && <BestSetStep a={a} setA={setA} />}
         {step === "body_comp" && (
           <BodyCompStep onSaved={next} onSkip={next} />
         )}
@@ -380,6 +382,46 @@ function LifestyleStep({ a, set }: {
             ["crossfit", "CrossFit-style"],
             ["not_picky", "Not picky"],
           ]} />
+      </div>
+    </div>
+  );
+}
+
+function BestSetStep({ a, setA }: { a: GoalAnswers; setA: React.Dispatch<React.SetStateAction<GoalAnswers>> }) {
+  const best = a.bestSet ?? {};
+  const set = (k: keyof NonNullable<GoalAnswers["bestSet"]>, v: string) =>
+    setA(prev => ({
+      ...prev,
+      bestSet: { ...(prev.bestSet ?? {}), [k]: v === "" ? undefined : Math.max(0, Math.round(Number(v))) },
+    }));
+  const fields: [keyof NonNullable<GoalAnswers["bestSet"]>, string][] = [
+    ["pushups", "Push-ups"],
+    ["pullups", "Pull-ups"],
+    ["situps", "Sit-ups"],
+    ["squats", "Squats"],
+  ];
+  return (
+    <div>
+      <h3 className="font-display text-lg font-semibold mb-1">Your current best set</h3>
+      <p className="text-xs text-muted-foreground mb-4">
+        The most reps you can do in one unbroken set right now. Rough numbers are fine — leave blank to skip.
+        These anchor the AI's daily strength target suggestions.
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        {fields.map(([k, label]) => (
+          <label key={k} className="text-xs text-muted-foreground">
+            {label}
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={best[k] ?? ""}
+              onChange={e => set(k, e.target.value)}
+              placeholder="reps"
+              className="mt-1 w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm font-mono text-foreground"
+            />
+          </label>
+        ))}
       </div>
     </div>
   );

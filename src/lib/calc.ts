@@ -23,6 +23,13 @@ export type GoalAnswers = {
   derailers?: string[]; // time, motivation, injury, social_eating, travel
   realisticDays?: "3" | "4-5" | "6-7";
   targetLossKg?: "2-3" | "5-7" | "8-10" | "none";
+  // Current best unbroken set per exercise
+  bestSet?: {
+    pushups?: number;
+    pullups?: number;
+    situps?: number;
+    squats?: number;
+  };
 };
 
 export type Profile = {
