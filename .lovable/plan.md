@@ -13,7 +13,8 @@ Yes, this makes sense — and it fixes the old problem: targets never change on 
 
 ## Goal questionnaire
 
-No new questions needed for a first version — the AI already gets body scans, height/weight/age, activity level, realistic training days, deadline and injury/caution flags. If the suggestions feel off after using it, we can add a "current best set" question later.
+Add one new step, "Your current best set", right before the body composition step: four numeric inputs asking the most reps you can do in a single unbroken set of push-ups, pull-ups, sit-ups and squats (all optional, skippable). These are stored in `goal_answers.bestSet` and given to the AI so suggested daily targets are anchored to what you can actually do today, not guessed from body stats alone.
+
 
 ## Technical details
 
