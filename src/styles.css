@@ -47,7 +47,7 @@
   --radius: 1rem;
 
   /* Desert night palette */
-  --background: oklch(0.97 0.015 85); /* soft warm ivory, hint of sand */
+  --background: oklch(0.98 0.01 240); /* near-white, faint cool blue tint */
   --foreground: oklch(0.94 0.02 80); /* warm off-white */
   --card: oklch(0.235 0.032 258); /* raised dune card */
   --card-foreground: oklch(0.94 0.02 80);
