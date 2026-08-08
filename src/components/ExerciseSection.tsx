@@ -35,8 +35,14 @@ export type ExerciseEntry = {
   created_at: string;
 };
 
-function dayStart(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
-function dayKey(d: Date) { return dayStart(d).toISOString().slice(0, 10); }
+function dayStart(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function dayKey(d: Date) {
+  return dayStart(d).toISOString().slice(0, 10);
+}
 
 export function useExerciseEntries() {
   return useQuery({
@@ -58,14 +64,18 @@ export function useExerciseEntries() {
 export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
   const k = dayKey(date);
   return entries
-    .filter(e => e.exercise === ex && dayKey(new Date(e.created_at)) === k)
+    .filter((e) => e.exercise === ex && dayKey(new Date(e.created_at)) === k)
     .reduce((s, e) => s + Number(e.reps), 0);
 }
 
 /* ---------- Section ---------- */
 
 export function ExerciseSection({
-  entries, selectedDate, logTimestamp, onChange, onSelectDate,
+  entries,
+  selectedDate,
+  logTimestamp,
+  onChange,
+  onSelectDate,
 }: {
   entries: ExerciseEntry[];
   selectedDate: Date;
@@ -82,7 +92,9 @@ export function ExerciseSection({
     setBusy(true);
     try {
       const { error } = await supabase.from("exercise_entries" as never).insert({
-        exercise: ex, reps, created_at: logTimestamp(),
+        exercise: ex,
+        reps,
+        created_at: logTimestamp(),
       } as never);
       if (error) throw error;
       toast.success(`Logged ${reps} ${EXERCISE_LABELS[ex].toLowerCase()}`);
@@ -90,7 +102,9 @@ export function ExerciseSection({
       onChange();
     } catch (err) {
       toast.error((err as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const series = useMemo(() => buildSeries(entries), [entries]);
@@ -103,10 +117,9 @@ export function ExerciseSection({
         </h2>
       </div>
 
-
       {/* Loggers */}
       <div className="grid grid-cols-2 gap-2.5">
-        {EXERCISES.map(ex => (
+        {EXERCISES.map((ex) => (
           <RepLogger
             key={ex}
             ex={ex}
@@ -114,23 +127,24 @@ export function ExerciseSection({
             target={STRENGTH_TARGETS[ex]}
             info={`Fixed daily target: ${STRENGTH_TARGETS[ex]} reps.`}
             busy={busy}
-            onLog={reps => log(ex, reps)}
+            onLog={(reps) => log(ex, reps)}
           />
         ))}
-
       </div>
 
       {/* History */}
       <div className="mt-5">
         <div className="flex items-center justify-between gap-2 mb-3">
-          <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">History</h3>
+          <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">Historical</h3>
           <select
             value={metric}
-            onChange={e => setMetric(e.target.value as ExerciseKey | "total")}
+            onChange={(e) => setMetric(e.target.value as ExerciseKey | "total")}
             className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
-            {EXERCISES.map(ex => (
-              <option key={ex} value={ex}>{EXERCISE_LABELS[ex]}</option>
+            {EXERCISES.map((ex) => (
+              <option key={ex} value={ex}>
+                {EXERCISE_LABELS[ex]}
+              </option>
             ))}
             <option value="total">All reps</option>
           </select>
@@ -141,15 +155,27 @@ export function ExerciseSection({
           metric={metric}
           targets={STRENGTH_TARGETS}
           selectedDate={selectedDate}
-          onSelect={d => onSelectDate?.(d)}
+          onSelect={(d) => onSelectDate?.(d)}
         />
       </div>
     </section>
   );
 }
 
-function RepLogger({ ex, today, target, info, busy, onLog }: {
-  ex: ExerciseKey; today: number; target: number; info?: string; busy: boolean; onLog: (n: number) => void;
+function RepLogger({
+  ex,
+  today,
+  target,
+  info,
+  busy,
+  onLog,
+}: {
+  ex: ExerciseKey;
+  today: number;
+  target: number;
+  info?: string;
+  busy: boolean;
+  onLog: (n: number) => void;
 }) {
   const [val, setVal] = useState("");
   const [openInfo, setOpenInfo] = useState(false);
@@ -164,7 +190,7 @@ function RepLogger({ ex, today, target, info, busy, onLog }: {
           {info && (
             <button
               type="button"
-              onClick={() => setOpenInfo(o => !o)}
+              onClick={() => setOpenInfo((o) => !o)}
               aria-label={`How the ${EXERCISE_LABELS[ex]} target is set`}
               aria-expanded={openInfo}
               className={`inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border text-[9px] font-bold transition ${
@@ -187,22 +213,34 @@ function RepLogger({ ex, today, target, info, busy, onLog }: {
       )}
 
       <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-2">
-        <div className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: EXERCISE_COLORS[ex], opacity: 0.9 }} />
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: EXERCISE_COLORS[ex], opacity: 0.9 }}
+        />
       </div>
       <form
-        onSubmit={e => { e.preventDefault(); onLog(Number(val)); setVal(""); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          onLog(Number(val));
+          setVal("");
+        }}
         className="flex items-center gap-1.5"
       >
         <input
-          type="number" inputMode="numeric" min={1} value={val}
-          onChange={e => setVal(e.target.value)}
+          type="number"
+          inputMode="numeric"
+          min={1}
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
           placeholder="reps"
           className="w-full min-w-0 bg-input/50 border border-border/50 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
-        <button type="submit" disabled={busy || !val}
+        <button
+          type="submit"
+          disabled={busy || !val}
           className="p-1.5 rounded-lg bg-secondary text-foreground disabled:opacity-40 shrink-0"
-          aria-label={`Log ${EXERCISE_LABELS[ex]}`}>
+          aria-label={`Log ${EXERCISE_LABELS[ex]}`}
+        >
           <Plus size={14} />
         </button>
       </form>
@@ -234,7 +272,13 @@ function buildSeries(entries: ExerciseEntry[]): Point[] {
   return out;
 }
 
-function ExerciseHistoryChart({ series, metric, targets, selectedDate, onSelect }: {
+function ExerciseHistoryChart({
+  series,
+  metric,
+  targets,
+  selectedDate,
+  onSelect,
+}: {
   series: Point[];
   metric: ExerciseKey | "total";
   targets: Record<ExerciseKey, number>;
@@ -245,19 +289,15 @@ function ExerciseHistoryChart({ series, metric, targets, selectedDate, onSelect 
   const H = 150;
   const label = metric === "total" ? "All reps" : EXERCISE_LABELS[metric];
   const color = metric === "total" ? "var(--oasis)" : EXERCISE_COLORS[metric];
-  const target = metric === "total"
-    ? EXERCISES.reduce((s, ex) => s + targets[ex], 0)
-    : targets[metric];
+  const target = metric === "total" ? EXERCISES.reduce((s, ex) => s + targets[ex], 0) : targets[metric];
 
-  const data = series.map(p => ({
+  const data = series.map((p) => ({
     date: p.date,
-    value: metric === "total"
-      ? EXERCISES.reduce((s, ex) => s + p.values[ex], 0)
-      : p.values[metric],
+    value: metric === "total" ? EXERCISES.reduce((s, ex) => s + p.values[ex], 0) : p.values[metric],
   }));
 
   const todayKey = dayKey(new Date());
-  const maxVal = Math.max(target, ...data.map(d => d.value), 1);
+  const maxVal = Math.max(target, ...data.map((d) => d.value), 1);
   const scale = maxVal * 1.15;
 
   useEffect(() => {
@@ -294,9 +334,7 @@ function ExerciseHistoryChart({ series, metric, targets, selectedDate, onSelect 
               const isToday = dayKey(d.date) === todayKey;
               const selected = dayKey(d.date) === dayKey(selectedDate);
               const good = target > 0 && d.value >= target;
-              const barColor = d.value === 0
-                ? "oklch(0.35 0.02 210 / 0.5)"
-                : good ? color : "var(--coral)";
+              const barColor = d.value === 0 ? "oklch(0.35 0.02 210 / 0.5)" : good ? color : "var(--coral)";
               return (
                 <button
                   key={i}
@@ -315,7 +353,9 @@ function ExerciseHistoryChart({ series, metric, targets, selectedDate, onSelect 
                     />
                   </div>
                   <div className="h-[28px] flex flex-col items-center justify-center leading-tight">
-                    <div className={`text-[9px] font-mono ${isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}>
+                    <div
+                      className={`text-[9px] font-mono ${isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}
+                    >
                       {d.date.getDate()}/{d.date.getMonth() + 1}
                     </div>
                     <div className={`text-[8px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
@@ -335,22 +375,25 @@ function ExerciseHistoryChart({ series, metric, targets, selectedDate, onSelect 
   );
 }
 
-
 /* ---------- Day log rows ---------- */
 
-export function ExerciseLogRows({ entries, onChange }: {
-  entries: ExerciseEntry[]; onChange: () => void;
-}) {
+export function ExerciseLogRows({ entries, onChange }: { entries: ExerciseEntry[]; onChange: () => void }) {
   const qc = useQueryClient();
   const del = async (id: string) => {
-    const { error } = await supabase.from("exercise_entries" as never).delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    const { error } = await supabase
+      .from("exercise_entries" as never)
+      .delete()
+      .eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["exercise_entries"] });
     onChange();
   };
   return (
     <>
-      {entries.map(e => (
+      {entries.map((e) => (
         <div key={e.id} className="flex items-center gap-3 py-3">
           <div className="w-8 h-8 rounded-full bg-secondary/70 flex items-center justify-center shrink-0">
             <Dumbbell size={16} style={{ color: EXERCISE_COLORS[e.exercise] }} />
@@ -360,7 +403,11 @@ export function ExerciseLogRows({ entries, onChange }: {
             <div className="text-[11px] text-muted-foreground">bodyweight</div>
           </div>
           <div className="font-mono text-sm text-foreground/90">{Math.round(Number(e.reps))} reps</div>
-          <button onClick={() => del(e.id)} className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition" aria-label="Delete">
+          <button
+            onClick={() => del(e.id)}
+            className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
+            aria-label="Delete"
+          >
             <Trash2 size={14} />
           </button>
         </div>
