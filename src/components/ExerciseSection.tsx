@@ -141,6 +141,9 @@ export function ExerciseSection({
   onSelectDate,
   burnFor,
   burnTarget = 0,
+  profile,
+  latestScan = null,
+  targetRows,
 }: {
   entries: ExerciseEntry[];
   selectedDate: Date;
@@ -149,10 +152,16 @@ export function ExerciseSection({
   onSelectDate?: (d: Date) => void;
   burnFor?: (d: Date) => number;
   burnTarget?: number;
+  profile: Profile;
+  latestScan?: Record<string, number | string | null> | null;
+  targetRows: StrengthTargetRow[];
 }) {
   const qc = useQueryClient();
   const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  const targets = useMemo(() => targetsFor(targetRows, selectedDate), [targetRows, selectedDate]);
 
   const log = async (ex: ExerciseKey, reps: number) => {
     if (!reps || busy) return;
@@ -182,7 +191,29 @@ export function ExerciseSection({
         <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
           <Dumbbell size={13} /> Daily strength
         </h2>
+        <button
+          onClick={() => setEditing((e) => !e)}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/70 border border-border/50 text-[11px] text-muted-foreground hover:text-foreground transition"
+        >
+          {editing ? <X size={11} /> : <Pencil size={11} />} {editing ? "Close" : "Edit targets"}
+        </button>
       </div>
+
+      {editing && (
+        <TargetEditor
+          selectedDate={selectedDate}
+          current={targets}
+          profile={profile}
+          latestScan={latestScan}
+          entries={entries}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["strength_targets"] });
+            setEditing(false);
+            onChange();
+          }}
+        />
+      )}
 
       {/* Loggers */}
       <div className="grid grid-cols-2 gap-2.5">
@@ -191,7 +222,7 @@ export function ExerciseSection({
             key={ex}
             ex={ex}
             today={repsFor(entries, ex, selectedDate)}
-            target={STRENGTH_TARGETS[ex]}
+            target={targets[ex]}
             info={""}
             busy={busy}
             onLog={(reps) => log(ex, reps)}
@@ -222,7 +253,7 @@ export function ExerciseSection({
         <ExerciseHistoryChart
           series={series}
           metric={metric}
-          targets={STRENGTH_TARGETS}
+          targets={targets}
           selectedDate={selectedDate}
           onSelect={(d) => onSelectDate?.(d)}
           burnFor={burnFor}
@@ -232,6 +263,173 @@ export function ExerciseSection({
     </section>
   );
 }
+
+/* ---------- Target editor ---------- */
+
+function TargetEditor({
+  selectedDate,
+  current,
+  profile,
+  latestScan,
+  entries,
+  onClose,
+  onSaved,
+}: {
+  selectedDate: Date;
+  current: StrengthTargets;
+  profile: Profile;
+  latestScan: Record<string, number | string | null> | null;
+  entries: ExerciseEntry[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [vals, setVals] = useState<Record<ExerciseKey, string>>({
+    pushups: String(current.pushups),
+    pullups: String(current.pullups),
+    situps: String(current.situps),
+    squats: String(current.squats),
+  });
+  const [source, setSource] = useState<"manual" | "ai">("manual");
+  const [rationale, setRationale] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const suggest = useServerFn(suggestStrengthTargets);
+
+  const dateLabel = selectedDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+
+  const askAi = async () => {
+    setThinking(true);
+    try {
+      const recent = EXERCISES.map((ex) => {
+        const byDay = new Map<string, number>();
+        entries
+          .filter((e) => e.exercise === ex)
+          .forEach((e) => {
+            const k = dayKey(new Date(e.created_at));
+            byDay.set(k, (byDay.get(k) ?? 0) + Number(e.reps));
+          });
+        const v = [...byDay.values()];
+        return {
+          exercise: ex as string,
+          avg_reps: v.length ? Math.round(v.reduce((s, n) => s + n, 0) / v.length) : 0,
+          best_reps: v.length ? Math.max(...v) : 0,
+          days_logged: v.length,
+        };
+      });
+
+      const res = await suggest({
+        data: {
+          context: {
+            profile: {
+              age: profile.age,
+              gender: profile.gender,
+              height_cm: profile.height_cm,
+              weight_kg: profile.weight_kg,
+              activity_level: profile.activity_level,
+              fat_loss_pace: profile.fat_loss_pace,
+              goal_answers: (profile.goal_answers ?? {}) as Record<string, unknown>,
+            },
+            latest_scan: latestScan,
+            current_targets: current,
+            recent,
+          },
+        },
+      });
+      setVals({
+        pushups: String(res.pushups),
+        pullups: String(res.pullups),
+        situps: String(res.situps),
+        squats: String(res.squats),
+      });
+      setSource("ai");
+      setRationale(res.rationale);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const row = {
+        effective_date: dayKey(selectedDate),
+        pushups: Math.max(0, Math.round(Number(vals.pushups) || 0)),
+        pullups: Math.max(0, Math.round(Number(vals.pullups) || 0)),
+        situps: Math.max(0, Math.round(Number(vals.situps) || 0)),
+        squats: Math.max(0, Math.round(Number(vals.squats) || 0)),
+        source,
+        note: source === "ai" ? rationale : "",
+      };
+      const { error } = await supabase
+        .from("strength_targets" as never)
+        .upsert(row as never, { onConflict: "effective_date" } as never);
+      if (error) throw error;
+      toast.success(`Targets set from ${dateLabel}`);
+      onSaved();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mb-4 rounded-xl border border-border/50 bg-background/40 p-3">
+      <div className="text-[11px] text-muted-foreground mb-2.5">
+        Targets apply from <span className="text-foreground font-medium">{dateLabel}</span> onward, until you change
+        them again.
+      </div>
+      <div className="grid grid-cols-2 gap-2.5">
+        {EXERCISES.map((ex) => (
+          <label key={ex} className="text-[11px] text-muted-foreground">
+            {EXERCISE_LABELS[ex]}
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={vals[ex]}
+              onChange={(e) => setVals((v) => ({ ...v, [ex]: e.target.value }))}
+              className="mt-1 w-full bg-input/50 border border-border/50 rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </label>
+        ))}
+      </div>
+
+      {rationale && (
+        <div className="mt-2.5 rounded-lg bg-secondary/50 border border-border/50 px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground">
+          {rationale}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 mt-3">
+        <button
+          onClick={askAi}
+          disabled={thinking || saving}
+          className="flex-1 inline-flex items-center justify-center gap-1 py-2 rounded-full bg-secondary text-foreground text-xs font-medium disabled:opacity-50"
+        >
+          <Sparkles size={12} /> {thinking ? "Thinking…" : "Suggest with AI"}
+        </button>
+        <button
+          onClick={onClose}
+          disabled={saving}
+          className="px-3 py-2 rounded-full text-xs text-muted-foreground"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={save}
+          disabled={saving || thinking}
+          className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
 function RepLogger({
   ex,
