@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dumbbell, Loader2, Plus, Trash2 } from "lucide-react";
-import {
-  EXERCISES, generateExerciseBenchmarks,
-  type ExerciseKey, type BenchmarkContext,
-} from "@/lib/exercise-benchmark.functions";
+import { Dumbbell, Plus, Trash2 } from "lucide-react";
 
-export { EXERCISES };
-export type { ExerciseKey };
+export const EXERCISES = ["pushups", "pullups", "situps", "squats"] as const;
+export type ExerciseKey = (typeof EXERCISES)[number];
+
+export const STRENGTH_TARGETS: Record<ExerciseKey, number> = {
+  pushups: 40,
+  pullups: 8,
+  situps: 50,
+  squats: 60,
+};
 
 export const EXERCISE_LABELS: Record<ExerciseKey, string> = {
   pushups: "Push-ups",
@@ -33,12 +35,6 @@ export type ExerciseEntry = {
   created_at: string;
 };
 
-export type BenchmarkRow = {
-  exercise: ExerciseKey;
-  target_reps: number;
-  rationale: string;
-};
-
 function dayStart(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function dayKey(d: Date) { return dayStart(d).toISOString().slice(0, 10); }
 
@@ -59,21 +55,6 @@ export function useExerciseEntries() {
   });
 }
 
-export const BENCH_SIGNATURE_ROW = "__signature__";
-
-export function useExerciseBenchmarks() {
-  return useQuery({
-    queryKey: ["exercise_benchmarks"],
-    queryFn: async (): Promise<BenchmarkRow[]> => {
-      const { data, error } = await supabase
-        .from("exercise_benchmarks" as never)
-        .select("*");
-      if (error) throw error;
-      return (data ?? []) as unknown as BenchmarkRow[];
-    },
-  });
-}
-
 export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
   const k = dayKey(date);
   return entries
@@ -84,89 +65,17 @@ export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
 /* ---------- Section ---------- */
 
 export function ExerciseSection({
-  entries, benchmarks, benchmarksLoaded = true, selectedDate, logTimestamp, benchContext, onChange, onSelectDate,
+  entries, selectedDate, logTimestamp, onChange, onSelectDate,
 }: {
   entries: ExerciseEntry[];
-  benchmarks: BenchmarkRow[];
-  benchmarksLoaded?: boolean;
   selectedDate: Date;
   logTimestamp: () => string;
-  benchContext: BenchmarkContext;
   onChange: () => void;
   onSelectDate?: (d: Date) => void;
 }) {
   const qc = useQueryClient();
   const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
-  const genFn = useServerFn(generateExerciseBenchmarks);
-  const [generating, setGenerating] = useState(false);
-
-  const benchMap = useMemo(() => {
-    const m = new Map<ExerciseKey, BenchmarkRow>();
-    benchmarks
-      .filter(b => (b.exercise as string) !== BENCH_SIGNATURE_ROW)
-      .forEach(b => m.set(b.exercise, b));
-    return m;
-  }, [benchmarks]);
-
-  // Targets only auto-refresh when body data (InBody scan) or goal/profile change —
-  // never because of newly logged reps. The signature is stored in the database
-  // (not localStorage) so a new device/session never triggers a regeneration.
-  const contextKey = useMemo(
-    () => JSON.stringify({ profile: benchContext.profile, latest_scan: benchContext.latest_scan }),
-    [benchContext.profile, benchContext.latest_scan],
-  );
-
-  const storedKey = useMemo(
-    () => benchmarks.find(b => (b.exercise as string) === BENCH_SIGNATURE_ROW)?.rationale ?? null,
-    [benchmarks],
-  );
-
-  const regenerate = async (silent = false) => {
-    if (generating) return;
-    setGenerating(true);
-    try {
-      const { benchmarks: out } = await genFn({ data: { context: benchContext } });
-      const rows = [
-        ...out.map(b => ({ ...b, updated_at: new Date().toISOString() })),
-        { exercise: BENCH_SIGNATURE_ROW, target_reps: 0, rationale: contextKey, updated_at: new Date().toISOString() },
-      ];
-      const { error } = await supabase
-        .from("exercise_benchmarks" as never)
-        .upsert(rows as never, { onConflict: "exercise" } as never);
-      if (error) throw error;
-      qc.invalidateQueries({ queryKey: ["exercise_benchmarks"] });
-      if (!silent && out.length) toast.success("Targets updated for your current body data");
-    } catch (err) {
-      if (!silent) toast.error((err as Error).message);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  // Regenerate only when the body/goal signature actually changes, or when no targets exist yet.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!benchmarksLoaded) return;
-    if (storedKey === null) {
-      if (benchMap.size === 0) {
-        void regenerate(true);
-      } else {
-        // Targets already exist from before signatures were stored — adopt the
-        // current body/goal data as the baseline instead of regenerating.
-        void supabase
-          .from("exercise_benchmarks" as never)
-          .upsert(
-            [{ exercise: BENCH_SIGNATURE_ROW, target_reps: 0, rationale: contextKey, updated_at: new Date().toISOString() }] as never,
-            { onConflict: "exercise" } as never,
-          )
-          .then(() => qc.invalidateQueries({ queryKey: ["exercise_benchmarks"] }));
-      }
-      return;
-    }
-    if (storedKey !== contextKey) void regenerate(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contextKey, storedKey, benchmarksLoaded]);
 
   const log = async (ex: ExerciseKey, reps: number) => {
     if (!reps || busy) return;
@@ -192,7 +101,6 @@ export function ExerciseSection({
         <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
           <Dumbbell size={13} /> Daily strength
         </h2>
-        {generating && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
       </div>
 
 
@@ -203,8 +111,8 @@ export function ExerciseSection({
             key={ex}
             ex={ex}
             today={repsFor(entries, ex, selectedDate)}
-            target={benchMap.get(ex)?.target_reps ?? 0}
-            info={`Daily volume set by AI from your latest InBody scan and goal answers — not from your logs. It only changes when your scan or goal answers change.${benchMap.get(ex)?.rationale ? ` AI note: ${benchMap.get(ex)!.rationale}` : ""}`}
+            target={STRENGTH_TARGETS[ex]}
+            info={`Fixed daily target: ${STRENGTH_TARGETS[ex]} reps.`}
             busy={busy}
             onLog={reps => log(ex, reps)}
           />
@@ -231,19 +139,11 @@ export function ExerciseSection({
         <ExerciseHistoryChart
           series={series}
           metric={metric}
-          benchMap={benchMap}
+          targets={STRENGTH_TARGETS}
           selectedDate={selectedDate}
           onSelect={d => onSelectDate?.(d)}
         />
       </div>
-
-
-      {benchmarks.length === 0 && (
-        <div className="mt-4 text-[11px] text-muted-foreground flex items-center gap-1.5">
-          {generating ? <><Loader2 size={11} className="animate-spin" /> Setting your daily targets…</> : "Targets will be set from your InBody scan and goal answers."}
-        </div>
-      )}
-
     </section>
   );
 }
@@ -334,10 +234,10 @@ function buildSeries(entries: ExerciseEntry[]): Point[] {
   return out;
 }
 
-function ExerciseHistoryChart({ series, metric, benchMap, selectedDate, onSelect }: {
+function ExerciseHistoryChart({ series, metric, targets, selectedDate, onSelect }: {
   series: Point[];
   metric: ExerciseKey | "total";
-  benchMap: Map<ExerciseKey, BenchmarkRow>;
+  targets: Record<ExerciseKey, number>;
   selectedDate: Date;
   onSelect: (d: Date) => void;
 }) {
@@ -346,8 +246,8 @@ function ExerciseHistoryChart({ series, metric, benchMap, selectedDate, onSelect
   const label = metric === "total" ? "All reps" : EXERCISE_LABELS[metric];
   const color = metric === "total" ? "var(--oasis)" : EXERCISE_COLORS[metric];
   const target = metric === "total"
-    ? EXERCISES.reduce((s, ex) => s + (benchMap.get(ex)?.target_reps ?? 0), 0)
-    : (benchMap.get(metric)?.target_reps ?? 0);
+    ? EXERCISES.reduce((s, ex) => s + targets[ex], 0)
+    : targets[metric];
 
   const data = series.map(p => ({
     date: p.date,
