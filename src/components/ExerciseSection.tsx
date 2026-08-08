@@ -179,10 +179,12 @@ export function ExerciseSection({
             ex={ex}
             today={repsFor(entries, ex, selectedDate)}
             target={benchMap.get(ex)?.target_reps ?? 0}
+            info={`Daily volume set by AI from your latest InBody scan and goal answers — not from your logs. It only changes when your scan or goal answers change.${benchMap.get(ex)?.rationale ? ` AI note: ${benchMap.get(ex)!.rationale}` : ""}`}
             busy={busy}
             onLog={reps => log(ex, reps)}
           />
         ))}
+
       </div>
 
       {/* History */}
