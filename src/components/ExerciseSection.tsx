@@ -76,12 +76,16 @@ export function ExerciseSection({
   logTimestamp,
   onChange,
   onSelectDate,
+  burnFor,
+  burnTarget = 0,
 }: {
   entries: ExerciseEntry[];
   selectedDate: Date;
   logTimestamp: () => string;
   onChange: () => void;
   onSelectDate?: (d: Date) => void;
+  burnFor?: (d: Date) => number;
+  burnTarget?: number;
 }) {
   const qc = useQueryClient();
   const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
@@ -156,6 +160,8 @@ export function ExerciseSection({
           targets={STRENGTH_TARGETS}
           selectedDate={selectedDate}
           onSelect={(d) => onSelectDate?.(d)}
+          burnFor={burnFor}
+          burnTarget={burnTarget}
         />
       </div>
     </section>
@@ -316,7 +322,7 @@ function ExerciseHistoryChart({
     <div>
       <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground">
         <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Target {target || "—"} reps
+          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Target {target || "—"} {unit}
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} /> {label}
@@ -346,12 +352,12 @@ function ExerciseHistoryChart({
                 <button
                   key={i}
                   onClick={() => onSelect(d.date)}
-                  title={`${d.date.toDateString()} — ${d.value} reps${target ? ` (target ${target})` : ""}`}
+                  title={`${d.date.toDateString()} — ${d.value} ${unit}${target ? ` (target ${target})` : ""}`}
                   className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
                   style={{ height: `${H + 28}px` }}
-                  aria-label={`${d.date.toDateString()} — ${d.value} reps`}
+                  aria-label={`${d.date.toDateString()} — ${d.value} ${unit}`}
                 >
                   <div className="flex-1 w-full flex items-end justify-center">
                     <div
