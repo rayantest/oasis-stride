@@ -1122,25 +1122,6 @@ function ProfilePanel({ profile, onSaved }: {
 }
 
 
-function WeeklyRollup({ movements, foods, weeklyActiveTarget }: {
-  movements: Movement[]; foods: Food[]; weeklyActiveTarget: number;
-}) {
-  const now = new Date();
-  const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 6); cutoff.setHours(0, 0, 0, 0);
-  const wm = movements.filter(m => new Date(m.created_at) >= cutoff);
-  const wf = foods.filter(f => new Date(f.created_at) >= cutoff);
-  const days = new Set<string>();
-  wf.forEach(f => days.add(dayKey(new Date(f.created_at))));
-  const daysN = Math.max(1, days.size);
-  const avgKcal = Math.round(wf.reduce((s, f) => s + Number(f.kcal), 0) / daysN);
-  const totalBurn = Math.round(wm.reduce((s, m) => s + Number(m.kcal), 0));
-  const pct = weeklyActiveTarget > 0 ? Math.round((totalBurn / weeklyActiveTarget) * 100) : 0;
-  return (
-    <div className="mt-3 rounded-xl bg-secondary/50 px-3 py-2 text-[11px] text-muted-foreground">
-      <span className="font-medium text-foreground/90">This week:</span> avg {avgKcal} kcal/day eaten · {totalBurn} kcal active burn ({pct}% of {Math.round(weeklyActiveTarget)} weekly target)
-    </div>
-  );
-}
 
 
 function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
