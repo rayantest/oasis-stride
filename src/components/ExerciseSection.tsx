@@ -59,6 +59,8 @@ export function useExerciseEntries() {
   });
 }
 
+export const BENCH_SIGNATURE_ROW = "__signature__";
+
 export function useExerciseBenchmarks() {
   return useQuery({
     queryKey: ["exercise_benchmarks"],
