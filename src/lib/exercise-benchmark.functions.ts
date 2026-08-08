@@ -108,7 +108,6 @@ Return STRICT JSON only:
 
 
     const valid = new Set<string>(EXERCISES as unknown as string[]);
-    const valid = new Set<string>(EXERCISES as unknown as string[]);
 
     // Hard safety clamp: a target must stay within reach of what the user
     // already does, so it never becomes discouraging.
