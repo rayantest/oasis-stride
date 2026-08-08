@@ -223,22 +223,44 @@ export function ExerciseSection({
   );
 }
 
-function RepLogger({ ex, today, target, busy, onLog }: {
-  ex: ExerciseKey; today: number; target: number; busy: boolean; onLog: (n: number) => void;
+function RepLogger({ ex, today, target, info, busy, onLog }: {
+  ex: ExerciseKey; today: number; target: number; info?: string; busy: boolean; onLog: (n: number) => void;
 }) {
   const [val, setVal] = useState("");
+  const [openInfo, setOpenInfo] = useState(false);
   const pct = target > 0 ? Math.min(100, (today / target) * 100) : 0;
   const done = target > 0 && today >= target;
 
   return (
     <div className="rounded-xl border border-border/50 bg-background/40 p-3">
       <div className="flex items-baseline justify-between mb-1.5">
-        <span className="text-xs font-medium">{EXERCISE_LABELS[ex]}</span>
+        <span className="text-xs font-medium flex items-center gap-1">
+          {EXERCISE_LABELS[ex]}
+          {info && (
+            <button
+              type="button"
+              onClick={() => setOpenInfo(o => !o)}
+              aria-label={`How the ${EXERCISE_LABELS[ex]} target is set`}
+              aria-expanded={openInfo}
+              className={`inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border text-[9px] font-bold transition ${
+                openInfo ? "border-sand text-sand bg-sand/15" : "border-border text-muted-foreground"
+              }`}
+            >
+              !
+            </button>
+          )}
+        </span>
         <span className="font-mono text-[11px]">
           <span style={{ color: done ? "var(--oasis)" : "var(--foreground)" }}>{today}</span>
           <span className="text-muted-foreground">/{target || "—"}</span>
         </span>
       </div>
+      {info && openInfo && (
+        <div className="mb-2 rounded-lg bg-secondary/50 border border-border/50 px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground">
+          {info}
+        </div>
+      )}
+
       <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-2">
         <div className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, background: EXERCISE_COLORS[ex], opacity: 0.9 }} />
