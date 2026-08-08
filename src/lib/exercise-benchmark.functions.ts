@@ -108,14 +108,38 @@ Return STRICT JSON only:
 
 
     const valid = new Set<string>(EXERCISES as unknown as string[]);
+    const valid = new Set<string>(EXERCISES as unknown as string[]);
+
+    // Hard safety clamp: a target must stay within reach of what the user
+    // already does, so it never becomes discouraging.
+    const STARTER: Record<ExerciseKey, number> = { pushups: 12, pullups: 2, situps: 15, squats: 15 };
+    const recentBy = new Map<string, { best_reps: number; days_logged: number }>();
+    data.context.recent?.forEach(r =>
+      recentBy.set(r.exercise, { best_reps: Number(r.best_reps) || 0, days_logged: Number(r.days_logged) || 0 }),
+    );
+
+    const clamp = (ex: ExerciseKey, proposed: number): number => {
+      const r = recentBy.get(ex);
+      if (!r || r.days_logged === 0 || r.best_reps <= 0) {
+        return Math.min(Math.max(proposed || STARTER[ex], 1), STARTER[ex]);
+      }
+      const ceiling = ex === "pullups"
+        ? r.best_reps + 2
+        : Math.max(r.best_reps + 2, Math.round(r.best_reps * 1.2));
+      return Math.max(1, Math.min(proposed || ceiling, ceiling));
+    };
+
     const benchmarks: ExerciseBenchmark[] = Array.isArray(parsed.benchmarks)
       ? parsed.benchmarks
           .filter((b: any) => valid.has(String(b?.exercise)))
-          .map((b: any) => ({
-            exercise: String(b.exercise) as ExerciseKey,
-            target_reps: Math.max(0, Math.round(Number(b?.target_reps) || 0)),
-            rationale: String(b?.rationale ?? "").slice(0, 160),
-          }))
+          .map((b: any) => {
+            const exercise = String(b.exercise) as ExerciseKey;
+            return {
+              exercise,
+              target_reps: clamp(exercise, Math.max(0, Math.round(Number(b?.target_reps) || 0))),
+              rationale: String(b?.rationale ?? "").slice(0, 160),
+            };
+          })
       : [];
 
     return { benchmarks };
