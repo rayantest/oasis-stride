@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { analyzeFoodPhoto, type FoodPhotoResult } from "@/lib/ai-parse.functions";
 import { toast } from "sonner";
 import {
-  Camera, Loader2, X, Send, Plus, Bookmark, ImagePlus, Sparkles, Upload,
+  Camera, Loader2, X, Send, Plus, Bookmark, Sparkles, Upload,
 } from "lucide-react";
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
