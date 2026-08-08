@@ -44,16 +44,12 @@
 }
 
 :root {
-  --radius: 1rem;
-
-  /* Desert night palette */
   --background: oklch(0.98 0.01 240); /* near-white, faint cool blue tint */
   --foreground: oklch(0.94 0.02 80); /* warm off-white */
   --card: oklch(0.235 0.032 258); /* raised dune card */
   --card-foreground: oklch(0.94 0.02 80);
   --popover: oklch(0.235 0.032 258);
   --popover-foreground: oklch(0.94 0.02 80);
-
   --primary: oklch(0.82 0.14 82); /* sandy gold */
   --primary-foreground: oklch(0.2 0.03 260);
   --secondary: oklch(0.29 0.03 258);
@@ -67,22 +63,6 @@
   --border: oklch(0.32 0.03 258);
   --input: oklch(0.28 0.03 258);
   --ring: oklch(0.82 0.14 82);
-
-  /* Custom semantic tokens */
-  --sand: oklch(0.82 0.14 82);
-  --sand-dim: oklch(0.62 0.11 82);
-  --oasis: oklch(0.7 0.13 200);
-  --oasis-deep: oklch(0.5 0.12 210);
-  --coral: oklch(0.68 0.19 25);
-  --dune: oklch(0.27 0.028 258);
-
-  --gradient-night: radial-gradient(ellipse at top, oklch(0.26 0.04 258) 0%, oklch(0.16 0.03 260) 70%);
-  --gradient-oasis: linear-gradient(180deg, oklch(0.75 0.14 195) 0%, oklch(0.5 0.14 215) 100%);
-  --gradient-sand: linear-gradient(135deg, oklch(0.86 0.13 85), oklch(0.7 0.14 65));
-
-  --shadow-card: 0 8px 32px -12px oklch(0 0 0 / 0.5);
-  --shadow-glow-sand: 0 0 40px -8px oklch(0.82 0.14 82 / 0.35);
-  --shadow-glow-oasis: 0 0 40px -8px oklch(0.7 0.13 200 / 0.4);
 }
 
 @layer base {
