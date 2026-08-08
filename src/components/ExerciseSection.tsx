@@ -206,7 +206,7 @@ function RepLogger({
           <span className="text-muted-foreground">/{target || "—"}</span>
         </span>
       </div>
-      {info && openInfo && (
+      {info.trim() && openInfo && (
         <div className="mb-2 rounded-lg bg-secondary/50 border border-border/50 px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground">
           {info}
         </div>
