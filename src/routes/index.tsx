@@ -270,12 +270,17 @@ function App() {
 
             <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
               <div className="space-y-3">
-                <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
-                <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
-                <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under" />
-                <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under" />
+                <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under"
+                  info={`BMR ${t.bmr} kcal ${t.used_scan_bmr ? "(measured in your InBody scan)" : "(Mifflin-St Jeor from height, weight, age, gender)"} × ${(t.tdee / t.bmr).toFixed(2)} activity multiplier = TDEE ${t.tdee} kcal. Minus a ${t.deficit} kcal/day deficit for your "${profile.fat_loss_pace}" pace (≈ ${t.kg_per_week.toFixed(2)} kg fat/week) = ${t.calories} kcal${t.calories === 1500 ? " (1500 kcal safety floor applied)" : ""}.`} />
+                <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over"
+                  info={`1.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.protein_g} g. High protein protects muscle mass while you're in a deficit.`} />
+                <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under"
+                  info={`Whatever calories remain after protein and fat: ${t.calories} − ${t.protein_g * 4} (protein) − ${t.fat_g * 9} (fat) = ${t.carbs_g * 4} kcal ÷ 4 kcal/g = ${t.carbs_g} g.`} />
+                <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under"
+                  info={`0.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.fat_g} g, never below the 0.6 g/kg hormone-health floor.`} />
               </div>
             </Card>
+
 
             <Card
               title="History"
