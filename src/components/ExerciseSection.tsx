@@ -59,6 +59,8 @@ export function useExerciseEntries() {
   });
 }
 
+export const BENCH_SIGNATURE_ROW = "__signature__";
+
 export function useExerciseBenchmarks() {
   return useQuery({
     queryKey: ["exercise_benchmarks"],
@@ -82,10 +84,11 @@ export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
 /* ---------- Section ---------- */
 
 export function ExerciseSection({
-  entries, benchmarks, selectedDate, logTimestamp, benchContext, onChange, onSelectDate,
+  entries, benchmarks, benchmarksLoaded = true, selectedDate, logTimestamp, benchContext, onChange, onSelectDate,
 }: {
   entries: ExerciseEntry[];
   benchmarks: BenchmarkRow[];
+  benchmarksLoaded?: boolean;
   selectedDate: Date;
   logTimestamp: () => string;
   benchContext: BenchmarkContext;
@@ -100,15 +103,23 @@ export function ExerciseSection({
 
   const benchMap = useMemo(() => {
     const m = new Map<ExerciseKey, BenchmarkRow>();
-    benchmarks.forEach(b => m.set(b.exercise, b));
+    benchmarks
+      .filter(b => (b.exercise as string) !== BENCH_SIGNATURE_ROW)
+      .forEach(b => m.set(b.exercise, b));
     return m;
   }, [benchmarks]);
 
   // Targets only auto-refresh when body data (InBody scan) or goal/profile change —
-  // never because of newly logged reps.
+  // never because of newly logged reps. The signature is stored in the database
+  // (not localStorage) so a new device/session never triggers a regeneration.
   const contextKey = useMemo(
     () => JSON.stringify({ profile: benchContext.profile, latest_scan: benchContext.latest_scan }),
     [benchContext.profile, benchContext.latest_scan],
+  );
+
+  const storedKey = useMemo(
+    () => benchmarks.find(b => (b.exercise as string) === BENCH_SIGNATURE_ROW)?.rationale ?? null,
+    [benchmarks],
   );
 
   const regenerate = async (silent = false) => {
@@ -116,18 +127,16 @@ export function ExerciseSection({
     setGenerating(true);
     try {
       const { benchmarks: out } = await genFn({ data: { context: benchContext } });
-      if (out.length) {
-        const { error } = await supabase
-          .from("exercise_benchmarks" as never)
-          .upsert(
-            out.map(b => ({ ...b, updated_at: new Date().toISOString() })) as never,
-            { onConflict: "exercise" } as never,
-          );
-        if (error) throw error;
-        qc.invalidateQueries({ queryKey: ["exercise_benchmarks"] });
-        if (!silent) toast.success("Targets updated for your current body data");
-      }
-      localStorage.setItem("exercise_bench_key", contextKey);
+      const rows = [
+        ...out.map(b => ({ ...b, updated_at: new Date().toISOString() })),
+        { exercise: BENCH_SIGNATURE_ROW, target_reps: 0, rationale: contextKey, updated_at: new Date().toISOString() },
+      ];
+      const { error } = await supabase
+        .from("exercise_benchmarks" as never)
+        .upsert(rows as never, { onConflict: "exercise" } as never);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["exercise_benchmarks"] });
+      if (!silent && out.length) toast.success("Targets updated for your current body data");
     } catch (err) {
       if (!silent) toast.error((err as Error).message);
     } finally {
@@ -135,13 +144,29 @@ export function ExerciseSection({
     }
   };
 
-  // Auto-refresh the AI targets whenever the underlying body/goal data changes.
+  // Regenerate only when the body/goal signature actually changes, or when no targets exist yet.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const prev = localStorage.getItem("exercise_bench_key");
-    if (prev !== contextKey) void regenerate(true);
+    if (!benchmarksLoaded) return;
+    if (storedKey === null) {
+      if (benchMap.size === 0) {
+        void regenerate(true);
+      } else {
+        // Targets already exist from before signatures were stored — adopt the
+        // current body/goal data as the baseline instead of regenerating.
+        void supabase
+          .from("exercise_benchmarks" as never)
+          .upsert(
+            [{ exercise: BENCH_SIGNATURE_ROW, target_reps: 0, rationale: contextKey, updated_at: new Date().toISOString() }] as never,
+            { onConflict: "exercise" } as never,
+          )
+          .then(() => qc.invalidateQueries({ queryKey: ["exercise_benchmarks"] }));
+      }
+      return;
+    }
+    if (storedKey !== contextKey) void regenerate(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contextKey]);
+  }, [contextKey, storedKey, benchmarksLoaded]);
 
   const log = async (ex: ExerciseKey, reps: number) => {
     if (!reps || busy) return;

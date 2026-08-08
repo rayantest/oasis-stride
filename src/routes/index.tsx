@@ -315,6 +315,7 @@ function App() {
             <ExerciseSection
               entries={exercises}
               benchmarks={benchmarks}
+              benchmarksLoaded={benchQ.isSuccess}
               selectedDate={selectedDate}
               logTimestamp={() => timestampForDay(selectedDate)}
               benchContext={benchContext}
