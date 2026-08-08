@@ -290,7 +290,14 @@ function App() {
               logTimestamp={() => timestampForDay(selectedDate)}
               onChange={invalidate}
               onSelectDate={(d: Date) => setSelectedDate(dayStart(d))}
+              burnTarget={t.active_burn}
+              burnFor={(d: Date) =>
+                movements
+                  .filter((m) => isSameDay(new Date(m.created_at), d))
+                  .reduce((s, m) => s + Number(m.kcal), 0) + (ringByDate.get(localKey(d)) ?? 0)
+              }
             />
+
 
             <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
               <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
