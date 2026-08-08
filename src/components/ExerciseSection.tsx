@@ -139,7 +139,9 @@ export function ExerciseSection({
       {/* History */}
       <div className="mt-5">
         <div className="flex items-center justify-between gap-2 mb-3">
-          <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">Historical</h3>
+          <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">
+            Historical Performance{" "}
+          </h3>
           <select
             value={metric}
             onChange={(e) => setMetric(e.target.value as ExerciseKey | "total")}
@@ -316,7 +318,6 @@ function ExerciseHistoryChart({
     const el = scrollRef.current;
     if (el) el.scrollLeft = el.scrollWidth;
   }, [metric, data.length]);
-
 
   return (
     <div>
