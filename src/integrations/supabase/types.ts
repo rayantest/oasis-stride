@@ -59,27 +59,6 @@ export type Database = {
         }
         Relationships: []
       }
-      exercise_benchmarks: {
-        Row: {
-          exercise: string
-          rationale: string
-          target_reps: number
-          updated_at: string
-        }
-        Insert: {
-          exercise: string
-          rationale?: string
-          target_reps?: number
-          updated_at?: string
-        }
-        Update: {
-          exercise?: string
-          rationale?: string
-          target_reps?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       exercise_entries: {
         Row: {
           created_at: string
