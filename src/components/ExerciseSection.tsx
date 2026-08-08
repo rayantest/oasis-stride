@@ -278,22 +278,28 @@ function ExerciseHistoryChart({
   targets,
   selectedDate,
   onSelect,
+  burnFor,
+  burnTarget = 0,
 }: {
   series: Point[];
   metric: ExerciseKey | "total";
   targets: Record<ExerciseKey, number>;
   selectedDate: Date;
   onSelect: (d: Date) => void;
+  burnFor?: (d: Date) => number;
+  burnTarget?: number;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const H = 150;
-  const label = metric === "total" ? "All reps" : EXERCISE_LABELS[metric];
-  const color = metric === "total" ? "var(--oasis)" : EXERCISE_COLORS[metric];
-  const target = metric === "total" ? EXERCISES.reduce((s, ex) => s + targets[ex], 0) : targets[metric];
+  const isBurn = metric === "total";
+  const unit = isBurn ? "kcal" : "reps";
+  const label = isBurn ? "Active burn" : EXERCISE_LABELS[metric];
+  const color = isBurn ? "var(--oasis)" : EXERCISE_COLORS[metric];
+  const target = isBurn ? Math.round(burnTarget) : targets[metric];
 
   const data = series.map((p) => ({
     date: p.date,
-    value: metric === "total" ? EXERCISES.reduce((s, ex) => s + p.values[ex], 0) : p.values[metric],
+    value: isBurn ? Math.round(burnFor?.(p.date) ?? 0) : p.values[metric],
   }));
 
   const todayKey = dayKey(new Date());
@@ -304,6 +310,7 @@ function ExerciseHistoryChart({
     const el = scrollRef.current;
     if (el) el.scrollLeft = el.scrollWidth;
   }, [metric, data.length]);
+
 
   return (
     <div>
