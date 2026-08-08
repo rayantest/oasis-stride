@@ -39,18 +39,6 @@ const RANGES = {
   visceral_fat_level: [0, 9] as [number, number],
 };
 
-export function scanCautionNotes(scan: BodyScan | null | undefined, gender: string): string[] {
-  if (!scan) return [];
-  const notes: string[] = [];
-  const whrLimit = gender === "female" ? RANGES.waist_hip_ratio.female : RANGES.waist_hip_ratio.male;
-  if (scan.waist_hip_ratio && scan.waist_hip_ratio > whrLimit) {
-    notes.push(`waist-hip ratio ${scan.waist_hip_ratio.toFixed(2)} above ${whrLimit}`);
-  }
-  if (scan.visceral_fat_level && scan.visceral_fat_level >= 9) {
-    notes.push(`visceral fat level ${scan.visceral_fat_level}`);
-  }
-  return notes;
-}
 
 type MetricKey = keyof Pick<BodyScan,
   "weight_kg" | "body_fat_percent" | "body_fat_mass_kg" | "muscle_mass_kg" |
