@@ -173,7 +173,7 @@ function RepLogger({
   ex: ExerciseKey;
   today: number;
   target: number;
-  info?: string;
+  info: string;
   busy: boolean;
   onLog: (n: number) => void;
 }) {
