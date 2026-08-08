@@ -47,22 +47,22 @@
   --radius: 1rem;
 
   /* Desert night palette */
-  --background: oklch(0.19 0.03 260);       /* deep charcoal-navy */
-  --foreground: oklch(0.94 0.02 80);         /* warm off-white */
-  --card: oklch(0.235 0.032 258);            /* raised dune card */
+  --background: oklch(0.97 0.015 85); /* soft warm ivory, hint of sand */
+  --foreground: oklch(0.94 0.02 80); /* warm off-white */
+  --card: oklch(0.235 0.032 258); /* raised dune card */
   --card-foreground: oklch(0.94 0.02 80);
   --popover: oklch(0.235 0.032 258);
   --popover-foreground: oklch(0.94 0.02 80);
 
-  --primary: oklch(0.82 0.14 82);            /* sandy gold */
+  --primary: oklch(0.82 0.14 82); /* sandy gold */
   --primary-foreground: oklch(0.2 0.03 260);
   --secondary: oklch(0.29 0.03 258);
   --secondary-foreground: oklch(0.94 0.02 80);
   --muted: oklch(0.27 0.028 258);
   --muted-foreground: oklch(0.7 0.02 80);
-  --accent: oklch(0.7 0.13 200);             /* oasis teal */
+  --accent: oklch(0.7 0.13 200); /* oasis teal */
   --accent-foreground: oklch(0.16 0.03 260);
-  --destructive: oklch(0.68 0.19 25);        /* coral red */
+  --destructive: oklch(0.68 0.19 25); /* coral red */
   --destructive-foreground: oklch(0.98 0.01 80);
   --border: oklch(0.32 0.03 258);
   --input: oklch(0.28 0.03 258);
@@ -89,7 +89,8 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     background: var(--gradient-night);
     background-attachment: fixed;
     color: var(--color-foreground);
@@ -97,7 +98,10 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
@@ -105,16 +109,29 @@
 
 /* Wave animation for oasis meter */
 @keyframes wave {
-  0% { transform: translateX(0) translateY(0); }
-  50% { transform: translateX(-25%) translateY(-2px); }
-  100% { transform: translateX(-50%) translateY(0); }
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  50% {
+    transform: translateX(-25%) translateY(-2px);
+  }
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
 }
 .oasis-wave {
   animation: wave 6s linear infinite;
 }
 
 @keyframes shimmer {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
-.shimmer { animation: shimmer 3s ease-in-out infinite; }
+.shimmer {
+  animation: shimmer 3s ease-in-out infinite;
+}
