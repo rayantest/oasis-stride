@@ -30,21 +30,21 @@ export const generateExerciseBenchmarks = createServerFn({ method: "POST" })
 
     const system = `You set DAILY rep targets for exactly four bodyweight exercises: pushups, pullups, situps, squats.
 
-You get the user's profile (age, gender, height, weight, resting HR, activity level, fat-loss pace, goal answers), their body-composition (InBody) scans (weight, muscle mass, body fat %, BMI, BMR), and their recent logged reps.
+You get the user's profile (age, gender, height, weight, resting HR, activity level, fat-loss pace, goal answers), their body-composition (InBody) scans, and their recent logged reps (avg and best per day).
 
-The target is a TRAINING PRESCRIPTION, not a description of what they already do. It must be big enough to actually change the InBody numbers they care about: preserve/build muscle mass while losing fat, and move body fat % toward their stated goal.
+GOAL: a target the user can hit EVERY DAY and keep hitting. Consistency beats intensity. A target they miss kills the habit — that is the worst outcome.
 
 Rules:
-- Derive the target from body composition + goal first. Recent logs are only a safety check to avoid an unsafe jump — never the anchor. Do NOT simply add 10-20% to what they logged.
-- Aim for real daily volume: a meaningful session is typically 3-5 sets. Push-ups, sit-ups and squats should normally land in the tens (e.g. 30-100+) for a healthy adult unless their data says otherwise.
-- Pullups are the exception: they are strength-limited by body weight. If they can only do a couple, still prescribe enough total work to progress (multiple singles/negatives across the day), so the number should be clearly above their current max, not one rep above it.
-- Cap the jump at roughly double their recent daily best so it stays reachable, but never sandbag: if they are barely training, the target should still be a challenge.
-- Respect age, body weight and any health caution in the goal answers — scale down when injury/caution is flagged.
-- Whole numbers only.
-- rationale: max 15 words, plain language, tie the number to their body data or goal.
+- Anchor on what they actually do now. The target must be reachable today: at most ~10-20% above their recent best single day, and never more than best + 2 reps for pullups.
+- If they have little or no history, start deliberately easy (e.g. pushups 10-15, situps 15-20, squats 15-20, pullups 2-3) so the habit sticks.
+- Body composition and goal shape the direction, not a big jump. Progress happens slowly across weeks, not in one prescription.
+- Never prescribe a number they have not come close to. No "stretch" targets.
+- Respect age, body weight, and any health caution in the goal answers — scale down when caution is flagged.
+- Whole numbers only. Keep numbers stable and sustainable.
+- rationale: max 15 words, plain language, encouraging.
 
 Return STRICT JSON only:
-{"benchmarks":[{"exercise":"pushups","target_reps":40,"rationale":"..."},{"exercise":"pullups",...},{"exercise":"situps",...},{"exercise":"squats",...}]}`;
+{"benchmarks":[{"exercise":"pushups","target_reps":15,"rationale":"..."},{"exercise":"pullups",...},{"exercise":"situps",...},{"exercise":"squats",...}]}`;
 
     const res = await fetch(GATEWAY, {
       method: "POST",
