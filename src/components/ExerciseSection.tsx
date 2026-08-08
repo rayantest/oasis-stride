@@ -125,7 +125,7 @@ export function ExerciseSection({
             ex={ex}
             today={repsFor(entries, ex, selectedDate)}
             target={STRENGTH_TARGETS[ex]}
-            info={`Fixed daily target: ${STRENGTH_TARGETS[ex]} reps.`}
+            info={""}
             busy={busy}
             onLog={(reps) => log(ex, reps)}
           />
@@ -173,7 +173,7 @@ function RepLogger({
   ex: ExerciseKey;
   today: number;
   target: number;
-  info?: string;
+  info: string;
   busy: boolean;
   onLog: (n: number) => void;
 }) {
@@ -187,7 +187,7 @@ function RepLogger({
       <div className="flex items-baseline justify-between mb-1.5">
         <span className="text-xs font-medium flex items-center gap-1">
           {EXERCISE_LABELS[ex]}
-          {info && (
+          {info.trim() && (
             <button
               type="button"
               onClick={() => setOpenInfo((o) => !o)}
@@ -206,7 +206,7 @@ function RepLogger({
           <span className="text-muted-foreground">/{target || "—"}</span>
         </span>
       </div>
-      {info && openInfo && (
+      {info.trim() && openInfo && (
         <div className="mb-2 rounded-lg bg-secondary/50 border border-border/50 px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground">
           {info}
         </div>
