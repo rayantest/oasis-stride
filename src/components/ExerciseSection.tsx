@@ -84,10 +84,11 @@ export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
 /* ---------- Section ---------- */
 
 export function ExerciseSection({
-  entries, benchmarks, selectedDate, logTimestamp, benchContext, onChange, onSelectDate,
+  entries, benchmarks, benchmarksLoaded = true, selectedDate, logTimestamp, benchContext, onChange, onSelectDate,
 }: {
   entries: ExerciseEntry[];
   benchmarks: BenchmarkRow[];
+  benchmarksLoaded?: boolean;
   selectedDate: Date;
   logTimestamp: () => string;
   benchContext: BenchmarkContext;
