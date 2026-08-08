@@ -13,11 +13,13 @@ Yes, this makes sense — and it fixes the old problem: targets never change on 
 
 ## Goal questionnaire
 
-No new questions needed for a first version — the AI already gets body scans, height/weight/age, activity level, realistic training days, deadline and injury/caution flags. If the suggestions feel off after using it, we can add a "current best set" question later.
+Add one new step, "Your current best set", right before the body composition step: four numeric inputs asking the most reps you can do in a single unbroken set of push-ups, pull-ups, sit-ups and squats (all optional, skippable). These are stored in `goal_answers.bestSet` and given to the AI so suggested daily targets are anchored to what you can actually do today, not guessed from body stats alone.
+
 
 ## Technical details
 
 - New table `public.strength_targets`: `effective_date` (unique), `pushups`, `pullups`, `situps`, `squats`, `source` ('manual' | 'ai'), `note`, timestamps. Public policies matching the other single-user tables, plus grants. Seed one row with the current 40/8/50/60 at the earliest logged exercise date so history stays consistent.
 - Resolver in `ExerciseSection.tsx`: `targetsFor(date)` = the row with the greatest `effective_date <= date`, falling back to the seeded defaults. Replaces the `STRENGTH_TARGETS` constant everywhere (loggers, history chart benchmark line, coach context in `index.tsx`).
-- New `src/lib/strength-target.functions.ts` with a `suggestStrengthTargets` server fn: sends profile, goal answers, latest body scan and recent per-exercise reps to the Lovable AI Gateway (`openai/gpt-5.6-sol`), returns `{ pushups, pullups, situps, squats, rationale }`. Suggestion only, never written to the DB by the server.
+- New `src/lib/strength-target.functions.ts` with a `suggestStrengthTargets` server fn: sends profile, goal answers (including the new `bestSet`), latest body scan and recent per-exercise reps to the Lovable AI Gateway (`openai/gpt-5.6-sol`), returns `{ pushups, pullups, situps, squats, rationale }`. Suggestion only, never written to the DB by the server.
+- `GoalQuestionnaire.tsx`: new `best_set` step in `STEPS`; `GoalAnswers` in `src/lib/calc.ts` gains `bestSet?: { pushups?: number; pullups?: number; situps?: number; squats?: number }`. No migration needed — `goal_answers` is JSONB.
 - Editing UI: a small inline panel in the Daily strength card with four numeric inputs, "Suggest with AI", Cancel and Save. Save upserts a `strength_targets` row for the selected date and invalidates the query.
