@@ -125,7 +125,7 @@ export function ExerciseSection({
             ex={ex}
             today={repsFor(entries, ex, selectedDate)}
             target={STRENGTH_TARGETS[ex]}
-            info={`Fixed daily target: ${STRENGTH_TARGETS[ex]} reps.`}
+            info={""}
             busy={busy}
             onLog={(reps) => log(ex, reps)}
           />
