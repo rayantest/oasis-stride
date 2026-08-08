@@ -15,15 +15,29 @@ import { BodyCompSection, useBodyScans, type BodyScan } from "@/components/BodyC
 import { projectionText, eventLikelyMisses } from "@/lib/goal-derive";
 import { FoodScanSheet } from "@/components/FoodScanSheet";
 import {
-  ExerciseSection, ExerciseLogRows, useExerciseEntries,
-  repsFor, EXERCISES, EXERCISE_LABELS, STRENGTH_TARGETS,
-  type ExerciseEntry, type ExerciseKey,
+  ExerciseSection,
+  ExerciseLogRows,
+  useExerciseEntries,
+  repsFor,
+  EXERCISES,
+  EXERCISE_LABELS,
+  STRENGTH_TARGETS,
+  type ExerciseEntry,
+  type ExerciseKey,
 } from "@/components/ExerciseSection";
 
 import { toast, Toaster } from "sonner";
 import {
-  Footprints, UtensilsCrossed, Trash2, Loader2, Watch,
-  Wand2, ArrowLeft, ChevronDown, Compass, Camera,
+  Footprints,
+  UtensilsCrossed,
+  Trash2,
+  Loader2,
+  Watch,
+  Wand2,
+  ArrowLeft,
+  ChevronDown,
+  Compass,
+  Camera,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -32,16 +46,24 @@ export const Route = createFileRoute("/")({
 });
 
 type Movement = {
-  id: string; label: string; minutes: number; kcal: number;
-  source: "watch" | "estimate"; created_at: string;
+  id: string;
+  label: string;
+  minutes: number;
+  kcal: number;
+  source: "watch" | "estimate";
+  created_at: string;
 };
 type Food = {
-  id: string; label: string; kcal: number;
-  protein_g: number; carbs_g: number; fat_g: number; created_at: string;
+  id: string;
+  label: string;
+  kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  created_at: string;
 };
 
 type MetricKey = "eaten_kcal" | "protein" | "carbs" | "fat";
-
 
 function dayStart(d: Date) {
   const x = new Date(d);
@@ -93,8 +115,10 @@ function App() {
     queryFn: async (): Promise<Movement[]> => {
       const since = new Date();
       since.setDate(since.getDate() - 365);
-      const { data, error } = await supabase.from("movement_entries")
-        .select("*").gte("created_at", since.toISOString())
+      const { data, error } = await supabase
+        .from("movement_entries")
+        .select("*")
+        .gte("created_at", since.toISOString())
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Movement[];
@@ -106,8 +130,10 @@ function App() {
     queryFn: async (): Promise<Food[]> => {
       const since = new Date();
       since.setDate(since.getDate() - 365);
-      const { data, error } = await supabase.from("food_entries")
-        .select("*").gte("created_at", since.toISOString())
+      const { data, error } = await supabase
+        .from("food_entries")
+        .select("*")
+        .gte("created_at", since.toISOString())
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Food[];
@@ -122,7 +148,8 @@ function App() {
     queryFn: async (): Promise<Array<{ date: string; active_calories: number }>> => {
       const since = new Date();
       since.setDate(since.getDate() - 365);
-      const { data, error } = await supabase.from("fitness_rings")
+      const { data, error } = await supabase
+        .from("fitness_rings")
         .select("date, active_calories")
         .gte("date", localKey(since))
         .order("date", { ascending: false });
@@ -131,7 +158,6 @@ function App() {
     },
   });
 
-
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["movement"] });
     qc.invalidateQueries({ queryKey: ["food"] });
@@ -139,18 +165,22 @@ function App() {
     qc.invalidateQueries({ queryKey: ["exercise_entries"] });
   };
 
-
-
   if (profileQ.isLoading || movementQ.isLoading || foodQ.isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-      <Loader2 className="animate-spin" />
-    </div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
   }
 
   if (profileQ.error) {
-    return <div className="min-h-screen flex items-center justify-center p-6 text-coral text-center">
-      Couldn't load profile.<br />{(profileQ.error as Error).message}
-    </div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 text-coral text-center">
+        Couldn't load profile.
+        <br />
+        {(profileQ.error as Error).message}
+      </div>
+    );
   }
 
   const profile = profileQ.data!;
@@ -163,14 +193,13 @@ function App() {
   const exercises = (exercisesQ.data ?? []) as ExerciseEntry[];
   const viewingToday = isToday(selectedDate);
 
-  const dayMovements = movements.filter(m => isSameDay(new Date(m.created_at), selectedDate));
-  const dayFoods = foods.filter(f => isSameDay(new Date(f.created_at), selectedDate));
-  const dayExercises = exercises.filter(e => isSameDay(new Date(e.created_at), selectedDate));
+  const dayMovements = movements.filter((m) => isSameDay(new Date(m.created_at), selectedDate));
+  const dayFoods = foods.filter((f) => isSameDay(new Date(f.created_at), selectedDate));
+  const dayExercises = exercises.filter((e) => isSameDay(new Date(e.created_at), selectedDate));
   const rings = ringsQ.data ?? [];
-  const ringByDate = new Map(rings.map(r => [r.date, Number(r.active_calories) || 0] as const));
+  const ringByDate = new Map(rings.map((r) => [r.date, Number(r.active_calories) || 0] as const));
   const ringBurn = ringByDate.get(localKey(selectedDate)) ?? 0;
   const activeBurn = dayMovements.reduce((s, m) => s + Number(m.kcal), 0) + ringBurn;
-
 
   const eaten = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
   const proteinG = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0);
@@ -179,10 +208,10 @@ function App() {
 
   const history = historyDays(movements, foods, metric, t);
 
-  const exerciseSummary = EXERCISES.map(ex => {
-    const rows = exercises.filter(e => e.exercise === ex);
+  const exerciseSummary = EXERCISES.map((ex) => {
+    const rows = exercises.filter((e) => e.exercise === ex);
     const byDay = new Map<string, number>();
-    rows.forEach(r => {
+    rows.forEach((r) => {
       const k = dayKey(new Date(r.created_at));
       byDay.set(k, (byDay.get(k) ?? 0) + Number(r.reps));
     });
@@ -217,24 +246,26 @@ function App() {
         </header>
       )}
 
-
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
-
         {/* Diet / Movement switch */}
         <div className="grid grid-cols-2 gap-1 p-1 rounded-full bg-secondary/60 border border-border/50">
-          <TabButton active={tab === "diet"} onClick={() => setTab("diet")}
-            icon={<UtensilsCrossed size={14} />} label="Diet" />
-          <TabButton active={tab === "movement"} onClick={() => setTab("movement")}
-            icon={<Footprints size={14} />} label="Movement" />
+          <TabButton
+            active={tab === "diet"}
+            onClick={() => setTab("diet")}
+            icon={<UtensilsCrossed size={14} />}
+            label="Diet"
+          />
+          <TabButton
+            active={tab === "movement"}
+            onClick={() => setTab("movement")}
+            icon={<Footprints size={14} />}
+            label="Movement"
+          />
         </div>
 
         {tab === "diet" ? (
           <>
-            <FoodInput
-              logDate={selectedDate}
-              viewingToday={viewingToday}
-              onLogged={invalidate}
-            />
+            <FoodInput logDate={selectedDate} viewingToday={viewingToday} onLogged={invalidate} />
 
             <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
               <DayLog movements={[]} foods={dayFoods} exercises={[]} onChange={invalidate} />
@@ -242,22 +273,42 @@ function App() {
 
             <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
               <div className="space-y-3">
-                <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under"
-                  info={`BMR ${t.bmr} kcal ${t.used_scan_bmr ? "(measured in your InBody scan)" : "(Mifflin-St Jeor from height, weight, age, gender)"} × ${(t.tdee / t.bmr).toFixed(2)} activity multiplier = TDEE ${t.tdee} kcal. Minus a ${t.deficit} kcal/day deficit for your "${profile.fat_loss_pace}" pace (≈ ${t.kg_per_week.toFixed(2)} kg fat/week) = ${t.calories} kcal${t.calories === 1500 ? " (1500 kcal safety floor applied)" : ""}.`} />
-                <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over"
-                  info={`1.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.protein_g} g. High protein protects muscle mass while you're in a deficit.`} />
-                <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under"
-                  info={`Whatever calories remain after protein and fat: ${t.calories} − ${t.protein_g * 4} (protein) − ${t.fat_g * 9} (fat) = ${t.carbs_g * 4} kcal ÷ 4 kcal/g = ${t.carbs_g} g.`} />
-                <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under"
-                  info={`0.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.fat_g} g, never below the 0.6 g/kg hormone-health floor.`} />
+                <BenchmarkRow
+                  label="Calories eaten"
+                  value={eaten}
+                  target={t.calories}
+                  unit="kcal"
+                  mode="under"
+                  info={`BMR ${t.bmr} kcal ${t.used_scan_bmr ? "(measured in your InBody scan)" : "(Mifflin-St Jeor from height, weight, age, gender)"} × ${(t.tdee / t.bmr).toFixed(2)} activity multiplier = TDEE ${t.tdee} kcal. Minus a ${t.deficit} kcal/day deficit for your "${profile.fat_loss_pace}" pace (≈ ${t.kg_per_week.toFixed(2)} kg fat/week) = ${t.calories} kcal${t.calories === 1500 ? " (1500 kcal safety floor applied)" : ""}.`}
+                />
+                <BenchmarkRow
+                  label="Protein"
+                  value={proteinG}
+                  target={t.protein_g}
+                  unit="g"
+                  mode="over"
+                  info={`1.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.protein_g} g. High protein protects muscle mass while you're in a deficit.`}
+                />
+                <BenchmarkRow
+                  label="Carbs"
+                  value={carbsG}
+                  target={t.carbs_g}
+                  unit="g"
+                  mode="under"
+                  info={`Whatever calories remain after protein and fat: ${t.calories} − ${t.protein_g * 4} (protein) − ${t.fat_g * 9} (fat) = ${t.carbs_g * 4} kcal ÷ 4 kcal/g = ${t.carbs_g} g.`}
+                />
+                <BenchmarkRow
+                  label="Fat"
+                  value={fatG}
+                  target={t.fat_g}
+                  unit="g"
+                  mode="under"
+                  info={`0.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.fat_g} g, never below the 0.6 g/kg hormone-health floor.`}
+                />
               </div>
             </Card>
 
-
-            <Card
-              title="History"
-              right={<MetricPicker value={metric} onChange={setMetric} />}
-            >
+            <Card title="Historical Performance" right={<MetricPicker value={metric} onChange={setMetric} />}>
               <HistoryChart
                 data={history}
                 metric={metric}
@@ -266,13 +317,17 @@ function App() {
               />
             </Card>
 
-            <CoachCard focus="diet" profile={profile} movements={movements} foods={foods} scans={scans} exerciseSummary={exerciseSummary} />
+            <CoachCard
+              focus="diet"
+              profile={profile}
+              movements={movements}
+              foods={foods}
+              scans={scans}
+              exerciseSummary={exerciseSummary}
+            />
 
             <BodyCompSection gender={profile.gender}>
-              <ProfilePanel
-                profile={profile}
-                onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })}
-              />
+              <ProfilePanel profile={profile} onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })} />
             </BodyCompSection>
           </>
         ) : (
@@ -292,12 +347,10 @@ function App() {
               onSelectDate={(d: Date) => setSelectedDate(dayStart(d))}
               burnTarget={t.active_burn}
               burnFor={(d: Date) =>
-                movements
-                  .filter((m) => isSameDay(new Date(m.created_at), d))
-                  .reduce((s, m) => s + Number(m.kcal), 0) + (ringByDate.get(localKey(d)) ?? 0)
+                movements.filter((m) => isSameDay(new Date(m.created_at), d)).reduce((s, m) => s + Number(m.kcal), 0) +
+                (ringByDate.get(localKey(d)) ?? 0)
               }
             />
-
 
             <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
               <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
@@ -305,48 +358,63 @@ function App() {
 
             <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
               <div className="space-y-3">
-                <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over"
-                  info={`Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently ${t.active_burn} kcal/day. It counts logged movement${ringBurn > 0 ? " plus active calories synced from your watch" : ""}, and is separate from your ${t.deficit} kcal/day food deficit. Change it by updating your goal answers in Body & profile.`} />
+                <BenchmarkRow
+                  label="Active burn"
+                  value={activeBurn}
+                  target={t.active_burn}
+                  unit="kcal"
+                  mode="over"
+                  info={`Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently ${t.active_burn} kcal/day. It counts logged movement${ringBurn > 0 ? " plus active calories synced from your watch" : ""}, and is separate from your ${t.deficit} kcal/day food deficit. Change it by updating your goal answers in Body & profile.`}
+                />
                 {ringBurn > 0 && (
                   <div className="-mt-2 text-[11px] text-muted-foreground">
                     Includes {Math.round(ringBurn)} kcal synced from your watch.
                   </div>
                 )}
-                {EXERCISES.map(ex => (
-                    <BenchmarkRow
-                      key={ex}
-                      label={EXERCISE_LABELS[ex as ExerciseKey]}
-                      value={repsFor(exercises, ex, selectedDate)}
-                      target={STRENGTH_TARGETS[ex]}
-                      unit="reps"
-                      mode="over"
-                      info={`Fixed daily target: ${STRENGTH_TARGETS[ex]} reps.`}
-                    />
+                {EXERCISES.map((ex) => (
+                  <BenchmarkRow
+                    key={ex}
+                    label={EXERCISE_LABELS[ex as ExerciseKey]}
+                    value={repsFor(exercises, ex, selectedDate)}
+                    target={STRENGTH_TARGETS[ex]}
+                    unit="reps"
+                    mode="over"
+                    info={`Fixed daily target: ${STRENGTH_TARGETS[ex]} reps.`}
+                  />
                 ))}
-
               </div>
             </Card>
 
-            <CoachCard focus="movement" profile={profile} movements={movements} foods={foods} scans={scans} exerciseSummary={exerciseSummary} rings={rings} />
-
+            <CoachCard
+              focus="movement"
+              profile={profile}
+              movements={movements}
+              foods={foods}
+              scans={scans}
+              exerciseSummary={exerciseSummary}
+              rings={rings}
+            />
 
             <BodyCompSection gender={profile.gender}>
-              <ProfilePanel
-                profile={profile}
-                onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })}
-              />
+              <ProfilePanel profile={profile} onSaved={() => qc.invalidateQueries({ queryKey: ["profile"] })} />
             </BodyCompSection>
           </>
         )}
-
       </main>
-
     </div>
   );
 }
 
-function TabButton({ active, onClick, icon, label }: {
-  active: boolean; onClick: () => void; icon: React.ReactNode; label: string;
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
 }) {
   return (
     <button
@@ -363,16 +431,29 @@ function TabButton({ active, onClick, icon, label }: {
 
 /* ---------- Components ---------- */
 
-function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, rings = [] }: {
+function CoachCard({
+  profile,
+  movements,
+  foods,
+  scans,
+  focus,
+  exerciseSummary,
+  rings = [],
+}: {
   profile: Profile;
   movements: Movement[];
   foods: Food[];
   scans: BodyScan[];
   focus: "diet" | "movement";
-  exerciseSummary: Array<{ exercise: string; avg_reps: number; best_reps: number; days_logged: number; target_reps: number }>;
+  exerciseSummary: Array<{
+    exercise: string;
+    avg_reps: number;
+    best_reps: number;
+    days_logged: number;
+    target_reps: number;
+  }>;
   rings?: Array<{ date: string; active_calories: number }>;
 }) {
-
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -392,11 +473,25 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, r
   // Full personalised context: profile + goal + scans + daily food & movement history.
   const context = useMemo(() => {
     const t = targets(profile);
-    const byDay = new Map<string, { date: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number; active_kcal: number; active_min: number }>();
+    const byDay = new Map<
+      string,
+      {
+        date: string;
+        kcal: number;
+        protein_g: number;
+        carbs_g: number;
+        fat_g: number;
+        active_kcal: number;
+        active_min: number;
+      }
+    >();
     const bucket = (iso: string) => {
       const k = dayKey(new Date(iso));
       let row = byDay.get(k);
-      if (!row) { row = { date: k, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, active_kcal: 0, active_min: 0 }; byDay.set(k, row); }
+      if (!row) {
+        row = { date: k, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, active_kcal: 0, active_min: 0 };
+        byDay.set(k, row);
+      }
       return row;
     };
     for (const f of foods) {
@@ -414,11 +509,13 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, r
     // Watch-synced active calories, keyed by their own calendar date.
     for (const ring of rings) {
       let row = byDay.get(ring.date);
-      if (!row) { row = { date: ring.date, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, active_kcal: 0, active_min: 0 }; byDay.set(ring.date, row); }
+      if (!row) {
+        row = { date: ring.date, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, active_kcal: 0, active_min: 0 };
+        byDay.set(ring.date, row);
+      }
       row.active_kcal += Math.round(Number(ring.active_calories) || 0);
     }
     const days = [...byDay.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
-
 
     return {
       focus,
@@ -454,7 +551,17 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, r
     };
   }, [profile, foods, movements, scans, signals, focus, exerciseSummary, rings]);
 
-  const contextKey = useMemo(() => focus + ":" + JSON.stringify(context).length + ":" + (context.days[0]?.date ?? "none") + ":" + context.days.length, [context, focus]);
+  const contextKey = useMemo(
+    () =>
+      focus +
+      ":" +
+      JSON.stringify(context).length +
+      ":" +
+      (context.days[0]?.date ?? "none") +
+      ":" +
+      context.days.length,
+    [context, focus],
+  );
 
   const coachFn = useServerFn(generateCoachAdvice);
   const ai = useQuery({
@@ -479,7 +586,6 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, r
   const headline = advice[0];
   const rest = advice.slice(1);
   const empty = advice.length === 0;
-
 
   return (
     <section className="rounded-2xl p-5 border border-border/50 bg-gradient-to-br from-card via-card to-oasis/5 shadow-[var(--shadow-card)]">
@@ -536,7 +642,9 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, r
                     <div key={a.id} className="rounded-xl border border-border/40 bg-background/40 p-3">
                       <div className="flex items-center justify-between mb-1 gap-2">
                         <span className="text-sm font-semibold leading-snug">{a.headline}</span>
-                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground shrink-0">{a.category}</span>
+                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground shrink-0">
+                          {a.category}
+                        </span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">{a.detail}</p>
                       <button
@@ -560,26 +668,42 @@ function CoachCard({ profile, movements, foods, scans, focus, exerciseSummary, r
   );
 }
 
-
-
-
-function Card({ title, hint, right, children }: {
-  title: string; hint?: string; right?: React.ReactNode; children: React.ReactNode;
+function Card({
+  title,
+  hint,
+  right,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <section className="rounded-2xl bg-card border border-border/50 shadow-[var(--shadow-card)] p-5">
       <div className="flex items-center justify-between mb-3 gap-2">
         <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground">{title}</h2>
-        {right ? right : (hint && <span className="text-[10px] text-muted-foreground/70 italic">{hint}</span>)}
+        {right ? right : hint && <span className="text-[10px] text-muted-foreground/70 italic">{hint}</span>}
       </div>
       {children}
     </section>
   );
 }
 
-
-function BenchmarkRow({ label, value, target, unit, mode, info }: {
-  label: string; value: number; target: number; unit: string; mode: "over" | "under"; info?: string;
+function BenchmarkRow({
+  label,
+  value,
+  target,
+  unit,
+  mode,
+  info,
+}: {
+  label: string;
+  value: number;
+  target: number;
+  unit: string;
+  mode: "over" | "under";
+  info?: string;
 }) {
   const v = Math.round(value);
   const pct = Math.min(100, target > 0 ? (v / target) * 100 : 0);
@@ -596,11 +720,13 @@ function BenchmarkRow({ label, value, target, unit, mode, info }: {
           {info && (
             <button
               type="button"
-              onClick={() => setOpen(o => !o)}
+              onClick={() => setOpen((o) => !o)}
               aria-label={`How the ${label} benchmark is set`}
               aria-expanded={open}
               className={`inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border text-[9px] font-bold transition ${
-                open ? "border-sand text-sand bg-sand/15" : "border-border text-muted-foreground hover:text-sand hover:border-sand/60"
+                open
+                  ? "border-sand text-sand bg-sand/15"
+                  : "border-border text-muted-foreground hover:text-sand hover:border-sand/60"
               }`}
             >
               !
@@ -609,7 +735,10 @@ function BenchmarkRow({ label, value, target, unit, mode, info }: {
         </span>
         <span className="font-mono text-xs">
           <span style={{ color: good ? "var(--oasis)" : "var(--coral)" }}>{v}</span>
-          <span className="text-muted-foreground"> / {target} {unit}</span>
+          <span className="text-muted-foreground">
+            {" "}
+            / {target} {unit}
+          </span>
         </span>
       </div>
       {info && open && (
@@ -619,25 +748,40 @@ function BenchmarkRow({ label, value, target, unit, mode, info }: {
       )}
 
       <div className="relative h-2 rounded-full bg-secondary overflow-hidden">
-        <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
           style={{ width: `${Math.min(100, pct)}%`, background: color, opacity: 0.85 }}
         />
         {overTarget && mode === "under" && (
-          <div className="absolute inset-y-0 rounded-full"
+          <div
+            className="absolute inset-y-0 rounded-full"
             style={{
-              left: "100%", width: `${Math.min(30, ((v - target) / target) * 100)}%`,
-              background: "var(--coral)", transform: "translateX(-100%)"
-            }} />
+              left: "100%",
+              width: `${Math.min(30, ((v - target) / target) * 100)}%`,
+              background: "var(--coral)",
+              transform: "translateX(-100%)",
+            }}
+          />
         )}
-        <div className="absolute top-[-2px] bottom-[-2px] w-[2px] bg-foreground/50" style={{ left: "100%", transform: "translateX(-1px)" }} />
+        <div
+          className="absolute top-[-2px] bottom-[-2px] w-[2px] bg-foreground/50"
+          style={{ left: "100%", transform: "translateX(-1px)" }}
+        />
       </div>
     </div>
   );
 }
 
-
-function MovementInput({ weight, logDate, viewingToday, onLogged }: {
-  weight: number; logDate: Date; viewingToday: boolean; onLogged: () => void;
+function MovementInput({
+  weight,
+  logDate,
+  viewingToday,
+  onLogged,
+}: {
+  weight: number;
+  logDate: Date;
+  viewingToday: boolean;
+  onLogged: () => void;
 }) {
   const [text, setText] = useState("");
   const parse = useServerFn(parseMovement);
@@ -659,7 +803,9 @@ function MovementInput({ weight, logDate, viewingToday, onLogged }: {
       onLogged();
     } catch (err) {
       toast.error((err as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const dateHint = viewingToday
@@ -674,14 +820,17 @@ function MovementInput({ weight, logDate, viewingToday, onLogged }: {
       <textarea
         rows={2}
         value={text}
-        onChange={e => setText(e.target.value)}
+        onChange={(e) => setText(e.target.value)}
         placeholder='e.g. "walked 30 min, watch said 145 kcal" or "played padel 45 min"'
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-oasis/40 placeholder:text-muted-foreground/50"
       />
       <div className="flex items-center justify-between mt-2 gap-2">
         <span className="text-[10px] text-muted-foreground">{dateHint}</span>
-        <button type="submit" disabled={busy || !text.trim()}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-oasis text-accent-foreground text-xs font-semibold disabled:opacity-40">
+        <button
+          type="submit"
+          disabled={busy || !text.trim()}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-oasis text-accent-foreground text-xs font-semibold disabled:opacity-40"
+        >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
           Log it
         </button>
@@ -691,12 +840,23 @@ function MovementInput({ weight, logDate, viewingToday, onLogged }: {
 }
 
 type SavedFood = {
-  id: string; label: string; grams: number | null;
-  kcal: number; protein_g: number; carbs_g: number; fat_g: number;
+  id: string;
+  label: string;
+  grams: number | null;
+  kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
 };
 
-function FoodInput({ logDate, viewingToday, onLogged }: {
-  logDate: Date; viewingToday: boolean; onLogged: () => void;
+function FoodInput({
+  logDate,
+  viewingToday,
+  onLogged,
+}: {
+  logDate: Date;
+  viewingToday: boolean;
+  onLogged: () => void;
 }) {
   const [text, setText] = useState("");
   const parse = useServerFn(parseFood);
@@ -708,7 +868,10 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
     queryKey: ["saved_foods"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("saved_foods").select("*").order("created_at", { ascending: false }).limit(12);
+        .from("saved_foods")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(12);
       if (error) throw error;
       return (data ?? []) as unknown as SavedFood[];
     },
@@ -734,7 +897,9 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
       onLogged();
     } catch (err) {
       toast.error((err as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const logSaved = async (s: SavedFood) => {
@@ -742,8 +907,11 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
     setBusy(true);
     try {
       const { error } = await supabase.from("food_entries").insert({
-        label: s.label, kcal: s.kcal, protein_g: s.protein_g,
-        carbs_g: s.carbs_g, fat_g: s.fat_g,
+        label: s.label,
+        kcal: s.kcal,
+        protein_g: s.protein_g,
+        carbs_g: s.carbs_g,
+        fat_g: s.fat_g,
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
@@ -751,24 +919,30 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
       onLogged();
     } catch (err) {
       toast.error((err as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between mb-2 gap-2">
         <label className="text-[10px] uppercase tracking-widest text-sand/80 flex items-center gap-1.5">
-          <UtensilsCrossed size={12} /> Log food or drink {!viewingToday && <span className="text-sand">· past day</span>}
+          <UtensilsCrossed size={12} /> Log food or drink{" "}
+          {!viewingToday && <span className="text-sand">· past day</span>}
         </label>
-        <button type="button" onClick={() => setScanOpen(true)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-sand/40 text-sand text-[11px] font-semibold">
+        <button
+          type="button"
+          onClick={() => setScanOpen(true)}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-sand/40 text-sand text-[11px] font-semibold"
+        >
           <Camera size={12} /> Scan
         </button>
       </div>
       <textarea
         rows={2}
         value={text}
-        onChange={e => setText(e.target.value)}
+        onChange={(e) => setText(e.target.value)}
         placeholder='e.g. "chicken shawarma wrap" or "flat white with oat milk"'
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
       />
@@ -776,9 +950,14 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
         <div className="mt-2">
           <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">My foods</div>
           <div className="flex flex-wrap gap-1.5">
-            {saved.data!.map(s => (
-              <button key={s.id} type="button" onClick={() => logSaved(s)} disabled={busy}
-                className="px-2.5 py-1 rounded-full bg-muted/40 border border-border/50 text-[11px] hover:border-sand/50 disabled:opacity-40">
+            {saved.data!.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => logSaved(s)}
+                disabled={busy}
+                className="px-2.5 py-1 rounded-full bg-muted/40 border border-border/50 text-[11px] hover:border-sand/50 disabled:opacity-40"
+              >
                 {s.label} <span className="text-muted-foreground">· {s.kcal}</span>
               </button>
             ))}
@@ -787,8 +966,11 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
       )}
       <div className="flex items-center justify-between mt-2 gap-2">
         <span className="text-[10px] text-muted-foreground">{dateHint}</span>
-        <button type="submit" disabled={busy || !text.trim()}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-sand text-primary-foreground text-xs font-semibold disabled:opacity-40">
+        <button
+          type="submit"
+          disabled={busy || !text.trim()}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-sand text-primary-foreground text-xs font-semibold disabled:opacity-40"
+        >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
           Log it
         </button>
@@ -799,15 +981,25 @@ function FoodInput({ logDate, viewingToday, onLogged }: {
         onClose={() => setScanOpen(false)}
         logTimestamp={() => timestampForDay(logDate)}
         dateHint={dateHint}
-        onLogged={() => { onLogged(); qc.invalidateQueries({ queryKey: ["saved_foods"] }); }}
+        onLogged={() => {
+          onLogged();
+          qc.invalidateQueries({ queryKey: ["saved_foods"] });
+        }}
       />
     </form>
   );
 }
 
-
-function DayLog({ movements, foods, exercises = [], onChange }: {
-  movements: Movement[]; foods: Food[]; exercises?: ExerciseEntry[]; onChange: () => void;
+function DayLog({
+  movements,
+  foods,
+  exercises = [],
+  onChange,
+}: {
+  movements: Movement[];
+  foods: Food[];
+  exercises?: ExerciseEntry[];
+  onChange: () => void;
 }) {
   type Row = { kind: "m" | "f"; ts: string; el: React.ReactNode };
   const del = useMutation({
@@ -820,16 +1012,27 @@ function DayLog({ movements, foods, exercises = [], onChange }: {
   });
 
   const rows: Row[] = useMemo(() => {
-    const mRows: Row[] = movements.map(m => ({
-      kind: "m", ts: m.created_at, el: (
-        <LogRow key={"m" + m.id}
+    const mRows: Row[] = movements.map((m) => ({
+      kind: "m",
+      ts: m.created_at,
+      el: (
+        <LogRow
+          key={"m" + m.id}
           icon={<Footprints size={16} className="text-oasis" />}
           label={m.label}
           sub={
             <>
               {m.minutes} min ·{" "}
-              <span className={`inline-flex items-center gap-1 ${m.source === "watch" ? "text-oasis" : "text-muted-foreground"}`}>
-                {m.source === "watch" ? <><Watch size={10} /> watch</> : "approx."}
+              <span
+                className={`inline-flex items-center gap-1 ${m.source === "watch" ? "text-oasis" : "text-muted-foreground"}`}
+              >
+                {m.source === "watch" ? (
+                  <>
+                    <Watch size={10} /> watch
+                  </>
+                ) : (
+                  "approx."
+                )}
               </span>
             </>
           }
@@ -837,40 +1040,56 @@ function DayLog({ movements, foods, exercises = [], onChange }: {
           tone="cool"
           onDelete={() => del.mutate({ table: "movement_entries", id: m.id })}
         />
-      )
+      ),
     }));
-    const fRows: Row[] = foods.map(f => ({
-      kind: "f", ts: f.created_at, el: (
-        <LogRow key={"f" + f.id}
+    const fRows: Row[] = foods.map((f) => ({
+      kind: "f",
+      ts: f.created_at,
+      el: (
+        <LogRow
+          key={"f" + f.id}
           icon={<UtensilsCrossed size={16} className="text-sand" />}
           label={f.label}
-          sub={<span className="font-mono">{Math.round(Number(f.protein_g))}p · {Math.round(Number(f.carbs_g))}c · {Math.round(Number(f.fat_g))}f</span>}
+          sub={
+            <span className="font-mono">
+              {Math.round(Number(f.protein_g))}p · {Math.round(Number(f.carbs_g))}c · {Math.round(Number(f.fat_g))}f
+            </span>
+          }
           value={`+${Math.round(Number(f.kcal))}`}
           tone="warm"
           onDelete={() => del.mutate({ table: "food_entries", id: f.id })}
         />
-      )
+      ),
     }));
     return [...mRows, ...fRows].sort((a, b) => b.ts.localeCompare(a.ts));
   }, [movements, foods, del]);
 
   if (rows.length === 0 && exercises.length === 0) {
-    return <div className="text-sm text-muted-foreground text-center py-6">
-      Nothing logged for this day yet.
-    </div>;
+    return <div className="text-sm text-muted-foreground text-center py-6">Nothing logged for this day yet.</div>;
   }
 
   return (
     <div className="divide-y divide-border/40">
-      {rows.map(r => r.el)}
+      {rows.map((r) => r.el)}
       <ExerciseLogRows entries={exercises} onChange={onChange} />
     </div>
   );
 }
 
-function LogRow({ icon, label, sub, value, tone, onDelete }: {
-  icon: React.ReactNode; label: string; sub: React.ReactNode;
-  value: string; tone: "warm" | "cool"; onDelete: () => void;
+function LogRow({
+  icon,
+  label,
+  sub,
+  value,
+  tone,
+  onDelete,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sub: React.ReactNode;
+  value: string;
+  tone: "warm" | "cool";
+  onDelete: () => void;
 }) {
   return (
     <div className="flex items-center gap-3 py-3">
@@ -880,7 +1099,11 @@ function LogRow({ icon, label, sub, value, tone, onDelete }: {
         <div className="text-[11px] text-muted-foreground">{sub}</div>
       </div>
       <div className={`font-mono text-sm ${tone === "cool" ? "text-oasis" : "text-sand"}`}>{value}</div>
-      <button onClick={onDelete} className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition" aria-label="Delete">
+      <button
+        onClick={onDelete}
+        className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
+        aria-label="Delete"
+      >
         <Trash2 size={14} />
       </button>
     </div>
@@ -902,23 +1125,33 @@ function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: Met
   return (
     <select
       value={value}
-      onChange={e => onChange(e.target.value as MetricKey)}
+      onChange={(e) => onChange(e.target.value as MetricKey)}
       className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
     >
-      {(Object.keys(METRIC_META) as MetricKey[]).map(k => (
-        <option key={k} value={k}>{METRIC_META[k].label}</option>
+      {(Object.keys(METRIC_META) as MetricKey[]).map((k) => (
+        <option key={k} value={k}>
+          {METRIC_META[k].label}
+        </option>
       ))}
     </select>
   );
 }
 
-function HistoryChart({ data, metric, selectedDate, onSelect }: {
-  data: DayPoint[]; metric: MetricKey; selectedDate: Date; onSelect: (d: Date) => void;
+function HistoryChart({
+  data,
+  metric,
+  selectedDate,
+  onSelect,
+}: {
+  data: DayPoint[];
+  metric: MetricKey;
+  selectedDate: Date;
+  onSelect: (d: Date) => void;
 }) {
   const meta = METRIC_META[metric];
   const scrollRef = useRef<HTMLDivElement>(null);
   const target = data[0]?.target ?? 0;
-  const maxVal = Math.max(target, ...data.map(d => d.value), 1);
+  const maxVal = Math.max(target, ...data.map((d) => d.value), 1);
   const scale = maxVal * 1.15;
   const H = 150;
 
@@ -957,9 +1190,7 @@ function HistoryChart({ data, metric, selectedDate, onSelect }: {
               const h = Math.max(2, (d.value / scale) * H);
               const good = meta.mode === "under" ? d.value <= d.target : d.value >= d.target;
               const selected = isSameDay(d.date, selectedDate);
-              const barColor = d.value === 0
-                ? "oklch(0.35 0.02 210 / 0.5)"
-                : good ? "var(--oasis)" : "var(--coral)";
+              const barColor = d.value === 0 ? "oklch(0.35 0.02 210 / 0.5)" : good ? "var(--oasis)" : "var(--coral)";
               return (
                 <button
                   key={i}
@@ -978,7 +1209,9 @@ function HistoryChart({ data, metric, selectedDate, onSelect }: {
                     />
                   </div>
                   <div className="h-[28px] flex flex-col items-center justify-center leading-tight">
-                    <div className={`text-[9px] font-mono ${d.isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}>
+                    <div
+                      className={`text-[9px] font-mono ${d.isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}
+                    >
                       {d.date.getDate()}/{d.date.getMonth() + 1}
                     </div>
                     <div className={`text-[8px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
@@ -998,30 +1231,37 @@ function HistoryChart({ data, metric, selectedDate, onSelect }: {
   );
 }
 
-
-
 /* ---------- Profile & goal panel (inline, inside Body & profile) ---------- */
 
-function ProfilePanel({ profile, onSaved }: {
-  profile: Profile; onSaved: () => void;
-}) {
+function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => void }) {
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
 
-  useEffect(() => { setForm(profile); }, [profile]);
+  useEffect(() => {
+    setForm(profile);
+  }, [profile]);
 
-  const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setForm(f => ({ ...f, [k]: v }));
+  const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   const save = async () => {
     setSaving(true);
-    const { error } = await supabase.from("profile").update({
-      height_cm: form.height_cm, weight_kg: form.weight_kg, age: form.age,
-      gender: form.gender, resting_hr: form.resting_hr,
-      updated_at: new Date().toISOString(),
-    }).eq("id", 1);
+    const { error } = await supabase
+      .from("profile")
+      .update({
+        height_cm: form.height_cm,
+        weight_kg: form.weight_kg,
+        age: form.age,
+        gender: form.gender,
+        resting_hr: form.resting_hr,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Profile saved");
     onSaved();
   };
@@ -1051,18 +1291,34 @@ function ProfilePanel({ profile, onSaved }: {
 
       {form.caution_flag && (
         <div className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/40 px-3 py-2 text-xs text-amber-200">
-          ⚠️ Caution noted{form.caution_note ? `: ${form.caution_note}` : ""} — consider checking with a doctor before high-strain training.
+          ⚠️ Caution noted{form.caution_note ? `: ${form.caution_note}` : ""} — consider checking with a doctor before
+          high-strain training.
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Height (cm)"><NumInput value={form.height_cm} onChange={v => set("height_cm", v)} /></Field>
-        <Field label="Weight (kg)"><NumInput value={form.weight_kg} onChange={v => set("weight_kg", v)} step={0.1} /></Field>
-        <Field label="Age"><NumInput value={form.age} onChange={v => set("age", v)} /></Field>
-        <Field label="Resting HR"><NumInput value={form.resting_hr} onChange={v => set("resting_hr", v)} /></Field>
+        <Field label="Height (cm)">
+          <NumInput value={form.height_cm} onChange={(v) => set("height_cm", v)} />
+        </Field>
+        <Field label="Weight (kg)">
+          <NumInput value={form.weight_kg} onChange={(v) => set("weight_kg", v)} step={0.1} />
+        </Field>
+        <Field label="Age">
+          <NumInput value={form.age} onChange={(v) => set("age", v)} />
+        </Field>
+        <Field label="Resting HR">
+          <NumInput value={form.resting_hr} onChange={(v) => set("resting_hr", v)} />
+        </Field>
         <Field label="Gender">
-          <Select value={form.gender} onChange={v => set("gender", v)}
-            options={[["male", "Male"], ["female", "Female"], ["other", "Other"]]} />
+          <Select
+            value={form.gender}
+            onChange={(v) => set("gender", v)}
+            options={[
+              ["male", "Male"],
+              ["female", "Female"],
+              ["other", "Other"],
+            ]}
+          />
         </Field>
       </div>
 
@@ -1070,10 +1326,15 @@ function ProfilePanel({ profile, onSaved }: {
         <div className="flex items-center justify-between gap-2">
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Your goal</div>
-            <div className="text-sm font-medium">{paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} · {actLabel[form.activity_level] ?? form.activity_level}</div>
+            <div className="text-sm font-medium">
+              {paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} ·{" "}
+              {actLabel[form.activity_level] ?? form.activity_level}
+            </div>
           </div>
-          <button onClick={() => setGoalOpen(true)}
-            className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shrink-0">
+          <button
+            onClick={() => setGoalOpen(true)}
+            className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shrink-0"
+          >
             Update your goal
           </button>
         </div>
@@ -1081,39 +1342,46 @@ function ProfilePanel({ profile, onSaved }: {
           Active burn target: {form.active_burn_goal_kcal} kcal/day · derived from your questionnaire.
         </div>
         {projection && (
-          <div className="text-xs text-foreground/80 rounded-lg bg-secondary/50 px-3 py-2">
-            {projection}
-          </div>
+          <div className="text-xs text-foreground/80 rounded-lg bg-secondary/50 px-3 py-2">{projection}</div>
         )}
         {misses && (
           <div className="text-xs text-amber-200 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
-            This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a faster pace manually by re-running the questionnaire.
+            This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a
+            faster pace manually by re-running the questionnaire.
           </div>
         )}
-        {(answers.dietary && answers.dietary !== "none") && (
+        {answers.dietary && answers.dietary !== "none" && (
           <div className="text-[11px] text-muted-foreground">
-            Dietary: {answers.dietary === "other" ? (answers.dietaryOther || "other") : answers.dietary}
+            Dietary: {answers.dietary === "other" ? answers.dietaryOther || "other" : answers.dietary}
           </div>
         )}
       </div>
 
       {scanWeightMismatch && latestScan?.weight_kg && (
         <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 px-3 py-2 text-[11px] flex items-center justify-between gap-2">
-          <span>Latest scan weight is {latestScan.weight_kg}kg (profile: {form.weight_kg}kg).</span>
+          <span>
+            Latest scan weight is {latestScan.weight_kg}kg (profile: {form.weight_kg}kg).
+          </span>
           <button
             onClick={() => set("weight_kg", latestScan.weight_kg as number)}
-            className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0">
+            className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0"
+          >
             Sync
           </button>
         </div>
       )}
 
       <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
-        BMR {t.bmr}{t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c / {t.fat_g}f
+        BMR {t.bmr}
+        {t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c /{" "}
+        {t.fat_g}f
       </div>
 
-      <button onClick={save} disabled={saving}
-        className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50">
+      <button
+        onClick={save}
+        disabled={saving}
+        className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50"
+      >
         {saving ? "Saving…" : "Save"}
       </button>
 
@@ -1121,15 +1389,15 @@ function ProfilePanel({ profile, onSaved }: {
         <GoalQuestionnaire
           profile={form}
           onClose={() => setGoalOpen(false)}
-          onSaved={() => { setGoalOpen(false); onSaved(); }}
+          onSaved={() => {
+            setGoalOpen(false);
+            onSaved();
+          }}
         />
       )}
     </div>
   );
 }
-
-
-
 
 function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return (
@@ -1142,17 +1410,37 @@ function Field({ label, children, className = "" }: { label: string; children: R
 
 function NumInput({ value, onChange, step = 1 }: { value: number; onChange: (v: number) => void; step?: number }) {
   return (
-    <input type="number" inputMode="decimal" step={step} value={value}
-      onChange={e => onChange(Number(e.target.value))}
-      className="w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40" />
+    <input
+      type="number"
+      inputMode="decimal"
+      step={step}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+    />
   );
 }
 
-function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: [string, string][] }) {
+function Select({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: [string, string][];
+}) {
   return (
-    <select value={value} onChange={e => onChange(e.target.value)}
-      className="w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40">
-      {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+    >
+      {options.map(([v, l]) => (
+        <option key={v} value={v}>
+          {l}
+        </option>
+      ))}
     </select>
   );
 }
@@ -1170,7 +1458,7 @@ function historyDays(
   const target = metricTarget(metric, t);
 
   // Start from the earliest logged entry (min 14 days of context).
-  const stamps = [...movements.map(m => m.created_at), ...foods.map(f => f.created_at)];
+  const stamps = [...movements.map((m) => m.created_at), ...foods.map((f) => f.created_at)];
   let start = new Date(today);
   start.setDate(start.getDate() - 13);
   for (const s of stamps) {
@@ -1183,14 +1471,22 @@ function historyDays(
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = dayKey(d);
-    const dayMoves = movements.filter(m => dayKey(new Date(m.created_at)) === key);
-    const dayFoods = foods.filter(f => dayKey(new Date(f.created_at)) === key);
+    const dayMoves = movements.filter((m) => dayKey(new Date(m.created_at)) === key);
+    const dayFoods = foods.filter((f) => dayKey(new Date(f.created_at)) === key);
     let value = 0;
     switch (metric) {
-      case "eaten_kcal": value = dayFoods.reduce((s, f) => s + Number(f.kcal), 0); break;
-      case "protein": value = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0); break;
-      case "carbs": value = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0); break;
-      case "fat": value = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0); break;
+      case "eaten_kcal":
+        value = dayFoods.reduce((s, f) => s + Number(f.kcal), 0);
+        break;
+      case "protein":
+        value = dayFoods.reduce((s, f) => s + Number(f.protein_g), 0);
+        break;
+      case "carbs":
+        value = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
+        break;
+      case "fat":
+        value = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
+        break;
     }
     void dayMoves;
     out.push({ date: d, value: Math.round(value), target, isToday: i === 0 });
@@ -1200,9 +1496,13 @@ function historyDays(
 
 function metricTarget(metric: MetricKey, t: ReturnType<typeof targets>): number {
   switch (metric) {
-    case "eaten_kcal": return t.calories;
-    case "protein": return t.protein_g;
-    case "carbs": return t.carbs_g;
-    case "fat": return t.fat_g;
+    case "eaten_kcal":
+      return t.calories;
+    case "protein":
+      return t.protein_g;
+    case "carbs":
+      return t.carbs_g;
+    case "fat":
+      return t.fat_g;
   }
 }
