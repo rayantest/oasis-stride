@@ -251,6 +251,45 @@ export type Database = {
         }
         Relationships: []
       }
+      strength_targets: {
+        Row: {
+          created_at: string
+          effective_date: string
+          id: string
+          note: string
+          pullups: number
+          pushups: number
+          situps: number
+          source: string
+          squats: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          effective_date: string
+          id?: string
+          note?: string
+          pullups?: number
+          pushups?: number
+          situps?: number
+          source?: string
+          squats?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          effective_date?: string
+          id?: string
+          note?: string
+          pullups?: number
+          pushups?: number
+          situps?: number
+          source?: string
+          squats?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
