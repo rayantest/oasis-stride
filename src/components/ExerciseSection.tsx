@@ -146,7 +146,7 @@ export function ExerciseSection({
                 {EXERCISE_LABELS[ex]}
               </option>
             ))}
-            <option value="total">All reps</option>
+            <option value="total">Active burn</option>
           </select>
         </div>
 
