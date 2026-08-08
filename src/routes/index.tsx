@@ -15,9 +15,9 @@ import { BodyCompSection, useBodyScans, scanCautionNotes, type BodyScan } from "
 import { deriveFromAnswers, projectionText, eventLikelyMisses } from "@/lib/goal-derive";
 import { FoodScanSheet } from "@/components/FoodScanSheet";
 import {
-  ExerciseSection, ExerciseLogRows, useExerciseEntries, useExerciseBenchmarks,
-  repsFor, EXERCISES, EXERCISE_LABELS,
-  type ExerciseEntry, type BenchmarkRow, type ExerciseKey,
+  ExerciseSection, ExerciseLogRows, useExerciseEntries,
+  repsFor, EXERCISES, EXERCISE_LABELS, STRENGTH_TARGETS,
+  type ExerciseEntry, type ExerciseKey,
 } from "@/components/ExerciseSection";
 
 import { toast, Toaster } from "sonner";
@@ -116,7 +116,6 @@ function App() {
 
   const scansQ = useBodyScans();
   const exercisesQ = useExerciseEntries();
-  const benchQ = useExerciseBenchmarks();
 
   const ringsQ = useQuery({
     queryKey: ["fitness_rings"],
@@ -162,7 +161,6 @@ function App() {
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
   const exercises = (exercisesQ.data ?? []) as ExerciseEntry[];
-  const benchmarks = (benchQ.data ?? []) as BenchmarkRow[];
   const viewingToday = isToday(selectedDate);
 
   const dayMovements = movements.filter(m => isSameDay(new Date(m.created_at), selectedDate));
@@ -181,8 +179,6 @@ function App() {
 
   const history = historyDays(movements, foods, metric, t);
 
-  const benchTargets = new Map(benchmarks.map(b => [b.exercise, b.target_reps] as const));
-
   const exerciseSummary = EXERCISES.map(ex => {
     const rows = exercises.filter(e => e.exercise === ex);
     const byDay = new Map<string, number>();
@@ -196,33 +192,9 @@ function App() {
       avg_reps: vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : 0,
       best_reps: vals.length ? Math.max(...vals) : 0,
       days_logged: vals.length,
-      target_reps: benchTargets.get(ex) ?? 0,
+      target_reps: STRENGTH_TARGETS[ex],
     };
   });
-
-  const benchContext = {
-    profile: {
-      age: profile.age, gender: profile.gender, height_cm: profile.height_cm,
-      weight_kg: profile.weight_kg, resting_hr: profile.resting_hr,
-      activity_level: profile.activity_level, fat_loss_pace: profile.fat_loss_pace,
-      active_burn_goal_kcal: profile.active_burn_goal_kcal,
-      goal_answers: (profile.goal_answers ?? {}) as Record<string, unknown>,
-    },
-    latest_scan: latestScan
-      ? {
-          scan_date: latestScan.scan_date, weight_kg: latestScan.weight_kg,
-          muscle_mass_kg: latestScan.muscle_mass_kg, body_fat_percent: latestScan.body_fat_percent,
-          bmi: latestScan.bmi, bmr_kcal: latestScan.bmr_kcal,
-        }
-      : null,
-    scans: scans.slice(0, 5).map(s => ({
-      scan_date: s.scan_date, weight_kg: s.weight_kg,
-      muscle_mass_kg: s.muscle_mass_kg, body_fat_percent: s.body_fat_percent,
-    })),
-    recent: exerciseSummary.map(({ exercise, avg_reps, best_reps, days_logged }) => ({
-      exercise, avg_reps, best_reps, days_logged,
-    })),
-  };
 
   const dateLabel = viewingToday
     ? "Today"
@@ -314,11 +286,8 @@ function App() {
 
             <ExerciseSection
               entries={exercises}
-              benchmarks={benchmarks}
-              benchmarksLoaded={benchQ.isSuccess}
               selectedDate={selectedDate}
               logTimestamp={() => timestampForDay(selectedDate)}
-              benchContext={benchContext}
               onChange={invalidate}
               onSelectDate={(d: Date) => setSelectedDate(dayStart(d))}
             />
@@ -336,20 +305,17 @@ function App() {
                     Includes {Math.round(ringBurn)} kcal synced from your watch.
                   </div>
                 )}
-                {EXERCISES.map(ex => {
-                  const row = benchmarks.find(b => b.exercise === ex);
-                  return (
+                {EXERCISES.map(ex => (
                     <BenchmarkRow
                       key={ex}
                       label={EXERCISE_LABELS[ex as ExerciseKey]}
                       value={repsFor(exercises, ex, selectedDate)}
-                      target={benchTargets.get(ex) ?? 0}
+                      target={STRENGTH_TARGETS[ex]}
                       unit="reps"
                       mode="over"
-                      info={`AI-prescribed daily volume from your latest InBody scan (${latestScan ? `${latestScan.weight_kg ?? "—"} kg, ${latestScan.body_fat_percent ?? "—"}% fat, ${latestScan.muscle_mass_kg ?? "—"} kg muscle` : "no scan yet"}) and your goal answers, not from your recent logs — those only cap how fast it can jump. It changes only when your scan or goal answers change.${row?.rationale ? ` AI note: ${row.rationale}` : ""}`}
+                      info={`Fixed daily target: ${STRENGTH_TARGETS[ex]} reps.`}
                     />
-                  );
-                })}
+                ))}
 
               </div>
             </Card>
