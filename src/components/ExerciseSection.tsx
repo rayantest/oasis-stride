@@ -187,7 +187,7 @@ function RepLogger({
       <div className="flex items-baseline justify-between mb-1.5">
         <span className="text-xs font-medium flex items-center gap-1">
           {EXERCISE_LABELS[ex]}
-          {info && (
+          {info.trim() && (
             <button
               type="button"
               onClick={() => setOpenInfo((o) => !o)}
