@@ -270,12 +270,17 @@ function App() {
 
             <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
               <div className="space-y-3">
-                <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under" />
-                <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over" />
-                <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under" />
-                <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under" />
+                <BenchmarkRow label="Calories eaten" value={eaten} target={t.calories} unit="kcal" mode="under"
+                  info={`BMR ${t.bmr} kcal ${t.used_scan_bmr ? "(measured in your InBody scan)" : "(Mifflin-St Jeor from height, weight, age, gender)"} × ${(t.tdee / t.bmr).toFixed(2)} activity multiplier = TDEE ${t.tdee} kcal. Minus a ${t.deficit} kcal/day deficit for your "${profile.fat_loss_pace}" pace (≈ ${t.kg_per_week.toFixed(2)} kg fat/week) = ${t.calories} kcal${t.calories === 1500 ? " (1500 kcal safety floor applied)" : ""}.`} />
+                <BenchmarkRow label="Protein" value={proteinG} target={t.protein_g} unit="g" mode="over"
+                  info={`1.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.protein_g} g. High protein protects muscle mass while you're in a deficit.`} />
+                <BenchmarkRow label="Carbs" value={carbsG} target={t.carbs_g} unit="g" mode="under"
+                  info={`Whatever calories remain after protein and fat: ${t.calories} − ${t.protein_g * 4} (protein) − ${t.fat_g * 9} (fat) = ${t.carbs_g * 4} kcal ÷ 4 kcal/g = ${t.carbs_g} g.`} />
+                <BenchmarkRow label="Fat" value={fatG} target={t.fat_g} unit="g" mode="under"
+                  info={`0.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.fat_g} g, never below the 0.6 g/kg hormone-health floor.`} />
               </div>
             </Card>
+
 
             <Card
               title="History"
@@ -323,22 +328,28 @@ function App() {
 
             <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
               <div className="space-y-3">
-                <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over" />
+                <BenchmarkRow label="Active burn" value={activeBurn} target={t.active_burn} unit="kcal" mode="over"
+                  info={`Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently ${t.active_burn} kcal/day. It counts logged movement${ringBurn > 0 ? " plus active calories synced from your watch" : ""}, and is separate from your ${t.deficit} kcal/day food deficit. Change it by updating your goal answers in Body & profile.`} />
                 {ringBurn > 0 && (
                   <div className="-mt-2 text-[11px] text-muted-foreground">
                     Includes {Math.round(ringBurn)} kcal synced from your watch.
                   </div>
                 )}
-                {EXERCISES.map(ex => (
-                  <BenchmarkRow
-                    key={ex}
-                    label={EXERCISE_LABELS[ex as ExerciseKey]}
-                    value={repsFor(exercises, ex, selectedDate)}
-                    target={benchTargets.get(ex) ?? 0}
-                    unit="reps"
-                    mode="over"
-                  />
-                ))}
+                {EXERCISES.map(ex => {
+                  const row = benchmarks.find(b => b.exercise === ex);
+                  return (
+                    <BenchmarkRow
+                      key={ex}
+                      label={EXERCISE_LABELS[ex as ExerciseKey]}
+                      value={repsFor(exercises, ex, selectedDate)}
+                      target={benchTargets.get(ex) ?? 0}
+                      unit="reps"
+                      mode="over"
+                      info={`AI-prescribed daily volume from your latest InBody scan (${latestScan ? `${latestScan.weight_kg ?? "—"} kg, ${latestScan.body_fat_percent ?? "—"}% fat, ${latestScan.muscle_mass_kg ?? "—"} kg muscle` : "no scan yet"}) and your goal answers, not from your recent logs — those only cap how fast it can jump. It changes only when your scan or goal answers change.${row?.rationale ? ` AI note: ${row.rationale}` : ""}`}
+                    />
+                  );
+                })}
+
               </div>
             </Card>
 
@@ -593,24 +604,46 @@ function Card({ title, hint, right, children }: {
 }
 
 
-function BenchmarkRow({ label, value, target, unit, mode }: {
-  label: string; value: number; target: number; unit: string; mode: "over" | "under";
+function BenchmarkRow({ label, value, target, unit, mode, info }: {
+  label: string; value: number; target: number; unit: string; mode: "over" | "under"; info?: string;
 }) {
   const v = Math.round(value);
   const pct = Math.min(100, target > 0 ? (v / target) * 100 : 0);
   const overTarget = v > target;
   const good = mode === "under" ? v <= target : v >= target;
   const color = good ? "var(--oasis)" : "var(--coral)";
+  const [open, setOpen] = useState(false);
 
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1.5">
-        <span className="text-sm">{label}</span>
+        <span className="text-sm flex items-center gap-1.5">
+          {label}
+          {info && (
+            <button
+              type="button"
+              onClick={() => setOpen(o => !o)}
+              aria-label={`How the ${label} benchmark is set`}
+              aria-expanded={open}
+              className={`inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border text-[9px] font-bold transition ${
+                open ? "border-sand text-sand bg-sand/15" : "border-border text-muted-foreground hover:text-sand hover:border-sand/60"
+              }`}
+            >
+              !
+            </button>
+          )}
+        </span>
         <span className="font-mono text-xs">
           <span style={{ color: good ? "var(--oasis)" : "var(--coral)" }}>{v}</span>
           <span className="text-muted-foreground"> / {target} {unit}</span>
         </span>
       </div>
+      {info && open && (
+        <div className="mb-2 rounded-lg bg-secondary/50 border border-border/50 px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground">
+          {info}
+        </div>
+      )}
+
       <div className="relative h-2 rounded-full bg-secondary overflow-hidden">
         <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
           style={{ width: `${Math.min(100, pct)}%`, background: color, opacity: 0.85 }}
