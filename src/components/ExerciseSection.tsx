@@ -2,17 +2,80 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dumbbell, Plus, Trash2 } from "lucide-react";
+import { Dumbbell, Plus, Trash2, Pencil, Sparkles, X } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { suggestStrengthTargets } from "@/lib/strength-target.functions";
+import type { Profile } from "@/lib/calc";
 
 export const EXERCISES = ["pushups", "pullups", "situps", "squats"] as const;
 export type ExerciseKey = (typeof EXERCISES)[number];
 
-export const STRENGTH_TARGETS: Record<ExerciseKey, number> = {
+export type StrengthTargets = Record<ExerciseKey, number>;
+
+export const DEFAULT_STRENGTH_TARGETS: StrengthTargets = {
   pushups: 40,
   pullups: 8,
   situps: 50,
   squats: 60,
 };
+
+export type StrengthTargetRow = {
+  id: string;
+  effective_date: string;
+  pushups: number;
+  pullups: number;
+  situps: number;
+  squats: number;
+  source: string;
+  note: string;
+};
+
+export function useStrengthTargets() {
+  return useQuery({
+    queryKey: ["strength_targets"],
+    queryFn: async (): Promise<StrengthTargetRow[]> => {
+      const { data, error } = await supabase
+        .from("strength_targets" as never)
+        .select("*")
+        .order("effective_date", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as StrengthTargetRow[];
+    },
+  });
+}
+
+/** The row in effect on `date` = latest row with effective_date <= date. */
+export function targetRowFor(rows: StrengthTargetRow[], date: Date): StrengthTargetRow | null {
+  const key = dayKey(date);
+  let found: StrengthTargetRow | null = null;
+  for (const r of rows) {
+    if (r.effective_date <= key) found = r;
+  }
+  return found;
+}
+
+export function targetsFor(rows: StrengthTargetRow[], date: Date): StrengthTargets {
+  const r = targetRowFor(rows, date);
+  if (!r) return { ...DEFAULT_STRENGTH_TARGETS };
+  return {
+    pushups: Number(r.pushups),
+    pullups: Number(r.pullups),
+    situps: Number(r.situps),
+    squats: Number(r.squats),
+  };
+}
+
+export function targetInfoText(rows: StrengthTargetRow[], date: Date, ex: ExerciseKey): string {
+  const r = targetRowFor(rows, date);
+  if (!r) return `Default target: ${DEFAULT_STRENGTH_TARGETS[ex]} reps a day.`;
+  const when = new Date(`${r.effective_date}T00:00:00`).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
+  const origin = r.source === "ai" ? `AI suggestion accepted on ${when}` : `set manually on ${when}`;
+  return `${r[ex]} reps a day — ${origin}.${r.note ? ` ${r.note}` : ""} It stays the same every day until you change it.`;
+}
+
 
 export const EXERCISE_LABELS: Record<ExerciseKey, string> = {
   pushups: "Push-ups",
