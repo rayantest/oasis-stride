@@ -11,8 +11,8 @@ import { computeSignals } from "@/lib/coach-signals";
 import { generateAdvice, type CoachAdvice } from "@/lib/coach-rules";
 import { bodyCompAdvice } from "@/lib/body-comp-advice";
 import { GoalQuestionnaire } from "@/components/GoalQuestionnaire";
-import { BodyCompSection, useBodyScans, scanCautionNotes, type BodyScan } from "@/components/BodyCompSection";
-import { deriveFromAnswers, projectionText, eventLikelyMisses } from "@/lib/goal-derive";
+import { BodyCompSection, useBodyScans, type BodyScan } from "@/components/BodyCompSection";
+import { projectionText, eventLikelyMisses } from "@/lib/goal-derive";
 import { FoodScanSheet } from "@/components/FoodScanSheet";
 import {
   ExerciseSection, ExerciseLogRows, useExerciseEntries,
