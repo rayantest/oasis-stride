@@ -9,7 +9,7 @@ export type DerivedProfile = {
   reasons: string[]; // why pace was gentled, for UI hint
 };
 
-const ACT_RANK = { barely_moving: 0, lightly_active: 1, moderately_active: 2 } as const;
+
 const ACT_BY_RANK = ["barely_moving", "lightly_active", "moderately_active"] as const;
 
 export function deriveFromAnswers(a: GoalAnswers): DerivedProfile {
