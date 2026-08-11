@@ -1,7 +1,7 @@
 # Macro & micronutrient breakdown for food logging
 
 ## Problem
-Healthy foods can still be flagged as "too high fat" or "too high carb" because the app only tracks totals. Fat type (saturated vs. unsaturated) and carb type (sugar vs. fiber vs. starch) matter for diet quality, and sodium is a common hidden issue.
+Healthy foods can still be flagged as "too high fat" or "too high carb" because the app only tracks totals. Fat type (saturated vs. unsaturated), carb type (sugar vs. fiber vs. starch), and protein source all matter for diet quality, and sodium is a common hidden issue.
 
 ## Goal
 Add a practical nutrient breakdown to every food log so the dashboard shows not just "how much" but "of what kind."
@@ -19,6 +19,7 @@ Extend `food_entries` and `saved_foods` with nullable breakdown columns:
 - `sodium_mg`
 - `trans_fat_g` (optional, default 0)
 - `cholesterol_mg` (optional, default 0)
+- `animal_protein_g` and `plant_protein_g` (split of total `protein_g` when inferable)
 
 Keep existing `protein_g`, `carbs_g`, `fat_g`, `kcal` untouched so current data and targets keep working.
 
@@ -32,6 +33,7 @@ Prompt rules for the model:
 - Return `null` or `0` when unknown rather than guessing.
 - Keep totals consistent: `saturated_fat_g + monounsaturated_fat_g + polyunsaturated_fat_g ≤ fat_g`.
 - `starch_g = carbs_g - sugar_g - fiber_g` (computed server-side, not returned by AI).
+- `animal_protein_g + plant_protein_g ≤ protein_g`; when unclear, return only `protein_g` and leave the split null.
 
 ### 3. Saved food library
 When a scanned/text-logged meal is saved to `saved_foods`, store the full breakdown. One-tap logging from the library later inserts the same breakdown into `food_entries`.
