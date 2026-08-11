@@ -81,4 +81,5 @@ When a standalone sub-nutrient is selected, show a simple single-color bar (gram
 - Log a food via text and confirm the row shows the new breakdown.
 - Scan a meal photo and confirm per-item and total breakdowns appear.
 - Save a scanned meal to the library, then log it again and confirm the breakdown is preserved.
-- Switch the historical chart to "Sugar" or "Sodium" and confirm bars update.
+- Switch the historical chart to "Fat" and confirm each bar is split into saturated vs. unsaturated segments; hover reveals grams + percentage.
+- Switch to "Carbs" and confirm sugar/fiber/starch segments; switch to "Protein" and confirm animal/plant segments.
