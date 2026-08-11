@@ -206,6 +206,17 @@ export type FoodPhotoItem = {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  sodium_mg: number;
+  trans_fat_g: number;
+  cholesterol_mg: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
 };
 export type FoodPhotoResult = {
   label: string;
@@ -215,21 +226,34 @@ export type FoodPhotoResult = {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  sodium_mg: number;
+  trans_fat_g: number;
+  cholesterol_mg: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
   note: string;
   confidence: "low" | "medium" | "high";
 };
 
 const FOOD_PHOTO_SYSTEM = `You are a nutrition estimator. The user shows you a photo of food (and may add comments).
-Identify every distinct food component visible, estimate its cooked weight in grams using plate/utensil/hand scale references, and give macros per component.
+Identify every distinct food component visible, estimate its cooked weight in grams using plate/utensil/hand scale references, and give macros plus a nutrient breakdown per component.
 
 Return STRICT JSON, no markdown, with EXACTLY these keys:
-{"label": string, "items": [{"name": string, "grams": number, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number}], "total_grams": number, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number, "note": string, "confidence": "low"|"medium"|"high"}
+{"label": string, "items": [{"name": string, "grams": number, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number, "saturated_fat_g": number, "monounsaturated_fat_g": number, "polyunsaturated_fat_g": number, "sugar_g": number, "fiber_g": number, "sodium_mg": number, "trans_fat_g": number, "cholesterol_mg": number, "animal_protein_g": number, "plant_protein_g": number}], "total_grams": number, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number, "saturated_fat_g": number, "monounsaturated_fat_g": number, "polyunsaturated_fat_g": number, "sugar_g": number, "fiber_g": number, "starch_g": number, "sodium_mg": number, "trans_fat_g": number, "cholesterol_mg": number, "animal_protein_g": number, "plant_protein_g": number, "note": string, "confidence": "low"|"medium"|"high"}
 
 Rules:
 - "label" is a short human title of the whole meal, 2-6 words (e.g. "Chicken stir-fry with peppers").
 - Include hidden ingredients that are clearly implied (cooking oil, sauce, dressing) as their own item.
 - If the user names a packaged product, use its published nutrition facts for the stated serving.
 - Totals MUST equal the sum of the items, rounded to whole numbers (grams may have one decimal).
+- For each item, estimate sub-types only when reasonably inferable from the photo/comment. Use 0 when unknown.
+- starch_g for each item = carbs_g - sugar_g - fiber_g. Compute it and include it.
 - "note" is one short sentence about assumptions made, or "" if none.
 - When the user sends a follow-up correction, REVISE your previous estimate accordingly and return the full updated JSON again.
 - Return ONLY the JSON object.`;
@@ -299,18 +323,33 @@ export const analyzeFoodPhoto = createServerFn({ method: "POST" })
           protein_g: n(it?.protein_g),
           carbs_g: n(it?.carbs_g),
           fat_g: n(it?.fat_g),
+          saturated_fat_g: n(it?.saturated_fat_g),
+          monounsaturated_fat_g: n(it?.monounsaturated_fat_g),
+          polyunsaturated_fat_g: n(it?.polyunsaturated_fat_g),
+          sugar_g: n(it?.sugar_g),
+          fiber_g: n(it?.fiber_g),
+          starch_g: Math.max(0, n(it?.carbs_g) - n(it?.sugar_g) - n(it?.fiber_g)),
+          sodium_mg: n(it?.sodium_mg),
+          trans_fat_g: n(it?.trans_fat_g),
+          cholesterol_mg: n(it?.cholesterol_mg),
+          animal_protein_g: n(it?.animal_protein_g),
+          plant_protein_g: n(it?.plant_protein_g),
         }))
       : [];
     const sum = (k: keyof FoodPhotoItem) => items.reduce((a, b) => a + (b[k] as number), 0);
     const conf = ["low", "medium", "high"].includes(out.confidence) ? out.confidence : "medium";
-    return {
-      label: String(out.label ?? "Meal").slice(0, 80),
-      items,
-      total_grams: out.total_grams != null ? g(out.total_grams) : g(sum("grams")),
+    const totals = {
       kcal: out.kcal != null ? n(out.kcal) : sum("kcal"),
       protein_g: out.protein_g != null ? n(out.protein_g) : sum("protein_g"),
       carbs_g: out.carbs_g != null ? n(out.carbs_g) : sum("carbs_g"),
       fat_g: out.fat_g != null ? n(out.fat_g) : sum("fat_g"),
+    };
+    return {
+      label: String(out.label ?? "Meal").slice(0, 80),
+      items,
+      total_grams: out.total_grams != null ? g(out.total_grams) : g(sum("grams")),
+      ...totals,
+      ...normalizeBreakdown(out, totals),
       note: String(out.note ?? "").slice(0, 300),
       confidence: conf,
     };
