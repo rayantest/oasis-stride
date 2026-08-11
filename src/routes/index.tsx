@@ -1312,13 +1312,29 @@ function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: Met
   );
 }
 
+type BreakdownTotals = {
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
+};
+
 function HistoryChart({
   data,
+  foods,
   metric,
   selectedDate,
   onSelect,
 }: {
   data: DayPoint[];
+  foods: Food[];
   metric: MetricKey;
   selectedDate: Date;
   onSelect: (d: Date) => void;
@@ -1330,47 +1346,138 @@ function HistoryChart({
   const scale = maxVal * 1.15;
   const H = 150;
 
+  const breakdownByDay = useMemo(() => {
+    const map = new Map<string, BreakdownTotals>();
+    for (const f of foods) {
+      const key = dayKey(new Date(f.created_at));
+      const existing = map.get(key) ?? {
+        protein_g: 0,
+        carbs_g: 0,
+        fat_g: 0,
+        saturated_fat_g: 0,
+        monounsaturated_fat_g: 0,
+        polyunsaturated_fat_g: 0,
+        sugar_g: 0,
+        fiber_g: 0,
+        starch_g: 0,
+        animal_protein_g: 0,
+        plant_protein_g: 0,
+      };
+      existing.protein_g += Number(f.protein_g);
+      existing.carbs_g += Number(f.carbs_g);
+      existing.fat_g += Number(f.fat_g);
+      existing.saturated_fat_g += Number(f.saturated_fat_g);
+      existing.monounsaturated_fat_g += Number(f.monounsaturated_fat_g);
+      existing.polyunsaturated_fat_g += Number(f.polyunsaturated_fat_g);
+      existing.sugar_g += Number(f.sugar_g);
+      existing.fiber_g += Number(f.fiber_g);
+      existing.starch_g += Number(f.starch_g);
+      existing.animal_protein_g += Number(f.animal_protein_g);
+      existing.plant_protein_g += Number(f.plant_protein_g);
+      map.set(key, existing);
+    }
+    return map;
+  }, [foods]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollLeft = el.scrollWidth;
   }, [metric, data.length]);
 
+  const isStackedMetric = metric === "fat" || metric === "carbs" || metric === "protein";
+
   return (
     <div>
-      <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Benchmark {target} {meta.unit}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> On track
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> Off target
-        </span>
+      <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground flex-wrap">
+        {target > 0 && (
+          <span className="inline-flex items-center gap-1">
+            <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Benchmark {target} {meta.unit}
+          </span>
+        )}
+        {isStackedMetric ? (
+          <>
+            {metric === "fat" && (
+              <>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Sat</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> Unsat</span>
+              </>
+            )}
+            {metric === "carbs" && (
+              <>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Sugar</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> Fiber</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> Starch</span>
+              </>
+            )}
+            {metric === "protein" && (
+              <>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Animal</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> Plant</span>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> On track
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> Off target
+            </span>
+          </>
+        )}
       </div>
 
       <div ref={scrollRef} className="overflow-x-auto pb-1 -mx-1 px-1">
         <div className="relative" style={{ minWidth: `${data.length * 34}px` }}>
-          {/* benchmark line across the whole chart */}
-          <div
-            className="absolute left-0 right-0 z-10 pointer-events-none"
-            style={{
-              bottom: `${28 + (target / scale) * H}px`,
-              borderTop: "2px dashed var(--sand)",
-              opacity: 0.85,
-            }}
-          />
+          {target > 0 && (
+            <div
+              className="absolute left-0 right-0 z-10 pointer-events-none"
+              style={{
+                bottom: `${28 + (target / scale) * H}px`,
+                borderTop: "2px dashed var(--sand)",
+                opacity: 0.85,
+              }}
+            />
+          )}
           <div className="flex items-end gap-1.5" style={{ height: `${H + 28}px` }}>
             {data.map((d, i) => {
-              const h = Math.max(2, (d.value / scale) * H);
-              const good = meta.mode === "under" ? d.value <= d.target : d.value >= d.target;
+              const key = dayKey(d.date);
+              const bd = breakdownByDay.get(key);
               const selected = isSameDay(d.date, selectedDate);
-              const barColor = d.value === 0 ? "oklch(0.35 0.02 210 / 0.5)" : good ? "var(--oasis)" : "var(--coral)";
+              const good = meta.mode === "under" ? d.value <= d.target : d.value >= d.target;
+
+              const segments: { pct: number; color: string; label: string; value: number }[] = [];
+              if (isStackedMetric && bd && d.value > 0) {
+                const total = d.value;
+                if (metric === "fat") {
+                  const sat = Math.min(total, bd.saturated_fat_g);
+                  const unsat = Math.max(0, total - sat);
+                  segments.push({ pct: sat / total, color: "var(--coral)", label: "Saturated", value: sat });
+                  segments.push({ pct: unsat / total, color: "var(--sand)", label: "Unsaturated", value: unsat });
+                } else if (metric === "carbs") {
+                  const sugar = Math.min(total, bd.sugar_g);
+                  const fiber = Math.min(total - sugar, bd.fiber_g);
+                  const starch = Math.max(0, total - sugar - fiber);
+                  segments.push({ pct: sugar / total, color: "var(--coral)", label: "Sugar", value: sugar });
+                  segments.push({ pct: fiber / total, color: "var(--oasis)", label: "Fiber", value: fiber });
+                  segments.push({ pct: starch / total, color: "var(--sand)", label: "Starch", value: starch });
+                } else if (metric === "protein") {
+                  const animal = Math.min(total, bd.animal_protein_g);
+                  const plant = Math.max(0, total - animal);
+                  segments.push({ pct: animal / total, color: "var(--coral)", label: "Animal", value: animal });
+                  segments.push({ pct: plant / total, color: "var(--oasis)", label: "Plant", value: plant });
+                }
+              }
+
+              const h = Math.max(2, (d.value / scale) * H);
+              const baseColor = d.value === 0 ? "oklch(0.35 0.02 210 / 0.5)" : good ? "var(--oasis)" : "var(--coral)";
+
               return (
                 <button
                   key={i}
                   onClick={() => onSelect(d.date)}
-                  title={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit} (target ${d.target})`}
+                  title={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}${target > 0 ? ` (target ${d.target})` : ""}`}
                   className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
@@ -1378,10 +1485,22 @@ function HistoryChart({
                   aria-label={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}`}
                 >
                   <div className="flex-1 w-full flex items-end justify-center">
-                    <div
-                      className="w-[16px] rounded-t transition-all duration-500"
-                      style={{ height: `${h}px`, background: barColor, opacity: d.value === 0 ? 0.4 : 0.9 }}
-                    />
+                    {segments.length > 0 ? (
+                      <div className="w-[16px] rounded-t overflow-hidden flex flex-col-reverse" style={{ height: `${h}px`, opacity: 0.95 }}>
+                        {segments.map((seg, idx) => (
+                          <div
+                            key={idx}
+                            style={{ height: `${Math.max(1, seg.pct * 100)}%`, background: seg.color }}
+                            title={`${seg.label}: ${Math.round(seg.value)}g (${Math.round(seg.pct * 100)}%)`}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        className="w-[16px] rounded-t transition-all duration-500"
+                        style={{ height: `${h}px`, background: baseColor, opacity: d.value === 0 ? 0.4 : 0.9 }}
+                      />
+                    )}
                   </div>
                   <div className="h-[28px] flex flex-col items-center justify-center leading-tight">
                     <div
