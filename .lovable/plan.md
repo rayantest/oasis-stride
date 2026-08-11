@@ -53,16 +53,18 @@ Update `FoodScanSheet` totals grid to include:
 
 Per-item list shows the same sub-fields when present.
 
-### 6. Historical chart metrics
-Add new chart metric options to the Diet history dropdown:
-- Sugar
-- Fiber
-- Saturated fat
-- Sodium
-- Animal protein
-- Plant protein
+### 6. Historical chart: stacked percentage bars
+Rework the Diet history chart so each day’s bar is a stacked percentage of the chosen macro, with segments representing its sub-types:
+- **Fat selected**: darker segment = saturated fat, lighter segment = unsaturated fat (mono + poly).
+- **Carbs selected**: segments = sugar, fiber, starch.
+- **Protein selected**: segments = animal protein, plant protein.
 
-This lets you review trends for each sub-nutrient and protein source over the selected period.
+Hovering a segment reveals the exact gram value and percentage of that day’s total for that macro. The Y-axis becomes 0–100% so comparison across days is immediate.
+
+Add the same sub-nutrients as standalone metric options in the dropdown:
+- Sugar, Fiber, Saturated fat, Sodium, Animal protein, Plant protein
+
+When a standalone sub-nutrient is selected, show a simple single-color bar (grams) as today.
 
 ## Out of scope for this phase
 - Micronutrients beyond sodium (vitamins/minerals) — too noisy for photo/text estimation.
@@ -79,4 +81,5 @@ This lets you review trends for each sub-nutrient and protein source over the se
 - Log a food via text and confirm the row shows the new breakdown.
 - Scan a meal photo and confirm per-item and total breakdowns appear.
 - Save a scanned meal to the library, then log it again and confirm the breakdown is preserved.
-- Switch the historical chart to "Sugar" or "Sodium" and confirm bars update.
+- Switch the historical chart to "Fat" and confirm each bar is split into saturated vs. unsaturated segments; hover reveals grams + percentage.
+- Switch to "Carbs" and confirm sugar/fiber/starch segments; switch to "Protein" and confirm animal/plant segments.
