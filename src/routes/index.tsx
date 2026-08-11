@@ -62,10 +62,31 @@ type Food = {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  sodium_mg: number;
+  trans_fat_g: number;
+  cholesterol_mg: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
   created_at: string;
 };
 
-type MetricKey = "eaten_kcal" | "protein" | "carbs" | "fat";
+type MetricKey =
+  | "eaten_kcal"
+  | "protein"
+  | "carbs"
+  | "fat"
+  | "sugar"
+  | "fiber"
+  | "saturated_fat"
+  | "sodium"
+  | "animal_protein"
+  | "plant_protein";
 
 function dayStart(d: Date) {
   const x = new Date(d);
