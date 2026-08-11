@@ -339,6 +339,7 @@ function App() {
             <Card title="Historical Performance" right={<MetricPicker value={metric} onChange={setMetric} />}>
               <HistoryChart
                 data={history}
+                foods={foods}
                 metric={metric}
                 selectedDate={selectedDate}
                 onSelect={(d: Date) => setSelectedDate(dayStart(d))}
