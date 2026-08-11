@@ -59,8 +59,10 @@ Add new chart metric options to the Diet history dropdown:
 - Fiber
 - Saturated fat
 - Sodium
+- Animal protein
+- Plant protein
 
-This lets you review trends for each sub-nutrient over the selected period.
+This lets you review trends for each sub-nutrient and protein source over the selected period.
 
 ## Out of scope for this phase
 - Micronutrients beyond sodium (vitamins/minerals) — too noisy for photo/text estimation.
