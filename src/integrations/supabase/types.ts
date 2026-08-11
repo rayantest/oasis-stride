@@ -112,31 +112,64 @@ export type Database = {
       }
       food_entries: {
         Row: {
+          animal_protein_g: number | null
           carbs_g: number
+          cholesterol_mg: number | null
           created_at: string
           fat_g: number
+          fiber_g: number | null
           id: string
           kcal: number
           label: string
+          monounsaturated_fat_g: number | null
+          plant_protein_g: number | null
+          polyunsaturated_fat_g: number | null
           protein_g: number
+          saturated_fat_g: number | null
+          sodium_mg: number | null
+          starch_g: number | null
+          sugar_g: number | null
+          trans_fat_g: number | null
         }
         Insert: {
+          animal_protein_g?: number | null
           carbs_g?: number
+          cholesterol_mg?: number | null
           created_at?: string
           fat_g?: number
+          fiber_g?: number | null
           id?: string
           kcal: number
           label: string
+          monounsaturated_fat_g?: number | null
+          plant_protein_g?: number | null
+          polyunsaturated_fat_g?: number | null
           protein_g?: number
+          saturated_fat_g?: number | null
+          sodium_mg?: number | null
+          starch_g?: number | null
+          sugar_g?: number | null
+          trans_fat_g?: number | null
         }
         Update: {
+          animal_protein_g?: number | null
           carbs_g?: number
+          cholesterol_mg?: number | null
           created_at?: string
           fat_g?: number
+          fiber_g?: number | null
           id?: string
           kcal?: number
           label?: string
+          monounsaturated_fat_g?: number | null
+          plant_protein_g?: number | null
+          polyunsaturated_fat_g?: number | null
           protein_g?: number
+          saturated_fat_g?: number | null
+          sodium_mg?: number | null
+          starch_g?: number | null
+          sugar_g?: number | null
+          trans_fat_g?: number | null
         }
         Relationships: []
       }
@@ -217,37 +250,70 @@ export type Database = {
       }
       saved_foods: {
         Row: {
+          animal_protein_g: number | null
           breakdown: Json | null
           carbs_g: number
+          cholesterol_mg: number | null
           created_at: string
           fat_g: number
+          fiber_g: number | null
           grams: number | null
           id: string
           kcal: number
           label: string
+          monounsaturated_fat_g: number | null
+          plant_protein_g: number | null
+          polyunsaturated_fat_g: number | null
           protein_g: number
+          saturated_fat_g: number | null
+          sodium_mg: number | null
+          starch_g: number | null
+          sugar_g: number | null
+          trans_fat_g: number | null
         }
         Insert: {
+          animal_protein_g?: number | null
           breakdown?: Json | null
           carbs_g?: number
+          cholesterol_mg?: number | null
           created_at?: string
           fat_g?: number
+          fiber_g?: number | null
           grams?: number | null
           id?: string
           kcal?: number
           label: string
+          monounsaturated_fat_g?: number | null
+          plant_protein_g?: number | null
+          polyunsaturated_fat_g?: number | null
           protein_g?: number
+          saturated_fat_g?: number | null
+          sodium_mg?: number | null
+          starch_g?: number | null
+          sugar_g?: number | null
+          trans_fat_g?: number | null
         }
         Update: {
+          animal_protein_g?: number | null
           breakdown?: Json | null
           carbs_g?: number
+          cholesterol_mg?: number | null
           created_at?: string
           fat_g?: number
+          fiber_g?: number | null
           grams?: number | null
           id?: string
           kcal?: number
           label?: string
+          monounsaturated_fat_g?: number | null
+          plant_protein_g?: number | null
+          polyunsaturated_fat_g?: number | null
           protein_g?: number
+          saturated_fat_g?: number | null
+          sodium_mg?: number | null
+          starch_g?: number | null
+          sugar_g?: number | null
+          trans_fat_g?: number | null
         }
         Relationships: []
       }

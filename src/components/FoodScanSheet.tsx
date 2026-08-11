@@ -92,6 +92,17 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
         protein_g: result.protein_g,
         carbs_g: result.carbs_g,
         fat_g: result.fat_g,
+        saturated_fat_g: result.saturated_fat_g,
+        monounsaturated_fat_g: result.monounsaturated_fat_g,
+        polyunsaturated_fat_g: result.polyunsaturated_fat_g,
+        sugar_g: result.sugar_g,
+        fiber_g: result.fiber_g,
+        starch_g: result.starch_g,
+        sodium_mg: result.sodium_mg,
+        trans_fat_g: result.trans_fat_g,
+        cholesterol_mg: result.cholesterol_mg,
+        animal_protein_g: result.animal_protein_g,
+        plant_protein_g: result.plant_protein_g,
         created_at: logTimestamp(),
       });
       if (error) throw error;
@@ -103,7 +114,18 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
           protein_g: result.protein_g,
           carbs_g: result.carbs_g,
           fat_g: result.fat_g,
-          breakdown: result.items as unknown as never,
+          saturated_fat_g: result.saturated_fat_g,
+          monounsaturated_fat_g: result.monounsaturated_fat_g,
+          polyunsaturated_fat_g: result.polyunsaturated_fat_g,
+          sugar_g: result.sugar_g,
+          fiber_g: result.fiber_g,
+          starch_g: result.starch_g,
+          sodium_mg: result.sodium_mg,
+          trans_fat_g: result.trans_fat_g,
+          cholesterol_mg: result.cholesterol_mg,
+          animal_protein_g: result.animal_protein_g,
+          plant_protein_g: result.plant_protein_g,
+          breakdown: result.items,
         });
       }
       toast.success(`Logged ${result.label} · ${result.kcal} kcal`);
@@ -215,17 +237,38 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
                   <li key={i} className="text-[11px] leading-snug text-muted-foreground">
                     <span className="text-foreground">{it.name}</span>
                     {it.grams ? ` (${it.grams}g)` : ""}: {it.kcal} kcal · {it.protein_g}P / {it.carbs_g}C / {it.fat_g}F
+                    {(it.saturated_fat_g > 0 || it.sugar_g > 0 || it.fiber_g > 0 || it.sodium_mg > 0 || it.animal_protein_g > 0 || it.plant_protein_g > 0) && (
+                      <span className="block text-[10px] text-muted-foreground/70">
+                        {[
+                          it.saturated_fat_g > 0 && `${it.saturated_fat_g}g sat fat`,
+                          (it.monounsaturated_fat_g + it.polyunsaturated_fat_g) > 0 && `${it.monounsaturated_fat_g + it.polyunsaturated_fat_g}g unsat fat`,
+                          it.sugar_g > 0 && `${it.sugar_g}g sugar`,
+                          it.fiber_g > 0 && `${it.fiber_g}g fiber`,
+                          it.starch_g > 0 && `${it.starch_g}g starch`,
+                          it.sodium_mg > 0 && `${it.sodium_mg}mg sodium`,
+                          it.animal_protein_g > 0 && `${it.animal_protein_g}g animal protein`,
+                          it.plant_protein_g > 0 && `${it.plant_protein_g}g plant protein`,
+                        ].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
 
-              <div className="pt-2 border-t border-border/40 grid grid-cols-5 gap-1 text-center">
+              <div className="pt-2 border-t border-border/40 grid grid-cols-4 gap-2 text-center">
                 {[
-                  ["Grams", `${result.total_grams}g`],
                   ["Kcal", `${result.kcal}`],
                   ["Protein", `${result.protein_g}g`],
                   ["Carbs", `${result.carbs_g}g`],
                   ["Fat", `${result.fat_g}g`],
+                  ["Animal P", `${result.animal_protein_g}g`],
+                  ["Plant P", `${result.plant_protein_g}g`],
+                  ["Sugar", `${result.sugar_g}g`],
+                  ["Fiber", `${result.fiber_g}g`],
+                  ["Sat fat", `${result.saturated_fat_g}g`],
+                  ["Unsat fat", `${result.monounsaturated_fat_g + result.polyunsaturated_fat_g}g`],
+                  ["Sodium", `${result.sodium_mg}mg`],
+                  ["Grams", `${result.total_grams}g`],
                 ].map(([k, v]) => (
                   <div key={k}>
                     <div className="text-sm font-semibold">{v}</div>

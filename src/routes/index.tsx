@@ -62,10 +62,31 @@ type Food = {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  sodium_mg: number;
+  trans_fat_g: number;
+  cholesterol_mg: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
   created_at: string;
 };
 
-type MetricKey = "eaten_kcal" | "protein" | "carbs" | "fat";
+type MetricKey =
+  | "eaten_kcal"
+  | "protein"
+  | "carbs"
+  | "fat"
+  | "sugar"
+  | "fiber"
+  | "saturated_fat"
+  | "sodium"
+  | "animal_protein"
+  | "plant_protein";
 
 function dayStart(d: Date) {
   const x = new Date(d);
@@ -318,6 +339,7 @@ function App() {
             <Card title="Historical Performance" right={<MetricPicker value={metric} onChange={setMetric} />}>
               <HistoryChart
                 data={history}
+                foods={foods}
                 metric={metric}
                 selectedDate={selectedDate}
                 onSelect={(d: Date) => setSelectedDate(dayStart(d))}
@@ -857,6 +879,17 @@ type SavedFood = {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  sodium_mg: number;
+  trans_fat_g: number;
+  cholesterol_mg: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
 };
 
 function FoodInput({
@@ -922,6 +955,17 @@ function FoodInput({
         protein_g: s.protein_g,
         carbs_g: s.carbs_g,
         fat_g: s.fat_g,
+        saturated_fat_g: s.saturated_fat_g,
+        monounsaturated_fat_g: s.monounsaturated_fat_g,
+        polyunsaturated_fat_g: s.polyunsaturated_fat_g,
+        sugar_g: s.sugar_g,
+        fiber_g: s.fiber_g,
+        starch_g: s.starch_g,
+        sodium_mg: s.sodium_mg,
+        trans_fat_g: s.trans_fat_g,
+        cholesterol_mg: s.cholesterol_mg,
+        animal_protein_g: s.animal_protein_g,
+        plant_protein_g: s.plant_protein_g,
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
@@ -1000,6 +1044,135 @@ function FoodInput({
   );
 }
 
+function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const fatTotal = Math.max(1, Number(food.fat_g));
+  const carbTotal = Math.max(1, Number(food.carbs_g));
+  const proteinTotal = Math.max(1, Number(food.protein_g));
+  const satPct = Math.min(100, Math.round((Number(food.saturated_fat_g) / fatTotal) * 100)) || 0;
+  const unsatPct = Math.max(0, 100 - satPct);
+  const sugarPct = Math.min(100, Math.round((Number(food.sugar_g) / carbTotal) * 100)) || 0;
+  const fiberPct = Math.min(100, Math.round((Number(food.fiber_g) / carbTotal) * 100)) || 0;
+  const starchPct = Math.max(0, 100 - sugarPct - fiberPct);
+  const animalPct = Math.min(100, Math.round((Number(food.animal_protein_g) / proteinTotal) * 100)) || 0;
+  const plantPct = Math.max(0, 100 - animalPct);
+
+  return (
+    <div className="py-3 group">
+      <div className="flex items-center gap-3">
+        <UtensilsCrossed size={16} className="text-sand shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => setOpen(!open)}
+              className="text-left text-sm font-medium truncate flex items-center gap-1.5"
+            >
+              {food.label}
+              <ChevronDown size={12} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="font-mono text-sm text-sand">+{Math.round(Number(food.kcal))}</span>
+              <button
+                onClick={onDelete}
+                className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
+                aria-label="Delete"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </div>
+          <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+            {Math.round(Number(food.protein_g))}p · {Math.round(Number(food.carbs_g))}c · {Math.round(Number(food.fat_g))}f
+            {Number(food.sodium_mg) > 0 && ` · ${Math.round(Number(food.sodium_mg))}mg sodium`}
+          </div>
+        </div>
+      </div>
+
+      {open && (
+        <div className="mt-3 space-y-3 rounded-xl border border-border/40 bg-background/40 p-3">
+          <div>
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              <span>Fat breakdown</span>
+              <span className="font-mono">{Math.round(Number(food.fat_g))}g total</span>
+            </div>
+            <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
+              <div
+                className="h-full bg-coral"
+                style={{ width: `${satPct}%` }}
+                title={`Saturated ${Math.round(Number(food.saturated_fat_g))}g (${satPct}%)`}
+              />
+              <div
+                className="h-full bg-sand"
+                style={{ width: `${unsatPct}%` }}
+                title={`Unsaturated ${Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g))}g (${unsatPct}%)`}
+              />
+            </div>
+            <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Sat {Math.round(Number(food.saturated_fat_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> Unsat {Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g))}g</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              <span>Carb breakdown</span>
+              <span className="font-mono">{Math.round(Number(food.carbs_g))}g total</span>
+            </div>
+            <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
+              <div className="h-full bg-coral" style={{ width: `${sugarPct}%` }} title={`Sugar ${Math.round(Number(food.sugar_g))}g`} />
+              <div className="h-full bg-oasis" style={{ width: `${fiberPct}%` }} title={`Fiber ${Math.round(Number(food.fiber_g))}g`} />
+              <div className="h-full bg-sand" style={{ width: `${starchPct}%` }} title={`Starch ${Math.round(Number(food.starch_g))}g`} />
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Sugar {Math.round(Number(food.sugar_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> Fiber {Math.round(Number(food.fiber_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> Starch {Math.round(Number(food.starch_g))}g</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              <span>Protein source</span>
+              <span className="font-mono">{Math.round(Number(food.protein_g))}g total</span>
+            </div>
+            <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
+              <div className="h-full bg-coral" style={{ width: `${animalPct}%` }} title={`Animal ${Math.round(Number(food.animal_protein_g))}g`} />
+              <div className="h-full bg-oasis" style={{ width: `${plantPct}%` }} title={`Plant ${Math.round(Number(food.plant_protein_g))}g`} />
+            </div>
+            <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Animal {Math.round(Number(food.animal_protein_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> Plant {Math.round(Number(food.plant_protein_g))}g</span>
+            </div>
+          </div>
+
+          {(Number(food.sodium_mg) > 0 || Number(food.cholesterol_mg) > 0 || Number(food.trans_fat_g) > 0) && (
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40">
+              {Number(food.sodium_mg) > 0 && (
+                <div className="text-center">
+                  <div className="text-[10px] text-muted-foreground uppercase">Sodium</div>
+                  <div className="font-mono text-xs">{Math.round(Number(food.sodium_mg))}mg</div>
+                </div>
+              )}
+              {Number(food.cholesterol_mg) > 0 && (
+                <div className="text-center">
+                  <div className="text-[10px] text-muted-foreground uppercase">Cholesterol</div>
+                  <div className="font-mono text-xs">{Math.round(Number(food.cholesterol_mg))}mg</div>
+                </div>
+              )}
+              {Number(food.trans_fat_g) > 0 && (
+                <div className="text-center">
+                  <div className="text-[10px] text-muted-foreground uppercase">Trans fat</div>
+                  <div className="font-mono text-xs">{Math.round(Number(food.trans_fat_g))}g</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DayLog({
   movements,
   foods,
@@ -1055,21 +1228,7 @@ function DayLog({
     const fRows: Row[] = foods.map((f) => ({
       kind: "f",
       ts: f.created_at,
-      el: (
-        <LogRow
-          key={"f" + f.id}
-          icon={<UtensilsCrossed size={16} className="text-sand" />}
-          label={f.label}
-          sub={
-            <span className="font-mono">
-              {Math.round(Number(f.protein_g))}p · {Math.round(Number(f.carbs_g))}c · {Math.round(Number(f.fat_g))}f
-            </span>
-          }
-          value={`+${Math.round(Number(f.kcal))}`}
-          tone="warm"
-          onDelete={() => del.mutate({ table: "food_entries", id: f.id })}
-        />
-      ),
+      el: <FoodLogRow food={f} onDelete={() => del.mutate({ table: "food_entries", id: f.id })} />,
     }));
     return [...mRows, ...fRows].sort((a, b) => b.ts.localeCompare(a.ts));
   }, [movements, foods, del]);
@@ -1127,6 +1286,12 @@ const METRIC_META: Record<MetricKey, { label: string; unit: string; mode: "over"
   protein: { label: "Protein", unit: "g", mode: "over" },
   carbs: { label: "Carbs", unit: "g", mode: "under" },
   fat: { label: "Fat", unit: "g", mode: "under" },
+  sugar: { label: "Sugar", unit: "g", mode: "under" },
+  fiber: { label: "Fiber", unit: "g", mode: "over" },
+  saturated_fat: { label: "Saturated fat", unit: "g", mode: "under" },
+  sodium: { label: "Sodium", unit: "mg", mode: "under" },
+  animal_protein: { label: "Animal protein", unit: "g", mode: "over" },
+  plant_protein: { label: "Plant protein", unit: "g", mode: "over" },
 };
 
 type DayPoint = { date: Date; value: number; target: number; isToday: boolean };
@@ -1147,13 +1312,29 @@ function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: Met
   );
 }
 
+type BreakdownTotals = {
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
+};
+
 function HistoryChart({
   data,
+  foods,
   metric,
   selectedDate,
   onSelect,
 }: {
   data: DayPoint[];
+  foods: Food[];
   metric: MetricKey;
   selectedDate: Date;
   onSelect: (d: Date) => void;
@@ -1165,47 +1346,138 @@ function HistoryChart({
   const scale = maxVal * 1.15;
   const H = 150;
 
+  const breakdownByDay = useMemo(() => {
+    const map = new Map<string, BreakdownTotals>();
+    for (const f of foods) {
+      const key = dayKey(new Date(f.created_at));
+      const existing = map.get(key) ?? {
+        protein_g: 0,
+        carbs_g: 0,
+        fat_g: 0,
+        saturated_fat_g: 0,
+        monounsaturated_fat_g: 0,
+        polyunsaturated_fat_g: 0,
+        sugar_g: 0,
+        fiber_g: 0,
+        starch_g: 0,
+        animal_protein_g: 0,
+        plant_protein_g: 0,
+      };
+      existing.protein_g += Number(f.protein_g);
+      existing.carbs_g += Number(f.carbs_g);
+      existing.fat_g += Number(f.fat_g);
+      existing.saturated_fat_g += Number(f.saturated_fat_g);
+      existing.monounsaturated_fat_g += Number(f.monounsaturated_fat_g);
+      existing.polyunsaturated_fat_g += Number(f.polyunsaturated_fat_g);
+      existing.sugar_g += Number(f.sugar_g);
+      existing.fiber_g += Number(f.fiber_g);
+      existing.starch_g += Number(f.starch_g);
+      existing.animal_protein_g += Number(f.animal_protein_g);
+      existing.plant_protein_g += Number(f.plant_protein_g);
+      map.set(key, existing);
+    }
+    return map;
+  }, [foods]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollLeft = el.scrollWidth;
   }, [metric, data.length]);
 
+  const isStackedMetric = metric === "fat" || metric === "carbs" || metric === "protein";
+
   return (
     <div>
-      <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Benchmark {target} {meta.unit}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> On track
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> Off target
-        </span>
+      <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground flex-wrap">
+        {target > 0 && (
+          <span className="inline-flex items-center gap-1">
+            <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Benchmark {target} {meta.unit}
+          </span>
+        )}
+        {isStackedMetric ? (
+          <>
+            {metric === "fat" && (
+              <>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Sat</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> Unsat</span>
+              </>
+            )}
+            {metric === "carbs" && (
+              <>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Sugar</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> Fiber</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> Starch</span>
+              </>
+            )}
+            {metric === "protein" && (
+              <>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Animal</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> Plant</span>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> On track
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> Off target
+            </span>
+          </>
+        )}
       </div>
 
       <div ref={scrollRef} className="overflow-x-auto pb-1 -mx-1 px-1">
         <div className="relative" style={{ minWidth: `${data.length * 34}px` }}>
-          {/* benchmark line across the whole chart */}
-          <div
-            className="absolute left-0 right-0 z-10 pointer-events-none"
-            style={{
-              bottom: `${28 + (target / scale) * H}px`,
-              borderTop: "2px dashed var(--sand)",
-              opacity: 0.85,
-            }}
-          />
+          {target > 0 && (
+            <div
+              className="absolute left-0 right-0 z-10 pointer-events-none"
+              style={{
+                bottom: `${28 + (target / scale) * H}px`,
+                borderTop: "2px dashed var(--sand)",
+                opacity: 0.85,
+              }}
+            />
+          )}
           <div className="flex items-end gap-1.5" style={{ height: `${H + 28}px` }}>
             {data.map((d, i) => {
-              const h = Math.max(2, (d.value / scale) * H);
-              const good = meta.mode === "under" ? d.value <= d.target : d.value >= d.target;
+              const key = dayKey(d.date);
+              const bd = breakdownByDay.get(key);
               const selected = isSameDay(d.date, selectedDate);
-              const barColor = d.value === 0 ? "oklch(0.35 0.02 210 / 0.5)" : good ? "var(--oasis)" : "var(--coral)";
+              const good = meta.mode === "under" ? d.value <= d.target : d.value >= d.target;
+
+              const segments: { pct: number; color: string; label: string; value: number }[] = [];
+              if (isStackedMetric && bd && d.value > 0) {
+                const total = d.value;
+                if (metric === "fat") {
+                  const sat = Math.min(total, bd.saturated_fat_g);
+                  const unsat = Math.max(0, total - sat);
+                  segments.push({ pct: sat / total, color: "var(--coral)", label: "Saturated", value: sat });
+                  segments.push({ pct: unsat / total, color: "var(--sand)", label: "Unsaturated", value: unsat });
+                } else if (metric === "carbs") {
+                  const sugar = Math.min(total, bd.sugar_g);
+                  const fiber = Math.min(total - sugar, bd.fiber_g);
+                  const starch = Math.max(0, total - sugar - fiber);
+                  segments.push({ pct: sugar / total, color: "var(--coral)", label: "Sugar", value: sugar });
+                  segments.push({ pct: fiber / total, color: "var(--oasis)", label: "Fiber", value: fiber });
+                  segments.push({ pct: starch / total, color: "var(--sand)", label: "Starch", value: starch });
+                } else if (metric === "protein") {
+                  const animal = Math.min(total, bd.animal_protein_g);
+                  const plant = Math.max(0, total - animal);
+                  segments.push({ pct: animal / total, color: "var(--coral)", label: "Animal", value: animal });
+                  segments.push({ pct: plant / total, color: "var(--oasis)", label: "Plant", value: plant });
+                }
+              }
+
+              const h = Math.max(2, (d.value / scale) * H);
+              const baseColor = d.value === 0 ? "oklch(0.35 0.02 210 / 0.5)" : good ? "var(--oasis)" : "var(--coral)";
+
               return (
                 <button
                   key={i}
                   onClick={() => onSelect(d.date)}
-                  title={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit} (target ${d.target})`}
+                  title={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}${target > 0 ? ` (target ${d.target})` : ""}`}
                   className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
@@ -1213,10 +1485,22 @@ function HistoryChart({
                   aria-label={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}`}
                 >
                   <div className="flex-1 w-full flex items-end justify-center">
-                    <div
-                      className="w-[16px] rounded-t transition-all duration-500"
-                      style={{ height: `${h}px`, background: barColor, opacity: d.value === 0 ? 0.4 : 0.9 }}
-                    />
+                    {segments.length > 0 ? (
+                      <div className="w-[16px] rounded-t overflow-hidden flex flex-col-reverse" style={{ height: `${h}px`, opacity: 0.95 }}>
+                        {segments.map((seg, idx) => (
+                          <div
+                            key={idx}
+                            style={{ height: `${Math.max(1, seg.pct * 100)}%`, background: seg.color }}
+                            title={`${seg.label}: ${Math.round(seg.value)}g (${Math.round(seg.pct * 100)}%)`}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        className="w-[16px] rounded-t transition-all duration-500"
+                        style={{ height: `${h}px`, background: baseColor, opacity: d.value === 0 ? 0.4 : 0.9 }}
+                      />
+                    )}
                   </div>
                   <div className="h-[28px] flex flex-col items-center justify-center leading-tight">
                     <div
@@ -1497,6 +1781,24 @@ function historyDays(
       case "fat":
         value = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
         break;
+      case "sugar":
+        value = dayFoods.reduce((s, f) => s + Number(f.sugar_g), 0);
+        break;
+      case "fiber":
+        value = dayFoods.reduce((s, f) => s + Number(f.fiber_g), 0);
+        break;
+      case "saturated_fat":
+        value = dayFoods.reduce((s, f) => s + Number(f.saturated_fat_g), 0);
+        break;
+      case "sodium":
+        value = dayFoods.reduce((s, f) => s + Number(f.sodium_mg), 0);
+        break;
+      case "animal_protein":
+        value = dayFoods.reduce((s, f) => s + Number(f.animal_protein_g), 0);
+        break;
+      case "plant_protein":
+        value = dayFoods.reduce((s, f) => s + Number(f.plant_protein_g), 0);
+        break;
     }
     void dayMoves;
     out.push({ date: d, value: Math.round(value), target, isToday: i === 0 });
@@ -1514,5 +1816,12 @@ function metricTarget(metric: MetricKey, t: ReturnType<typeof targets>): number 
       return t.carbs_g;
     case "fat":
       return t.fat_g;
+    case "sugar":
+    case "fiber":
+    case "saturated_fat":
+    case "sodium":
+    case "animal_protein":
+    case "plant_protein":
+      return 0;
   }
 }
