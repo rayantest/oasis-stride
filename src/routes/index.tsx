@@ -258,8 +258,9 @@ function App() {
     : selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 
   return (
-    <div className="min-h-screen pb-24">
-      <Toaster theme="dark" position="top-center" richColors />
+    <div className="min-h-screen pb-24 transition-colors duration-300" data-mode={tab}>
+      <Toaster theme="light" position="top-center" richColors />
+
 
       {!viewingToday && (
         <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/70 border-b border-border/50">

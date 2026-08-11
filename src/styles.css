@@ -46,43 +46,67 @@
 :root {
   --radius: 1rem;
 
-  /* Desert night palette */
-  --background: oklch(0.19 0.03 260);       /* deep charcoal-navy */
-  --foreground: oklch(0.94 0.02 80);         /* warm off-white */
-  --card: oklch(0.235 0.032 258);            /* raised dune card */
-  --card-foreground: oklch(0.94 0.02 80);
-  --popover: oklch(0.235 0.032 258);
-  --popover-foreground: oklch(0.94 0.02 80);
+  /* Light base — warm daylight */
+  --background: oklch(0.985 0.006 90);
+  --foreground: oklch(0.26 0.02 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.26 0.02 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.26 0.02 265);
 
-  --primary: oklch(0.82 0.14 82);            /* sandy gold */
-  --primary-foreground: oklch(0.2 0.03 260);
-  --secondary: oklch(0.29 0.03 258);
-  --secondary-foreground: oklch(0.94 0.02 80);
-  --muted: oklch(0.27 0.028 258);
-  --muted-foreground: oklch(0.7 0.02 80);
-  --accent: oklch(0.7 0.13 200);             /* oasis teal */
-  --accent-foreground: oklch(0.16 0.03 260);
-  --destructive: oklch(0.68 0.19 25);        /* coral red */
-  --destructive-foreground: oklch(0.98 0.01 80);
-  --border: oklch(0.32 0.03 258);
-  --input: oklch(0.28 0.03 258);
-  --ring: oklch(0.82 0.14 82);
+  --primary: oklch(0.63 0.16 55);
+  --primary-foreground: oklch(0.99 0.005 90);
+  --secondary: oklch(0.955 0.008 90);
+  --secondary-foreground: oklch(0.3 0.02 265);
+  --muted: oklch(0.955 0.008 90);
+  --muted-foreground: oklch(0.52 0.02 265);
+  --accent: oklch(0.6 0.11 175);
+  --accent-foreground: oklch(0.99 0.005 90);
+  --destructive: oklch(0.58 0.2 25);
+  --destructive-foreground: oklch(0.99 0.005 90);
+  --border: oklch(0.9 0.01 90);
+  --input: oklch(0.96 0.008 90);
+  --ring: oklch(0.63 0.16 55);
 
-  /* Custom semantic tokens */
-  --sand: oklch(0.82 0.14 82);
-  --sand-dim: oklch(0.62 0.11 82);
-  --oasis: oklch(0.7 0.13 200);
-  --oasis-deep: oklch(0.5 0.12 210);
-  --coral: oklch(0.68 0.19 25);
-  --dune: oklch(0.27 0.028 258);
+  /* Accent tokens (overridden per section) */
+  --sand: oklch(0.63 0.16 55);
+  --sand-dim: oklch(0.72 0.12 55);
+  --oasis: oklch(0.58 0.11 175);
+  --oasis-deep: oklch(0.48 0.11 180);
+  --coral: oklch(0.6 0.19 25);
+  --dune: oklch(0.955 0.008 90);
 
-  --gradient-night: radial-gradient(ellipse at top, oklch(0.26 0.04 258) 0%, oklch(0.16 0.03 260) 70%);
-  --gradient-oasis: linear-gradient(180deg, oklch(0.75 0.14 195) 0%, oklch(0.5 0.14 215) 100%);
-  --gradient-sand: linear-gradient(135deg, oklch(0.86 0.13 85), oklch(0.7 0.14 65));
+  --gradient-night: radial-gradient(ellipse at top, oklch(0.99 0.012 85) 0%, oklch(0.96 0.008 250) 70%);
+  --gradient-oasis: linear-gradient(180deg, oklch(0.72 0.12 180) 0%, oklch(0.55 0.12 200) 100%);
+  --gradient-sand: linear-gradient(135deg, oklch(0.78 0.14 65), oklch(0.65 0.16 45));
 
-  --shadow-card: 0 8px 32px -12px oklch(0 0 0 / 0.5);
-  --shadow-glow-sand: 0 0 40px -8px oklch(0.82 0.14 82 / 0.35);
-  --shadow-glow-oasis: 0 0 40px -8px oklch(0.7 0.13 200 / 0.4);
+  --shadow-card: 0 8px 24px -14px oklch(0.3 0.05 260 / 0.35);
+  --shadow-glow-sand: 0 0 30px -10px oklch(0.63 0.16 55 / 0.35);
+  --shadow-glow-oasis: 0 0 30px -10px oklch(0.58 0.11 175 / 0.35);
+}
+
+/* Diet section — appetising warm food palette */
+[data-mode="diet"] {
+  --sand: oklch(0.62 0.17 45);       /* terracotta / paprika */
+  --sand-dim: oklch(0.73 0.13 55);
+  --oasis: oklch(0.58 0.14 145);     /* fresh herb green */
+  --oasis-deep: oklch(0.48 0.13 148);
+  --coral: oklch(0.6 0.2 20);        /* tomato */
+  --primary: oklch(0.62 0.17 45);
+  --ring: oklch(0.62 0.17 45);
+  --accent: oklch(0.58 0.14 145);
+}
+
+/* Movement section — cool athletic palette */
+[data-mode="movement"] {
+  --sand: oklch(0.56 0.17 250);      /* athletic blue */
+  --sand-dim: oklch(0.68 0.13 250);
+  --oasis: oklch(0.62 0.14 200);     /* cyan */
+  --oasis-deep: oklch(0.5 0.13 215);
+  --coral: oklch(0.62 0.19 15);
+  --primary: oklch(0.56 0.17 250);
+  --ring: oklch(0.56 0.17 250);
+  --accent: oklch(0.62 0.14 200);
 }
 
 @layer base {
@@ -102,6 +126,7 @@
     letter-spacing: -0.02em;
   }
 }
+
 
 /* Wave animation for oasis meter */
 @keyframes wave {

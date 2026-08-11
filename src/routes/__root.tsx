@@ -67,7 +67,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "revertV — personal movement + fuel log" },
       { name: "description", content: "A private, single-user tracker for daily movement, food, and steady fat-loss progress." },
       { name: "robots", content: "noindex, nofollow" },
-      { name: "theme-color", content: "#1a1c2a" },
+      { name: "theme-color", content: "#faf8f5" },
       { property: "og:title", content: "revertV — personal movement + fuel log" },
       { property: "og:description", content: "A private, single-user tracker for daily movement, food, and steady fat-loss progress." },
       { property: "og:type", content: "website" },
