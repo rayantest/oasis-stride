@@ -133,7 +133,7 @@ Rules:
       carbs_g: Math.max(0, Math.round(Number(out.carbs_g) || 0)),
       fat_g: Math.max(0, Math.round(Number(out.fat_g) || 0)),
     };
-    return { ...totals, breakdown: normalizeBreakdown(out, totals) };
+    return { ...totals, ...normalizeBreakdown(out, totals) };
   });
 
 export const parseBodyScan = createServerFn({ method: "POST" })
