@@ -92,6 +92,17 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
         protein_g: result.protein_g,
         carbs_g: result.carbs_g,
         fat_g: result.fat_g,
+        saturated_fat_g: result.saturated_fat_g,
+        monounsaturated_fat_g: result.monounsaturated_fat_g,
+        polyunsaturated_fat_g: result.polyunsaturated_fat_g,
+        sugar_g: result.sugar_g,
+        fiber_g: result.fiber_g,
+        starch_g: result.starch_g,
+        sodium_mg: result.sodium_mg,
+        trans_fat_g: result.trans_fat_g,
+        cholesterol_mg: result.cholesterol_mg,
+        animal_protein_g: result.animal_protein_g,
+        plant_protein_g: result.plant_protein_g,
         created_at: logTimestamp(),
       });
       if (error) throw error;
@@ -103,7 +114,18 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
           protein_g: result.protein_g,
           carbs_g: result.carbs_g,
           fat_g: result.fat_g,
-          breakdown: result.items as unknown as never,
+          saturated_fat_g: result.saturated_fat_g,
+          monounsaturated_fat_g: result.monounsaturated_fat_g,
+          polyunsaturated_fat_g: result.polyunsaturated_fat_g,
+          sugar_g: result.sugar_g,
+          fiber_g: result.fiber_g,
+          starch_g: result.starch_g,
+          sodium_mg: result.sodium_mg,
+          trans_fat_g: result.trans_fat_g,
+          cholesterol_mg: result.cholesterol_mg,
+          animal_protein_g: result.animal_protein_g,
+          plant_protein_g: result.plant_protein_g,
+          breakdown: result.items,
         });
       }
       toast.success(`Logged ${result.label} · ${result.kcal} kcal`);
