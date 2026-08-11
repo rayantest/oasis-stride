@@ -40,6 +40,7 @@ When a scanned/text-logged meal is saved to `saved_foods`, store the full breakd
 
 ### 4. UI inside each food row
 Update the diet log list so each food item expands or shows a second line with:
+- Protein: `Xg total · Yg animal · Zg plant` (only when the split is known)
 - Fat: `Xg total · Yg sat · Zg mono · Wg poly`
 - Carbs: `Xg total · Yg sugar · Zg fiber · Wg starch`
 - Sodium: `X mg`
@@ -48,7 +49,7 @@ Keep the row compact by default; tapping a row reveals the breakdown.
 
 ### 5. Camera scanner result card
 Update `FoodScanSheet` totals grid to include:
-- Sugar, Fiber, Saturated fat, Sodium
+- Animal protein, Plant protein, Sugar, Fiber, Saturated fat, Sodium
 
 Per-item list shows the same sub-fields when present.
 
