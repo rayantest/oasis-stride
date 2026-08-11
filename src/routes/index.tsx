@@ -1148,6 +1148,12 @@ const METRIC_META: Record<MetricKey, { label: string; unit: string; mode: "over"
   protein: { label: "Protein", unit: "g", mode: "over" },
   carbs: { label: "Carbs", unit: "g", mode: "under" },
   fat: { label: "Fat", unit: "g", mode: "under" },
+  sugar: { label: "Sugar", unit: "g", mode: "under" },
+  fiber: { label: "Fiber", unit: "g", mode: "over" },
+  saturated_fat: { label: "Saturated fat", unit: "g", mode: "under" },
+  sodium: { label: "Sodium", unit: "mg", mode: "under" },
+  animal_protein: { label: "Animal protein", unit: "g", mode: "over" },
+  plant_protein: { label: "Plant protein", unit: "g", mode: "over" },
 };
 
 type DayPoint = { date: Date; value: number; target: number; isToday: boolean };
