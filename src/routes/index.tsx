@@ -878,6 +878,17 @@ type SavedFood = {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  sodium_mg: number;
+  trans_fat_g: number;
+  cholesterol_mg: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
 };
 
 function FoodInput({
@@ -943,6 +954,17 @@ function FoodInput({
         protein_g: s.protein_g,
         carbs_g: s.carbs_g,
         fat_g: s.fat_g,
+        saturated_fat_g: s.saturated_fat_g,
+        monounsaturated_fat_g: s.monounsaturated_fat_g,
+        polyunsaturated_fat_g: s.polyunsaturated_fat_g,
+        sugar_g: s.sugar_g,
+        fiber_g: s.fiber_g,
+        starch_g: s.starch_g,
+        sodium_mg: s.sodium_mg,
+        trans_fat_g: s.trans_fat_g,
+        cholesterol_mg: s.cholesterol_mg,
+        animal_protein_g: s.animal_protein_g,
+        plant_protein_g: s.plant_protein_g,
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
