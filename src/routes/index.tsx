@@ -1098,21 +1098,7 @@ function DayLog({
     const fRows: Row[] = foods.map((f) => ({
       kind: "f",
       ts: f.created_at,
-      el: (
-        <LogRow
-          key={"f" + f.id}
-          icon={<UtensilsCrossed size={16} className="text-sand" />}
-          label={f.label}
-          sub={
-            <span className="font-mono">
-              {Math.round(Number(f.protein_g))}p · {Math.round(Number(f.carbs_g))}c · {Math.round(Number(f.fat_g))}f
-            </span>
-          }
-          value={`+${Math.round(Number(f.kcal))}`}
-          tone="warm"
-          onDelete={() => del.mutate({ table: "food_entries", id: f.id })}
-        />
-      ),
+      el: <FoodLogRow food={f} onDelete={() => del.mutate({ table: "food_entries", id: f.id })} />,
     }));
     return [...mRows, ...fRows].sort((a, b) => b.ts.localeCompare(a.ts));
   }, [movements, foods, del]);
