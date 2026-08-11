@@ -1043,6 +1043,135 @@ function FoodInput({
   );
 }
 
+function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const fatTotal = Math.max(1, Number(food.fat_g));
+  const carbTotal = Math.max(1, Number(food.carbs_g));
+  const proteinTotal = Math.max(1, Number(food.protein_g));
+  const satPct = Math.min(100, Math.round((Number(food.saturated_fat_g) / fatTotal) * 100)) || 0;
+  const unsatPct = Math.max(0, 100 - satPct);
+  const sugarPct = Math.min(100, Math.round((Number(food.sugar_g) / carbTotal) * 100)) || 0;
+  const fiberPct = Math.min(100, Math.round((Number(food.fiber_g) / carbTotal) * 100)) || 0;
+  const starchPct = Math.max(0, 100 - sugarPct - fiberPct);
+  const animalPct = Math.min(100, Math.round((Number(food.animal_protein_g) / proteinTotal) * 100)) || 0;
+  const plantPct = Math.max(0, 100 - animalPct);
+
+  return (
+    <div className="py-3 group">
+      <div className="flex items-center gap-3">
+        <UtensilsCrossed size={16} className="text-sand shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => setOpen(!open)}
+              className="text-left text-sm font-medium truncate flex items-center gap-1.5"
+            >
+              {food.label}
+              <ChevronDown size={12} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="font-mono text-sm text-sand">+{Math.round(Number(food.kcal))}</span>
+              <button
+                onClick={onDelete}
+                className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
+                aria-label="Delete"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </div>
+          <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+            {Math.round(Number(food.protein_g))}p · {Math.round(Number(food.carbs_g))}c · {Math.round(Number(food.fat_g))}f
+            {Number(food.sodium_mg) > 0 && ` · ${Math.round(Number(food.sodium_mg))}mg sodium`}
+          </div>
+        </div>
+      </div>
+
+      {open && (
+        <div className="mt-3 space-y-3 rounded-xl border border-border/40 bg-background/40 p-3">
+          <div>
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              <span>Fat breakdown</span>
+              <span className="font-mono">{Math.round(Number(food.fat_g))}g total</span>
+            </div>
+            <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
+              <div
+                className="h-full bg-coral"
+                style={{ width: `${satPct}%` }}
+                title={`Saturated ${Math.round(Number(food.saturated_fat_g))}g (${satPct}%)`}
+              />
+              <div
+                className="h-full bg-sand"
+                style={{ width: `${unsatPct}%` }}
+                title={`Unsaturated ${Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g))}g (${unsatPct}%)`}
+              />
+            </div>
+            <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Sat {Math.round(Number(food.saturated_fat_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> Unsat {Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g))}g</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              <span>Carb breakdown</span>
+              <span className="font-mono">{Math.round(Number(food.carbs_g))}g total</span>
+            </div>
+            <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
+              <div className="h-full bg-coral" style={{ width: `${sugarPct}%` }} title={`Sugar ${Math.round(Number(food.sugar_g))}g`} />
+              <div className="h-full bg-oasis" style={{ width: `${fiberPct}%` }} title={`Fiber ${Math.round(Number(food.fiber_g))}g`} />
+              <div className="h-full bg-sand" style={{ width: `${starchPct}%` }} title={`Starch ${Math.round(Number(food.starch_g))}g`} />
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Sugar {Math.round(Number(food.sugar_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> Fiber {Math.round(Number(food.fiber_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> Starch {Math.round(Number(food.starch_g))}g</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              <span>Protein source</span>
+              <span className="font-mono">{Math.round(Number(food.protein_g))}g total</span>
+            </div>
+            <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
+              <div className="h-full bg-coral" style={{ width: `${animalPct}%` }} title={`Animal ${Math.round(Number(food.animal_protein_g))}g`} />
+              <div className="h-full bg-oasis" style={{ width: `${plantPct}%` }} title={`Plant ${Math.round(Number(food.plant_protein_g))}g`} />
+            </div>
+            <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Animal {Math.round(Number(food.animal_protein_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> Plant {Math.round(Number(food.plant_protein_g))}g</span>
+            </div>
+          </div>
+
+          {(Number(food.sodium_mg) > 0 || Number(food.cholesterol_mg) > 0 || Number(food.trans_fat_g) > 0) && (
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40">
+              {Number(food.sodium_mg) > 0 && (
+                <div className="text-center">
+                  <div className="text-[10px] text-muted-foreground uppercase">Sodium</div>
+                  <div className="font-mono text-xs">{Math.round(Number(food.sodium_mg))}mg</div>
+                </div>
+              )}
+              {Number(food.cholesterol_mg) > 0 && (
+                <div className="text-center">
+                  <div className="text-[10px] text-muted-foreground uppercase">Cholesterol</div>
+                  <div className="font-mono text-xs">{Math.round(Number(food.cholesterol_mg))}mg</div>
+                </div>
+              )}
+              {Number(food.trans_fat_g) > 0 && (
+                <div className="text-center">
+                  <div className="text-[10px] text-muted-foreground uppercase">Trans fat</div>
+                  <div className="font-mono text-xs">{Math.round(Number(food.trans_fat_g))}g</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DayLog({
   movements,
   foods,
