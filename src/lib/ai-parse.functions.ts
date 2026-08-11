@@ -63,6 +63,50 @@ Rules:
     };
   });
 
+export type FoodBreakdown = {
+  saturated_fat_g: number;
+  monounsaturated_fat_g: number;
+  polyunsaturated_fat_g: number;
+  sugar_g: number;
+  fiber_g: number;
+  starch_g: number;
+  sodium_mg: number;
+  trans_fat_g: number;
+  cholesterol_mg: number;
+  animal_protein_g: number;
+  plant_protein_g: number;
+};
+
+function normalizeBreakdown(out: any, totals: { protein_g: number; carbs_g: number; fat_g: number }): FoodBreakdown {
+  const n = (v: any) => Math.max(0, Math.round(Number(v) || 0));
+  const sat = n(out.saturated_fat_g);
+  const mono = n(out.monounsaturated_fat_g);
+  const poly = n(out.polyunsaturated_fat_g);
+  const fatSum = sat + mono + poly;
+  // Clamp sub-fats to total fat if they exceed it
+  const scale = fatSum > totals.fat_g && fatSum > 0 ? totals.fat_g / fatSum : 1;
+  const sugar = n(out.sugar_g);
+  const fiber = n(out.fiber_g);
+  const starch = Math.max(0, totals.carbs_g - sugar - fiber);
+  const animal = n(out.animal_protein_g);
+  const plant = n(out.plant_protein_g);
+  const proteinSum = animal + plant;
+  const proteinScale = proteinSum > totals.protein_g && proteinSum > 0 ? totals.protein_g / proteinSum : 1;
+  return {
+    saturated_fat_g: Math.round(sat * scale),
+    monounsaturated_fat_g: Math.round(mono * scale),
+    polyunsaturated_fat_g: Math.round(poly * scale),
+    sugar_g: sugar,
+    fiber_g: fiber,
+    starch_g: starch,
+    sodium_mg: n(out.sodium_mg),
+    trans_fat_g: n(out.trans_fat_g),
+    cholesterol_mg: n(out.cholesterol_mg),
+    animal_protein_g: Math.round(animal * proteinScale),
+    plant_protein_g: Math.round(plant * proteinScale),
+  };
+}
+
 export const parseFood = createServerFn({ method: "POST" })
   .inputValidator((input: { text: string }) => {
     if (!input?.text || typeof input.text !== "string") throw new Error("text required");
@@ -70,21 +114,26 @@ export const parseFood = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const system = `You parse a user's short free-text description of what they ate or drank.
-Return STRICT JSON with keys: {"label": string, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number}.
+Return STRICT JSON with keys:
+{"label": string, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number, "saturated_fat_g": number, "monounsaturated_fat_g": number, "polyunsaturated_fat_g": number, "sugar_g": number, "fiber_g": number, "sodium_mg": number, "trans_fat_g": number, "cholesterol_mg": number, "animal_protein_g": number, "plant_protein_g": number}
 
 Rules:
 - "label" is a short human title, 2-5 words, e.g. "Chicken shawarma", "Latte", "Apple + peanut butter".
 - Estimate totals for a typical single serving unless the user specifies a quantity.
 - Values should be reasonable rough estimates. Round to whole numbers.
+- For the fat breakdown, only include values you can reasonably infer from the description. Use 0 when unknown.
+- For carbs, split into sugar and fiber when inferable; otherwise return 0 for both.
+- For protein, split into animal and plant sources when inferable; otherwise return 0 for both.
 - Return ONLY the JSON object.`;
     const out = await callAI(system, data.text);
-    return {
+    const totals = {
       label: String(out.label ?? "Food").slice(0, 80),
       kcal: Math.max(0, Math.round(Number(out.kcal) || 0)),
       protein_g: Math.max(0, Math.round(Number(out.protein_g) || 0)),
       carbs_g: Math.max(0, Math.round(Number(out.carbs_g) || 0)),
       fat_g: Math.max(0, Math.round(Number(out.fat_g) || 0)),
     };
+    return { ...totals, breakdown: normalizeBreakdown(out, totals) };
   });
 
 export const parseBodyScan = createServerFn({ method: "POST" })
