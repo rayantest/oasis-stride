@@ -1524,6 +1524,24 @@ function historyDays(
       case "fat":
         value = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
         break;
+      case "sugar":
+        value = dayFoods.reduce((s, f) => s + Number(f.sugar_g), 0);
+        break;
+      case "fiber":
+        value = dayFoods.reduce((s, f) => s + Number(f.fiber_g), 0);
+        break;
+      case "saturated_fat":
+        value = dayFoods.reduce((s, f) => s + Number(f.saturated_fat_g), 0);
+        break;
+      case "sodium":
+        value = dayFoods.reduce((s, f) => s + Number(f.sodium_mg), 0);
+        break;
+      case "animal_protein":
+        value = dayFoods.reduce((s, f) => s + Number(f.animal_protein_g), 0);
+        break;
+      case "plant_protein":
+        value = dayFoods.reduce((s, f) => s + Number(f.plant_protein_g), 0);
+        break;
     }
     void dayMoves;
     out.push({ date: d, value: Math.round(value), target, isToday: i === 0 });
@@ -1541,5 +1559,12 @@ function metricTarget(metric: MetricKey, t: ReturnType<typeof targets>): number 
       return t.carbs_g;
     case "fat":
       return t.fat_g;
+    case "sugar":
+    case "fiber":
+    case "saturated_fat":
+    case "sodium":
+    case "animal_protein":
+    case "plant_protein":
+      return 0;
   }
 }
