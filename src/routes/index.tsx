@@ -40,6 +40,9 @@ import {
   ChevronDown,
   Compass,
   Camera,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
