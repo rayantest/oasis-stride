@@ -6,6 +6,7 @@ import { Dumbbell, Plus, Trash2, Pencil, Sparkles, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { suggestStrengthTargets } from "@/lib/strength-target.functions";
 import type { Profile } from "@/lib/calc";
+import { useT } from "@/lib/i18n";
 
 export const EXERCISES = ["pushups", "pullups", "situps", "squats"] as const;
 export type ExerciseKey = (typeof EXERCISES)[number];
@@ -157,6 +158,7 @@ export function ExerciseSection({
   targetRows: StrengthTargetRow[];
 }) {
   const qc = useQueryClient();
+  const t = useT();
   const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -173,7 +175,7 @@ export function ExerciseSection({
         created_at: logTimestamp(),
       } as never);
       if (error) throw error;
-      toast.success(`Logged ${reps} ${EXERCISE_LABELS[ex].toLowerCase()}`);
+      toast.success(t("Logged {reps} {label}", { reps, label: t(EXERCISE_LABELS[ex]).toLowerCase() }));
       qc.invalidateQueries({ queryKey: ["exercise_entries"] });
       onChange();
     } catch (err) {
@@ -189,13 +191,13 @@ export function ExerciseSection({
     <section className="rounded-2xl bg-card border border-border/50 shadow-[var(--shadow-card)] p-5">
       <div className="flex items-center justify-between mb-3 gap-2">
         <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-          <Dumbbell size={13} /> Daily strength
+          <Dumbbell size={13} /> {t("Daily strength")}
         </h2>
         <button
           onClick={() => setEditing((e) => !e)}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/70 border border-border/50 text-[11px] text-muted-foreground hover:text-foreground transition"
         >
-          {editing ? <X size={11} /> : <Pencil size={11} />} {editing ? "Close" : "Edit targets"}
+          {editing ? <X size={11} /> : <Pencil size={11} />} {editing ? t("Close") : t("Edit targets")}
         </button>
       </div>
 
@@ -234,7 +236,7 @@ export function ExerciseSection({
       <div className="mt-5">
         <div className="flex items-center justify-between gap-2 mb-3">
           <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">
-            Historical Performance{" "}
+            {t("Historical Performance")}{" "}
           </h3>
           <select
             value={metric}
@@ -243,10 +245,10 @@ export function ExerciseSection({
           >
             {EXERCISES.map((ex) => (
               <option key={ex} value={ex}>
-                {EXERCISE_LABELS[ex]}
+                {t(EXERCISE_LABELS[ex])}
               </option>
             ))}
-            <option value="total">Active burn</option>
+            <option value="total">{t("Active burn")}</option>
           </select>
         </div>
 
@@ -294,6 +296,7 @@ function TargetEditor({
   const [thinking, setThinking] = useState(false);
   const [saving, setSaving] = useState(false);
   const suggest = useServerFn(suggestStrengthTargets);
+  const t = useT();
 
   const dateLabel = selectedDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 
@@ -366,7 +369,7 @@ function TargetEditor({
         .from("strength_targets" as never)
         .upsert(row as never, { onConflict: "effective_date" } as never);
       if (error) throw error;
-      toast.success(`Targets set from ${dateLabel}`);
+      toast.success(t("Targets set from {date}", { date: dateLabel }));
       onSaved();
     } catch (err) {
       toast.error((err as Error).message);
@@ -378,13 +381,12 @@ function TargetEditor({
   return (
     <div className="mb-4 rounded-xl border border-border/50 bg-background/40 p-3">
       <div className="text-[11px] text-muted-foreground mb-2.5">
-        Targets apply from <span className="text-foreground font-medium">{dateLabel}</span> onward, until you change
-        them again.
+        {t("Targets apply from {date} onward, until you change them again.", { date: dateLabel })}
       </div>
       <div className="grid grid-cols-2 gap-2.5">
         {EXERCISES.map((ex) => (
           <label key={ex} className="text-[11px] text-muted-foreground">
-            {EXERCISE_LABELS[ex]}
+            {t(EXERCISE_LABELS[ex])}
             <input
               type="number"
               inputMode="numeric"
@@ -409,21 +411,21 @@ function TargetEditor({
           disabled={thinking || saving}
           className="flex-1 inline-flex items-center justify-center gap-1 py-2 rounded-full bg-secondary text-foreground text-xs font-medium disabled:opacity-50"
         >
-          <Sparkles size={12} /> {thinking ? "Thinking…" : "Suggest with AI"}
+          <Sparkles size={12} /> {thinking ? t("Thinking…") : t("Suggest with AI")}
         </button>
         <button
           onClick={onClose}
           disabled={saving}
           className="px-3 py-2 rounded-full text-xs text-muted-foreground"
         >
-          Cancel
+          {t("Cancel")}
         </button>
         <button
           onClick={save}
           disabled={saving || thinking}
           className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? t("Saving…") : t("Save")}
         </button>
       </div>
     </div>
@@ -446,6 +448,7 @@ function RepLogger({
   busy: boolean;
   onLog: (n: number) => void;
 }) {
+  const t = useT();
   const [val, setVal] = useState("");
   const [openInfo, setOpenInfo] = useState(false);
   const pct = target > 0 ? Math.min(100, (today / target) * 100) : 0;
@@ -455,12 +458,12 @@ function RepLogger({
     <div className="rounded-xl border border-border/50 bg-background/40 p-3">
       <div className="flex items-baseline justify-between mb-1.5">
         <span className="text-xs font-medium flex items-center gap-1">
-          {EXERCISE_LABELS[ex]}
+          {t(EXERCISE_LABELS[ex])}
           {info.trim() && (
             <button
               type="button"
               onClick={() => setOpenInfo((o) => !o)}
-              aria-label={`How the ${EXERCISE_LABELS[ex]} target is set`}
+              aria-label={t("How the {label} target is set", { label: t(EXERCISE_LABELS[ex]) })}
               aria-expanded={openInfo}
               className={`inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border text-[9px] font-bold transition ${
                 openInfo ? "border-sand text-sand bg-sand/15" : "border-border text-muted-foreground"
@@ -501,14 +504,14 @@ function RepLogger({
           min={1}
           value={val}
           onChange={(e) => setVal(e.target.value)}
-          placeholder="reps"
+          placeholder={t("reps")}
           className="w-full min-w-0 bg-input/50 border border-border/50 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         <button
           type="submit"
           disabled={busy || !val}
           className="p-1.5 rounded-lg bg-secondary text-foreground disabled:opacity-40 shrink-0"
-          aria-label={`Log ${EXERCISE_LABELS[ex]}`}
+          aria-label={t("Log {label}", { label: t(EXERCISE_LABELS[ex]) })}
         >
           <Plus size={14} />
         </button>
@@ -558,11 +561,12 @@ function ExerciseHistoryChart({
   burnFor?: (d: Date) => number;
   burnTarget?: number;
 }) {
+  const t = useT();
   const scrollRef = useRef<HTMLDivElement>(null);
   const H = 150;
   const isBurn = metric === "total";
-  const unit = isBurn ? "kcal" : "reps";
-  const label = isBurn ? "Active burn" : EXERCISE_LABELS[metric];
+  const unit = isBurn ? t("kcal") : t("reps");
+  const label = isBurn ? t("Active burn") : t(EXERCISE_LABELS[metric]);
   const color = isBurn ? "var(--oasis)" : EXERCISE_COLORS[metric];
   const target = isBurn ? Math.round(burnTarget) : targets[metric];
 
@@ -584,7 +588,7 @@ function ExerciseHistoryChart({
     <div>
       <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground">
         <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Target {target || "—"} {unit}
+          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> {t("Target {target} {unit}", { target: target || "—", unit })}
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} /> {label}
@@ -614,12 +618,21 @@ function ExerciseHistoryChart({
                 <button
                   key={i}
                   onClick={() => onSelect(d.date)}
-                  title={`${d.date.toDateString()} — ${d.value} ${unit}${target ? ` (target ${target})` : ""}`}
+                  title={
+                    target
+                      ? t("{date} — {value} {unit} (target {target})", {
+                          date: d.date.toDateString(),
+                          value: d.value,
+                          unit,
+                          target,
+                        })
+                      : t("{date} — {value} {unit}", { date: d.date.toDateString(), value: d.value, unit })
+                  }
                   className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
                   style={{ height: `${H + 28}px` }}
-                  aria-label={`${d.date.toDateString()} — ${d.value} ${unit}`}
+                  aria-label={t("{date} — {value} {unit}", { date: d.date.toDateString(), value: d.value, unit })}
                 >
                   <div className="flex-1 w-full flex items-end justify-center">
                     <div
@@ -634,7 +647,7 @@ function ExerciseHistoryChart({
                       {d.date.getDate()}/{d.date.getMonth() + 1}
                     </div>
                     <div className={`text-[8px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
-                      {isToday ? "now" : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
+                      {isToday ? t("now") : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
                     </div>
                   </div>
                 </button>
@@ -644,7 +657,7 @@ function ExerciseHistoryChart({
         </div>
       </div>
       <div className="text-[10px] text-muted-foreground/70 mt-2 text-center">
-        Scroll for older days · tap a day to view its numbers
+        {t("Scroll for older days · tap a day to view its numbers")}
       </div>
     </div>
   );
@@ -654,6 +667,7 @@ function ExerciseHistoryChart({
 
 export function ExerciseLogRows({ entries, onChange }: { entries: ExerciseEntry[]; onChange: () => void }) {
   const qc = useQueryClient();
+  const t = useT();
   const del = async (id: string) => {
     const { error } = await supabase
       .from("exercise_entries" as never)
@@ -674,14 +688,16 @@ export function ExerciseLogRows({ entries, onChange }: { entries: ExerciseEntry[
             <Dumbbell size={16} style={{ color: EXERCISE_COLORS[e.exercise] }} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{EXERCISE_LABELS[e.exercise] ?? e.exercise}</div>
-            <div className="text-[11px] text-muted-foreground">bodyweight</div>
+            <div className="text-sm font-medium truncate">
+              {EXERCISE_LABELS[e.exercise] ? t(EXERCISE_LABELS[e.exercise]) : e.exercise}
+            </div>
+            <div className="text-[11px] text-muted-foreground">{t("bodyweight")}</div>
           </div>
-          <div className="font-mono text-sm text-foreground/90">{Math.round(Number(e.reps))} reps</div>
+          <div className="font-mono text-sm text-foreground/90">{t("{n} reps", { n: Math.round(Number(e.reps)) })}</div>
           <button
             onClick={() => del(e.id)}
             className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
-            aria-label="Delete"
+            aria-label={t("Delete")}
           >
             <Trash2 size={14} />
           </button>

@@ -29,6 +29,7 @@ import {
 } from "@/components/ExerciseSection";
 
 import { toast, Toaster } from "sonner";
+import { useT, useI18n, LanguageToggle } from "@/lib/i18n";
 import {
   Footprints,
   UtensilsCrossed,
@@ -122,6 +123,8 @@ type Tab = "diet" | "movement";
 
 function App() {
   const qc = useQueryClient();
+  const tr = useT();
+  const { lang } = useI18n();
   const [selectedDate, setSelectedDate] = useState<Date>(() => dayStart(new Date()));
   const [metric, setMetric] = useState<MetricKey>("eaten_kcal");
   const [tab, setTab] = useState<Tab>("diet");
@@ -203,7 +206,7 @@ function App() {
   if (profileQ.error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-coral text-center">
-        Couldn't load profile.
+        {tr("Couldn't load profile.")}
         <br />
         {(profileQ.error as Error).message}
       </div>
@@ -256,8 +259,8 @@ function App() {
   });
 
   const dateLabel = viewingToday
-    ? "Today"
-    : selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    ? tr("Today")
+    : selectedDate.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "short", month: "short", day: "numeric" });
 
   return (
     <div className="min-h-screen pb-24 transition-colors duration-300" data-mode={tab}>
@@ -271,7 +274,7 @@ function App() {
               onClick={() => setSelectedDate(dayStart(new Date()))}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sand/15 border border-sand/30 text-sand text-xs font-semibold hover:bg-sand/25 transition"
             >
-              <ArrowLeft size={12} /> Back to today
+              <ArrowLeft size={12} /> {tr("Back to today")}
             </button>
           </div>
         </header>
@@ -279,67 +282,80 @@ function App() {
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
         {/* Diet / Movement switch */}
-        <div className="grid grid-cols-2 gap-1 p-1 rounded-full bg-secondary/60 border border-border/50">
-          <TabButton
-            active={tab === "diet"}
-            onClick={() => setTab("diet")}
-            icon={<UtensilsCrossed size={14} />}
-            label="Diet"
-          />
-          <TabButton
-            active={tab === "movement"}
-            onClick={() => setTab("movement")}
-            icon={<Footprints size={14} />}
-            label="Movement"
-          />
+        <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-1 p-1 rounded-full bg-secondary/60 border border-border/50 flex-1">
+            <TabButton
+              active={tab === "diet"}
+              onClick={() => setTab("diet")}
+              icon={<UtensilsCrossed size={14} />}
+              label={tr("Diet")}
+            />
+            <TabButton
+              active={tab === "movement"}
+              onClick={() => setTab("movement")}
+              icon={<Footprints size={14} />}
+              label={tr("Movement")}
+            />
+          </div>
+          <LanguageToggle />
         </div>
 
         {tab === "diet" ? (
           <>
             <FoodInput logDate={selectedDate} viewingToday={viewingToday} onLogged={invalidate} />
 
-            <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
+            <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
               <DayLog movements={[]} foods={dayFoods} exercises={[]} onChange={invalidate} />
             </Card>
 
-            <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
+            <Card title={viewingToday ? tr("Daily benchmark") : tr("Benchmark · {d}", { d: dateLabel })} hint={tr("Compass, not a rulebook.")}>
               <div className="space-y-3">
                 <BenchmarkRow
-                  label="Calories eaten"
+                  label={tr("Calories eaten")}
                   value={eaten}
                   target={t.calories}
                   unit="kcal"
                   mode="under"
-                  info={`BMR ${t.bmr} kcal ${t.used_scan_bmr ? "(measured in your InBody scan)" : "(Mifflin-St Jeor from height, weight, age, gender)"} × ${(t.tdee / t.bmr).toFixed(2)} activity multiplier = TDEE ${t.tdee} kcal. Minus a ${t.deficit} kcal/day deficit for your "${profile.fat_loss_pace}" pace (≈ ${t.kg_per_week.toFixed(2)} kg fat/week) = ${t.calories} kcal${t.calories === 1500 ? " (1500 kcal safety floor applied)" : ""}.`}
+                  info={tr("BMR {bmr} kcal {bmrSrc} × {mult} activity multiplier = TDEE {tdee} kcal. Minus a {deficit} kcal/day deficit for your \"{pace}\" pace (≈ {kgpw} kg fat/week) = {cal} kcal{floor}.", {
+                    bmr: t.bmr,
+                    bmrSrc: t.used_scan_bmr ? tr("(measured in your InBody scan)") : tr("(Mifflin-St Jeor from height, weight, age, gender)"),
+                    mult: (t.tdee / t.bmr).toFixed(2),
+                    tdee: t.tdee,
+                    deficit: t.deficit,
+                    pace: profile.fat_loss_pace,
+                    kgpw: t.kg_per_week.toFixed(2),
+                    cal: t.calories,
+                    floor: t.calories === 1500 ? tr(" (1500 kcal safety floor applied)") : "",
+                  })}
                 />
                 <BenchmarkRow
-                  label="Protein"
+                  label={tr("Protein")}
                   value={proteinG}
                   target={t.protein_g}
                   unit="g"
                   mode="over"
-                  info={`1.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.protein_g} g. High protein protects muscle mass while you're in a deficit.`}
+                  info={tr("1.8 g per kg of body weight × {w} kg = {p} g. High protein protects muscle mass while you're in a deficit.", { w: t.current_weight_kg, p: t.protein_g })}
                 />
                 <BenchmarkRow
-                  label="Carbs"
+                  label={tr("Carbs")}
                   value={carbsG}
                   target={t.carbs_g}
                   unit="g"
                   mode="under"
-                  info={`Whatever calories remain after protein and fat: ${t.calories} − ${t.protein_g * 4} (protein) − ${t.fat_g * 9} (fat) = ${t.carbs_g * 4} kcal ÷ 4 kcal/g = ${t.carbs_g} g.`}
+                  info={tr("Whatever calories remain after protein and fat: {cal} − {p} (protein) − {f} (fat) = {c4} kcal ÷ 4 kcal/g = {c} g.", { cal: t.calories, p: t.protein_g * 4, f: t.fat_g * 9, c4: t.carbs_g * 4, c: t.carbs_g })}
                 />
                 <BenchmarkRow
-                  label="Fat"
+                  label={tr("Fat")}
                   value={fatG}
                   target={t.fat_g}
                   unit="g"
                   mode="under"
-                  info={`0.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.fat_g} g, never below the 0.6 g/kg hormone-health floor.`}
+                  info={tr("0.8 g per kg of body weight × {w} kg = {f} g, never below the 0.6 g/kg hormone-health floor.", { w: t.current_weight_kg, f: t.fat_g })}
                 />
               </div>
             </Card>
 
-            <Card title="Historical Performance" right={<MetricPicker value={metric} onChange={setMetric} />}>
+            <Card title={tr("Historical Performance")} right={<MetricPicker value={metric} onChange={setMetric} />}>
               <HistoryChart
                 data={history}
                 foods={foods}

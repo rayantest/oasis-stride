@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, Activity, Plus, X } from "lucide-react";
 import { BodyCompStep } from "./BodyCompStep";
+import { useT } from "@/lib/i18n";
 
 export type BodyScan = {
   id: string;
@@ -66,6 +67,7 @@ const METRICS: MetricDef[] = [
 ];
 
 export function BodyCompSection({ gender, children }: { gender: string; children?: React.ReactNode }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [metric, setMetric] = useState<MetricKey>("weight_kg");
@@ -87,14 +89,14 @@ export function BodyCompSection({ gender, children }: { gender: string; children
   return (
     <section className="rounded-2xl border border-border/50 bg-card shadow-[var(--shadow-card)] overflow-hidden">
       <div className="w-full flex items-center justify-between px-5 py-4 gap-2">
-        <button onClick={() => setOpen(!open)} className="flex items-center gap-2 text-left flex-1"
+        <button onClick={() => setOpen(!open)} className="flex items-center gap-2 text-start flex-1"
           aria-expanded={open}>
           <Activity size={16} className="text-primary" />
-          <span className="text-sm font-semibold">Body &amp; profile</span>
+          <span className="text-sm font-semibold">{t("Body & profile")}</span>
 
           {latest && (
-            <span className="text-[10px] text-muted-foreground ml-1">
-              latest {latest.scan_date}
+            <span className="text-[10px] text-muted-foreground ms-1">
+              {t("latest {date}", { date: latest.scan_date })}
             </span>
           )}
         </button>
@@ -102,9 +104,9 @@ export function BodyCompSection({ gender, children }: { gender: string; children
           onClick={() => setAdding(true)}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/40 text-primary text-[11px] font-semibold hover:bg-primary/25 transition"
         >
-          <Plus size={12} /> Add scan
+          <Plus size={12} /> {t("Add scan")}
         </button>
-        <button onClick={() => setOpen(!open)} aria-label={open ? "Collapse" : "Expand"}>
+        <button onClick={() => setOpen(!open)} aria-label={open ? t("Collapse") : t("Expand")}>
           <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
       </div>
@@ -113,7 +115,7 @@ export function BodyCompSection({ gender, children }: { gender: string; children
         <div className="px-5 pb-5 space-y-4">
           {scans.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No scans yet. Tap <span className="text-foreground">Add scan</span> to upload a photo of your InBody printout or type the numbers in.
+              {t("No scans yet. Tap")} <span className="text-foreground">{t("Add scan")}</span> {t("to upload a photo of your InBody printout or type the numbers in.")}
             </p>
           ) : (
             <>
@@ -128,7 +130,7 @@ export function BodyCompSection({ gender, children }: { gender: string; children
                       className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px]"
                     >
                       {available.map(m => (
-                        <option key={m.key} value={m.key}>{m.label}</option>
+                        <option key={m.key} value={m.key}>{t(m.label)}</option>
                       ))}
                     </select>
                   }
@@ -137,7 +139,7 @@ export function BodyCompSection({ gender, children }: { gender: string; children
               {latest && <LatestScanMetrics scan={latest} gender={gender} />}
               <ScansList scans={scans} />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Reference ranges are general adult population values — informational only, not medical advice.
+                {t("Reference ranges are general adult population values — informational only, not medical advice.")}
               </p>
             </>
           )}
@@ -173,6 +175,7 @@ function MetricChart({ metric, scans, picker }: {
   scans: BodyScan[];
   picker: React.ReactNode;
 }) {
+  const t = useT();
   const pts = scans
     .map(s => ({ v: s[metric.key] as number | null, date: s.scan_date }))
     .filter((p): p is { v: number; date: string } => p.v != null);
@@ -203,13 +206,13 @@ function MetricChart({ metric, scans, picker }: {
     <div className="rounded-xl border border-border/40 bg-background/40 p-3">
       <div className="flex items-center justify-between gap-2 mb-2">
         {picker}
-        <div className="text-right">
+        <div className="text-end">
           <div className="font-display text-lg font-bold leading-none" style={{ color: metric.color }}>
             {last != null ? `${fmt(last)}${metric.unit ? ` ${metric.unit}` : ""}` : "—"}
           </div>
           {change != null && pts.length > 1 && (
             <div className={`text-[10px] font-mono mt-0.5 ${improving ? "text-oasis" : "text-coral"}`}>
-              {change > 0 ? "+" : ""}{fmt(change)} since {pts[0].date}
+              {change > 0 ? "+" : ""}{fmt(change)} {t("since {date}", { date: pts[0].date })}
             </div>
           )}
         </div>
@@ -217,7 +220,7 @@ function MetricChart({ metric, scans, picker }: {
 
       {pts.length < 2 ? (
         <p className="text-[11px] text-muted-foreground">
-          One data point so far — add another scan to see the trend line.
+          {t("One data point so far — add another scan to see the trend line.")}
         </p>
       ) : (
         <>
@@ -239,36 +242,37 @@ function MetricChart({ metric, scans, picker }: {
 }
 
 function LatestScanMetrics({ scan, gender }: { scan: BodyScan; gender: string }) {
+  const t = useT();
   const bfRange = gender === "female" ? RANGES.body_fat_percent.female : RANGES.body_fat_percent.male;
   const whrLimit = gender === "female" ? RANGES.waist_hip_ratio.female : RANGES.waist_hip_ratio.male;
 
   const items = [
-    scan.weight_kg != null && { label: "Weight", value: `${scan.weight_kg} kg`, tone: "neutral" as const },
+    scan.weight_kg != null && { label: t("Weight"), value: `${scan.weight_kg} kg`, tone: "neutral" as const },
     scan.body_fat_percent != null && {
-      label: "Body fat %",
+      label: t("Body fat %"),
       value: `${scan.body_fat_percent}%`,
       tone: rangeTone(scan.body_fat_percent, bfRange),
-      note: `normal ${bfRange[0]}–${bfRange[1]}%`,
+      note: t("normal {lo}–{hi}%", { lo: bfRange[0], hi: bfRange[1] }),
     },
-    scan.muscle_mass_kg != null && { label: "Muscle mass", value: `${scan.muscle_mass_kg} kg`, tone: "neutral" as const },
+    scan.muscle_mass_kg != null && { label: t("Muscle mass"), value: `${scan.muscle_mass_kg} kg`, tone: "neutral" as const },
     scan.bmi != null && {
-      label: "BMI",
+      label: t("BMI"),
       value: `${scan.bmi}`,
       tone: rangeTone(scan.bmi, RANGES.bmi),
-      note: `normal ${RANGES.bmi[0]}–${RANGES.bmi[1]}`,
+      note: t("normal {lo}–{hi}", { lo: RANGES.bmi[0], hi: RANGES.bmi[1] }),
     },
-    scan.bmr_kcal != null && { label: "BMR", value: `${scan.bmr_kcal} kcal`, tone: "neutral" as const },
+    scan.bmr_kcal != null && { label: t("BMR"), value: `${scan.bmr_kcal} kcal`, tone: "neutral" as const },
     scan.waist_hip_ratio != null && {
-      label: "Waist-hip ratio",
+      label: t("Waist-hip ratio"),
       value: `${scan.waist_hip_ratio.toFixed(2)}`,
       tone: scan.waist_hip_ratio > whrLimit ? "high" : "ok",
-      note: `≤ ${whrLimit}`,
+      note: t("≤ {limit}", { limit: whrLimit }),
     },
     scan.visceral_fat_level != null && {
-      label: "Visceral fat",
+      label: t("Visceral fat"),
       value: `${scan.visceral_fat_level}`,
       tone: scan.visceral_fat_level >= 9 ? "high" : "ok",
-      note: "safe < 9",
+      note: t("safe < 9"),
     },
   ].filter(Boolean) as { label: string; value: string; tone: "ok" | "high" | "low" | "neutral"; note?: string }[];
 
@@ -284,7 +288,7 @@ function LatestScanMetrics({ scan, gender }: { scan: BodyScan; gender: string })
                 it.tone === "high" ? "bg-coral/15 text-coral" :
                 "bg-sand/15 text-sand"
               }`}>
-                {it.tone === "ok" ? "in range" : it.tone === "high" ? "above" : "below"}
+                {it.tone === "ok" ? t("in range") : it.tone === "high" ? t("above") : t("below")}
               </span>
             )}
           </div>
@@ -303,13 +307,14 @@ function rangeTone(v: number, range: [number, number]): "ok" | "high" | "low" {
 }
 
 function ScansList({ scans }: { scans: BodyScan[] }) {
+  const t = useT();
   return (
     <div className="text-[11px] space-y-1">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">History ({scans.length})</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("History ({count})", { count: scans.length })}</div>
       {scans.slice(0, 6).map(s => (
         <div key={s.id} className="flex justify-between font-mono text-muted-foreground">
           <span>{s.scan_date}</span>
-          <span>{s.weight_kg ?? "—"}kg · {s.body_fat_percent ?? "—"}% BF</span>
+          <span>{s.weight_kg ?? "—"}kg · {s.body_fat_percent ?? "—"}% {t("BF")}</span>
         </div>
       ))}
     </div>
