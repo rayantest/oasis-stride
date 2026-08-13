@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { parseBodyScan } from "@/lib/ai-parse.functions";
 import { Camera, Pencil, SkipForward, Loader2, Check, ArrowLeft } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export type ScanValues = {
   scan_date: string;
@@ -30,6 +31,7 @@ export function BodyCompStep({ onSaved, onSkip }: {
   onSaved: () => void;
   onSkip: () => void;
 }) {
+  const t = useT();
   const [mode, setMode] = useState<Mode>("choose");
   const [values, setValues] = useState<ScanValues>(empty());
   const [saving, setSaving] = useState(false);
@@ -42,7 +44,7 @@ export function BodyCompStep({ onSaved, onSkip }: {
 
   const handleFile = async (file: File) => {
     if (file.size > 8 * 1024 * 1024) {
-      toast.error("Image is too large — try a smaller photo (< 8MB).");
+      toast.error(t("Image is too large — try a smaller photo (< 8MB)."));
       return;
     }
     setParsing(true);
@@ -67,9 +69,9 @@ export function BodyCompStep({ onSaved, onSkip }: {
       });
       setSource("photo");
       setMode("manual"); // reuse form as review/edit screen
-      toast.success("Values extracted — review and adjust before saving.");
+      toast.success(t("Values extracted — review and adjust before saving."));
     } catch (e: any) {
-      toast.error(e?.message || "Couldn't read the scan. Try manual entry instead.");
+      toast.error(e?.message || t("Couldn't read the scan. Try manual entry instead."));
       setMode("manual");
       setSource("manual");
     } finally {
@@ -79,7 +81,7 @@ export function BodyCompStep({ onSaved, onSkip }: {
 
   const save = async () => {
     if (!values.weight_kg || values.weight_kg <= 0) {
-      toast.error("Weight is required to save a scan.");
+      toast.error(t("Weight is required to save a scan."));
       return;
     }
     setSaving(true);
@@ -97,40 +99,40 @@ export function BodyCompStep({ onSaved, onSkip }: {
     } as any);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Body scan saved");
+    toast.success(t("Body scan saved"));
     onSaved();
   };
 
   if (mode === "choose") {
     return (
       <div>
-        <h3 className="font-display text-lg font-semibold mb-1">Body composition scan</h3>
+        <h3 className="font-display text-lg font-semibold mb-1">{t("Body composition scan")}</h3>
         <p className="text-xs text-muted-foreground mb-4">
-          Have a recent InBody or similar scan? Adding it makes your calorie & macro targets more accurate. Totally optional.
+          {t("Have a recent InBody or similar scan? Adding it makes your calorie & macro targets more accurate. Totally optional.")}
         </p>
         <div className="space-y-2">
           <button onClick={onPickFile} disabled={parsing}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/50 bg-secondary/40 hover:bg-secondary/70 transition text-left disabled:opacity-50">
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/50 bg-secondary/40 hover:bg-secondary/70 transition text-start disabled:opacity-50">
             {parsing ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <Camera className="w-5 h-5 text-primary" />}
             <div>
-              <div className="text-sm font-medium">{parsing ? "Reading scan…" : "Upload a photo of the printout"}</div>
-              <div className="text-xs text-muted-foreground">We'll extract the numbers for you to review.</div>
+              <div className="text-sm font-medium">{parsing ? t("Reading scan…") : t("Upload a photo of the printout")}</div>
+              <div className="text-xs text-muted-foreground">{t("We'll extract the numbers for you to review.")}</div>
             </div>
           </button>
           <button onClick={() => { setSource("manual"); setMode("manual"); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/50 bg-secondary/40 hover:bg-secondary/70 transition text-left">
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/50 bg-secondary/40 hover:bg-secondary/70 transition text-start">
             <Pencil className="w-5 h-5 text-primary" />
             <div>
-              <div className="text-sm font-medium">Enter the numbers manually</div>
-              <div className="text-xs text-muted-foreground">Type in what your scan reported.</div>
+              <div className="text-sm font-medium">{t("Enter the numbers manually")}</div>
+              <div className="text-xs text-muted-foreground">{t("Type in what your scan reported.")}</div>
             </div>
           </button>
           <button onClick={onSkip}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/50 bg-secondary/20 hover:bg-secondary/50 transition text-left">
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/50 bg-secondary/20 hover:bg-secondary/50 transition text-start">
             <SkipForward className="w-5 h-5 text-muted-foreground" />
             <div>
-              <div className="text-sm font-medium">Skip — I don't have one</div>
-              <div className="text-xs text-muted-foreground">We'll use estimates based on your profile.</div>
+              <div className="text-sm font-medium">{t("Skip — I don't have one")}</div>
+              <div className="text-xs text-muted-foreground">{t("We'll use estimates based on your profile.")}</div>
             </div>
           </button>
         </div>
@@ -146,38 +148,38 @@ export function BodyCompStep({ onSaved, onSkip }: {
   return (
     <div>
       <button onClick={() => setMode("choose")} className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
-        <ArrowLeft className="w-3 h-3" /> Back
+        <ArrowLeft className="w-3 h-3" /> {t("Back")}
       </button>
       <h3 className="font-display text-lg font-semibold mb-1">
-        {source === "photo" ? "Review extracted values" : "Enter scan values"}
+        {source === "photo" ? t("Review extracted values") : t("Enter scan values")}
       </h3>
       <p className="text-xs text-muted-foreground mb-4">
         {source === "photo"
-          ? "Correct anything the AI misread. Only weight is required."
-          : "All fields optional except weight. Enter only what your scan shows."}
+          ? t("Correct anything the AI misread. Only weight is required.")
+          : t("All fields optional except weight. Enter only what your scan shows.")}
       </p>
 
       <div className="space-y-3">
-        <NumField label="Scan date" type="date" value={values.scan_date}
+        <NumField label={t("Scan date")} type="date" value={values.scan_date}
           onChange={v => set("scan_date", v as string)} />
-        <NumField label="Weight (kg) *" value={values.weight_kg} onChange={v => set("weight_kg", v as number | null)} step={0.1} required />
-        <NumField label="Skeletal muscle mass (kg)" value={values.muscle_mass_kg} onChange={v => set("muscle_mass_kg", v as number | null)} step={0.1} />
-        <NumField label="Body fat mass (kg)" value={values.body_fat_mass_kg} onChange={v => set("body_fat_mass_kg", v as number | null)} step={0.1} />
-        <NumField label="Body fat %" value={values.body_fat_percent} onChange={v => set("body_fat_percent", v as number | null)} step={0.1} />
-        <NumField label="BMI" value={values.bmi} onChange={v => set("bmi", v as number | null)} step={0.1} />
-        <NumField label="BMR (kcal)" value={values.bmr_kcal} onChange={v => set("bmr_kcal", v as number | null)} />
-        <NumField label="Waist-hip ratio" value={values.waist_hip_ratio} onChange={v => set("waist_hip_ratio", v as number | null)} step={0.01} />
-        <NumField label="Visceral fat level" value={values.visceral_fat_level} onChange={v => set("visceral_fat_level", v as number | null)} />
+        <NumField label={t("Weight (kg) *")} value={values.weight_kg} onChange={v => set("weight_kg", v as number | null)} step={0.1} required />
+        <NumField label={t("Skeletal muscle mass (kg)")} value={values.muscle_mass_kg} onChange={v => set("muscle_mass_kg", v as number | null)} step={0.1} />
+        <NumField label={t("Body fat mass (kg)")} value={values.body_fat_mass_kg} onChange={v => set("body_fat_mass_kg", v as number | null)} step={0.1} />
+        <NumField label={t("Body fat %")} value={values.body_fat_percent} onChange={v => set("body_fat_percent", v as number | null)} step={0.1} />
+        <NumField label={t("BMI")} value={values.bmi} onChange={v => set("bmi", v as number | null)} step={0.1} />
+        <NumField label={t("BMR (kcal)")} value={values.bmr_kcal} onChange={v => set("bmr_kcal", v as number | null)} />
+        <NumField label={t("Waist-hip ratio")} value={values.waist_hip_ratio} onChange={v => set("waist_hip_ratio", v as number | null)} step={0.01} />
+        <NumField label={t("Visceral fat level")} value={values.visceral_fat_level} onChange={v => set("visceral_fat_level", v as number | null)} />
 
       </div>
 
       <div className="flex gap-2 mt-5">
         <button onClick={onSkip} className="flex-1 py-3 rounded-full bg-secondary text-foreground text-sm">
-          Skip
+          {t("Skip")}
         </button>
         <button onClick={save} disabled={saving}
           className="flex-1 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50 flex items-center justify-center gap-1">
-          {saving ? "Saving…" : <>Save scan <Check className="w-4 h-4" /></>}
+          {saving ? t("Saving…") : <>{t("Save scan")} <Check className="w-4 h-4" /></>}
         </button>
       </div>
     </div>

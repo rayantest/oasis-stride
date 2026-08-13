@@ -599,7 +599,7 @@ function ExerciseHistoryChart({
         <div className="relative" style={{ minWidth: `${data.length * 34}px` }}>
           {target > 0 && (
             <div
-              className="absolute left-0 right-0 z-10 pointer-events-none"
+              className="absolute start-0 end-0 z-10 pointer-events-none"
               style={{
                 bottom: `${28 + (target / scale) * H}px`,
                 borderTop: "2px dashed var(--sand)",

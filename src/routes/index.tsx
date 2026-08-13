@@ -403,29 +403,33 @@ function App() {
               }
             />
 
-            <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
+            <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
               <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
             </Card>
 
-            <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
+            <Card title={viewingToday ? tr("Daily benchmark") : tr("Benchmark · {d}", { d: dateLabel })} hint={tr("Compass, not a rulebook.")}>
               <div className="space-y-3">
                 <BenchmarkRow
-                  label="Active burn"
+                  label={tr("Active burn")}
                   value={activeBurn}
                   target={t.active_burn}
                   unit="kcal"
                   mode="over"
-                  info={`Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently ${t.active_burn} kcal/day. It counts logged movement${ringBurn > 0 ? " plus active calories synced from your watch" : ""}, and is separate from your ${t.deficit} kcal/day food deficit. Change it by updating your goal answers in Body & profile.`}
+                  info={tr("Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently {b} kcal/day. It counts logged movement{ring}, and is separate from your {d} kcal/day food deficit. Change it by updating your goal answers in Body & profile.", {
+                    b: t.active_burn,
+                    ring: ringBurn > 0 ? tr(" plus active calories synced from your watch") : "",
+                    d: t.deficit,
+                  })}
                 />
                 {ringBurn > 0 && (
                   <div className="-mt-2 text-[11px] text-muted-foreground">
-                    Includes {Math.round(ringBurn)} kcal synced from your watch.
+                    {tr("Includes {n} kcal synced from your watch.", { n: Math.round(ringBurn) })}
                   </div>
                 )}
                 {EXERCISES.map((ex) => (
                   <BenchmarkRow
                     key={ex}
-                    label={EXERCISE_LABELS[ex as ExerciseKey]}
+                    label={tr(EXERCISE_LABELS[ex as ExerciseKey])}
                     value={repsFor(exercises, ex, selectedDate)}
                     target={strengthTargets[ex]}
                     unit="reps"
@@ -762,6 +766,7 @@ function BenchmarkRow({
   const good = mode === "under" ? v <= target : v >= target;
   const color = good ? "var(--oasis)" : "var(--coral)";
   const [open, setOpen] = useState(false);
+  const tr = useT();
 
   return (
     <div>
@@ -772,7 +777,7 @@ function BenchmarkRow({
             <button
               type="button"
               onClick={() => setOpen((o) => !o)}
-              aria-label={`How the ${label} benchmark is set`}
+              aria-label={tr("How the {label} benchmark is set", { label })}
               aria-expanded={open}
               className={`inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border text-[9px] font-bold transition ${
                 open
@@ -788,7 +793,7 @@ function BenchmarkRow({
           <span style={{ color: good ? "var(--oasis)" : "var(--coral)" }}>{v}</span>
           <span className="text-muted-foreground">
             {" "}
-            / {target} {unit}
+            / {target} {tr(unit)}
           </span>
         </span>
       </div>
@@ -837,6 +842,8 @@ function MovementInput({
   const [text, setText] = useState("");
   const parse = useServerFn(parseMovement);
   const [busy, setBusy] = useState(false);
+  const tr = useT();
+  const { lang } = useI18n();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -849,7 +856,7 @@ function MovementInput({
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
-      toast.success(`Logged ${parsed.label} · ${parsed.kcal} kcal (${parsed.source})`);
+      toast.success(tr("Logged {label} · {kcal} kcal ({source})", { label: parsed.label, kcal: parsed.kcal, source: tr(parsed.source) }));
       setText("");
       onLogged();
     } catch (err) {
@@ -860,19 +867,19 @@ function MovementInput({
   };
 
   const dateHint = viewingToday
-    ? "Watch numbers are trusted exactly. No number → smart estimate."
-    : `Back-filling to ${logDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
+    ? tr("Watch numbers are trusted exactly. No number → smart estimate.")
+    : tr("Back-filling to {d}", { d: logDate.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "short", month: "short", day: "numeric" }) });
 
   return (
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
       <label className="text-[10px] uppercase tracking-widest text-oasis/80 flex items-center gap-1.5 mb-2">
-        <Footprints size={12} /> Log movement {!viewingToday && <span className="text-sand">· past day</span>}
+        <Footprints size={12} /> {tr("Log movement")} {!viewingToday && <span className="text-sand">· {tr("past day")}</span>}
       </label>
       <textarea
         rows={2}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder='e.g. "walked 30 min, watch said 145 kcal" or "played padel 45 min"'
+        placeholder={tr('e.g. "walked 30 min, watch said 145 kcal" or "played padel 45 min"')}
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-oasis/40 placeholder:text-muted-foreground/50"
       />
       <div className="flex items-center justify-between mt-2 gap-2">
@@ -883,7 +890,7 @@ function MovementInput({
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-oasis text-accent-foreground text-xs font-semibold disabled:opacity-40"
         >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-          Log it
+          {tr("Log it")}
         </button>
       </div>
     </form>
