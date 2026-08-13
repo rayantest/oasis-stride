@@ -1085,7 +1085,10 @@ function FoodEditForm({ food, onCancel, onSaved }: { food: Food; onCancel: () =>
         const n = Number(vals[f.key as string]);
         patch[f.key as string] = Number.isFinite(n) && n >= 0 ? n : 0;
       }
-      const { error } = await supabase.from("food_entries").update(patch).eq("id", food.id);
+      const { error } = await supabase
+        .from("food_entries")
+        .update(patch as never)
+        .eq("id", food.id);
       if (error) throw error;
       toast.success("Food updated");
       onSaved();
