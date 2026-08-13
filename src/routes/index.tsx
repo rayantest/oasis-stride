@@ -1596,6 +1596,7 @@ function HistoryChart({
 /* ---------- Profile & goal panel (inline, inside Body & profile) ---------- */
 
 function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => void }) {
+  const tr = useT();
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -1624,7 +1625,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
       toast.error(error.message);
       return;
     }
-    toast.success("Profile saved");
+    toast.success(tr("Profile saved"));
     onSaved();
   };
 
@@ -1637,48 +1638,48 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
   const projection = projectionText(answers.targetLossKg, t.kg_per_week);
   const misses = eventLikelyMisses(answers.deadline, answers.targetLossKg, t.kg_per_week);
   const paceLabel: Record<string, string> = {
-    modest: "Modest (0.5%/wk)",
-    moderate: "Moderate (0.75%/wk)",
-    aggressive: "Aggressive (1%/wk)",
+    modest: tr("Modest (0.5%/wk)"),
+    moderate: tr("Moderate (0.75%/wk)"),
+    aggressive: tr("Aggressive (1%/wk)"),
   };
   const actLabel: Record<string, string> = {
-    barely_moving: "Barely moving",
-    lightly_active: "Lightly active",
-    moderately_active: "Moderately active",
+    barely_moving: tr("Barely moving"),
+    lightly_active: tr("Lightly active"),
+    moderately_active: tr("Moderately active"),
   };
 
   return (
     <div className="rounded-xl border border-border/40 bg-background/40 p-4">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Profile & goal</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">{tr("Profile & goal")}</div>
 
       {form.caution_flag && (
         <div className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/40 px-3 py-2 text-xs text-amber-200">
-          ⚠️ Caution noted{form.caution_note ? `: ${form.caution_note}` : ""} — consider checking with a doctor before
-          high-strain training.
+          ⚠️ {tr("Caution noted")}
+          {form.caution_note ? `: ${form.caution_note}` : ""} — {tr("consider checking with a doctor before high-strain training.")}
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Height (cm)">
+        <Field label={tr("Height (cm)")}>
           <NumInput value={form.height_cm} onChange={(v) => set("height_cm", v)} />
         </Field>
-        <Field label="Weight (kg)">
+        <Field label={tr("Weight (kg)")}>
           <NumInput value={form.weight_kg} onChange={(v) => set("weight_kg", v)} step={0.1} />
         </Field>
-        <Field label="Age">
+        <Field label={tr("Age")}>
           <NumInput value={form.age} onChange={(v) => set("age", v)} />
         </Field>
-        <Field label="Resting HR">
+        <Field label={tr("Resting HR")}>
           <NumInput value={form.resting_hr} onChange={(v) => set("resting_hr", v)} />
         </Field>
-        <Field label="Gender">
+        <Field label={tr("Gender")}>
           <Select
             value={form.gender}
             onChange={(v) => set("gender", v)}
             options={[
-              ["male", "Male"],
-              ["female", "Female"],
-              ["other", "Other"],
+              ["male", tr("Male")],
+              ["female", tr("Female")],
+              ["other", tr("Other")],
             ]}
           />
         </Field>
@@ -1687,7 +1688,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
       <div className="mt-5 rounded-2xl border border-border/60 p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Your goal</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{tr("Your goal")}</div>
             <div className="text-sm font-medium">
               {paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} ·{" "}
               {actLabel[form.activity_level] ?? form.activity_level}
@@ -1697,24 +1698,23 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
             onClick={() => setGoalOpen(true)}
             className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shrink-0"
           >
-            Update your goal
+            {tr("Update your goal")}
           </button>
         </div>
         <div className="text-xs text-muted-foreground">
-          Active burn target: {form.active_burn_goal_kcal} kcal/day · derived from your questionnaire.
+          {tr("Active burn target: {n} kcal/day · derived from your questionnaire.", { n: form.active_burn_goal_kcal })}
         </div>
         {projection && (
           <div className="text-xs text-foreground/80 rounded-lg bg-secondary/50 px-3 py-2">{projection}</div>
         )}
         {misses && (
           <div className="text-xs text-amber-200 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
-            This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a
-            faster pace manually by re-running the questionnaire.
+            {tr("This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a faster pace manually by re-running the questionnaire.")}
           </div>
         )}
         {answers.dietary && answers.dietary !== "none" && (
           <div className="text-[11px] text-muted-foreground">
-            Dietary: {answers.dietary === "other" ? answers.dietaryOther || "other" : answers.dietary}
+            {tr("Dietary")}: {answers.dietary === "other" ? answers.dietaryOther || tr("other") : tr(String(answers.dietary))}
           </div>
         )}
       </div>
@@ -1722,21 +1722,23 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
       {scanWeightMismatch && latestScan?.weight_kg && (
         <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 px-3 py-2 text-[11px] flex items-center justify-between gap-2">
           <span>
-            Latest scan weight is {latestScan.weight_kg}kg (profile: {form.weight_kg}kg).
+            {tr("Latest scan weight is {s}kg (profile: {p}kg).", { s: latestScan.weight_kg, p: form.weight_kg })}
           </span>
           <button
             onClick={() => set("weight_kg", latestScan.weight_kg as number)}
             className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0"
           >
-            Sync
+            {tr("Sync")}
           </button>
         </div>
       )}
 
       <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
-        BMR {t.bmr}
-        {t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c /{" "}
-        {t.fat_g}f
+        <span className="ltr-nums">
+          BMR {t.bmr}
+          {t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c
+          / {t.fat_g}f
+        </span>
       </div>
 
       <button
@@ -1744,7 +1746,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
         disabled={saving}
         className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Save"}
+        {saving ? tr("Saving…") : tr("Save")}
       </button>
 
       {goalOpen && (
