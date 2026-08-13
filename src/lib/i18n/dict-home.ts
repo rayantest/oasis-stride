@@ -113,7 +113,7 @@ export const AR_HOME: Record<string, string> = {
   "consistency": "انتظام",
   "body": "الجسم",
   "trend": "اتجاه",
-  "logging": "تسجيل",,
+  "logging": "تسجيل",
 
   // Profile & goal
   "Profile & goal": "الملف الشخصي والهدف",
