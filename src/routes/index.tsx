@@ -1400,6 +1400,8 @@ function HistoryChart({
   selectedDate: Date;
   onSelect: (d: Date) => void;
 }) {
+  const tr = useT();
+  const { lang } = useI18n();
   const meta = METRIC_META[metric];
   const scrollRef = useRef<HTMLDivElement>(null);
   const target = data[0]?.target ?? 0;
@@ -1452,38 +1454,38 @@ function HistoryChart({
       <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground flex-wrap">
         {target > 0 && (
           <span className="inline-flex items-center gap-1">
-            <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Benchmark {target} {meta.unit}
+            <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> {tr("Benchmark {t} {u}", { t: target, u: meta.unit })}
           </span>
         )}
         {isStackedMetric ? (
           <>
             {metric === "fat" && (
               <>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Sat</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> Unsat</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> {tr("Sat")}</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> {tr("Unsat")}</span>
               </>
             )}
             {metric === "carbs" && (
               <>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Sugar</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> Fiber</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> Starch</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> {tr("Sugar")}</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> {tr("Fiber")}</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> {tr("Starch")}</span>
               </>
             )}
             {metric === "protein" && (
               <>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Animal</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> Plant</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> {tr("Animal")}</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> {tr("Plant")}</span>
               </>
             )}
           </>
         ) : (
           <>
             <span className="inline-flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> On track
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> {tr("On track")}
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> Off target
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> {tr("Off target")}
             </span>
           </>
         )}
@@ -1538,12 +1540,12 @@ function HistoryChart({
                 <button
                   key={i}
                   onClick={() => onSelect(d.date)}
-                  title={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}${target > 0 ? ` (target ${d.target})` : ""}`}
+                  title={tr("{d} — {v} {u}{t}", { d: d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US"), v: Math.round(d.value), u: meta.unit, t: target > 0 ? tr(" (target {t})", { t: d.target }) : "" })}
                   className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
                   style={{ height: `${H + 28}px` }}
-                  aria-label={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}`}
+                  aria-label={tr("{d} — {v} {u}", { d: d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US"), v: Math.round(d.value), u: meta.unit })}
                 >
                   <div className="flex-1 w-full flex items-end justify-center">
                     {segments.length > 0 ? (
@@ -1570,7 +1572,7 @@ function HistoryChart({
                       {d.date.getDate()}/{d.date.getMonth() + 1}
                     </div>
                     <div className={`text-[8px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
-                      {d.isToday ? "now" : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
+                      {d.isToday ? tr("now") : d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "narrow" })}
                     </div>
                   </div>
                 </button>
@@ -1580,7 +1582,7 @@ function HistoryChart({
         </div>
       </div>
       <div className="text-[10px] text-muted-foreground/70 mt-2 text-center">
-        Scroll for older days · tap a day to view its numbers
+        {tr("Scroll for older days · tap a day to view its numbers")}
       </div>
     </div>
   );
