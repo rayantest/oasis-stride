@@ -1193,6 +1193,14 @@ function FoodLogRow({ food, onDelete, onChange }: { food: Food; onDelete: () => 
         </div>
       </div>
 
+      {editing && (
+        <FoodEditForm
+          food={food}
+          onCancel={() => setEditing(false)}
+          onSaved={() => { setEditing(false); onChange(); }}
+        />
+      )}
+
       {open && (
         <div className="mt-3 space-y-3 rounded-xl border border-border/40 bg-background/40 p-3">
           <div>
