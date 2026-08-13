@@ -576,6 +576,7 @@ function CoachCard({
 
     return {
       focus,
+      lang,
       exercises: exerciseSummary,
       profile: {
         age: profile.age,
@@ -606,11 +607,13 @@ function CoachCard({
       })),
       days,
     };
-  }, [profile, foods, movements, scans, signals, focus, exerciseSummary, rings]);
+  }, [profile, foods, movements, scans, signals, focus, exerciseSummary, rings, lang]);
 
   const contextKey = useMemo(
     () =>
       focus +
+      ":" +
+      lang +
       ":" +
       JSON.stringify(context).length +
       ":" +
