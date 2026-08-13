@@ -13,6 +13,7 @@ export type AiCoachTip = {
 
 export type CoachContext = {
   focus?: "diet" | "movement";
+  lang?: "en" | "ar";
   exercises?: Array<{ exercise: string; avg_reps: number; best_reps: number; days_logged: number; target_reps: number }>;
   profile: {
     age: number;
