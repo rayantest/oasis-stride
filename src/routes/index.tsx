@@ -932,6 +932,8 @@ function FoodInput({
   const [busy, setBusy] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const qc = useQueryClient();
+  const tr = useT();
+  const { lang } = useI18n();
 
   const saved = useQuery({
     queryKey: ["saved_foods"],
@@ -948,7 +950,7 @@ function FoodInput({
 
   const dateHint = viewingToday
     ? " "
-    : `Back-filling to ${logDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
+    : tr("Back-filling to {d}", { d: logDate.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "short", month: "short", day: "numeric" }) });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -961,7 +963,7 @@ function FoodInput({
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
-      toast.success(`Logged ${parsed.label} · ${parsed.kcal} kcal`);
+      toast.success(tr("Logged {label} · {kcal} kcal", { label: parsed.label, kcal: parsed.kcal }));
       setText("");
       onLogged();
     } catch (err) {
@@ -995,7 +997,7 @@ function FoodInput({
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
-      toast.success(`Logged ${s.label} · ${s.kcal} kcal`);
+      toast.success(tr("Logged {label} · {kcal} kcal", { label: s.label, kcal: s.kcal }));
       onLogged();
     } catch (err) {
       toast.error((err as Error).message);
@@ -1005,12 +1007,12 @@ function FoodInput({
   };
 
   const renameSaved = async (s: SavedFood) => {
-    const next = window.prompt("Rename this saved food", s.label)?.trim();
+    const next = window.prompt(tr("Rename this saved food"), s.label)?.trim();
     if (!next || next === s.label) return;
     try {
       const { error } = await supabase.from("saved_foods").update({ label: next }).eq("id", s.id);
       if (error) throw error;
-      toast.success(`Renamed to ${next}`);
+      toast.success(tr("Renamed to {name}", { name: next }));
       qc.invalidateQueries({ queryKey: ["saved_foods"] });
     } catch (err) {
       toast.error((err as Error).message);
@@ -1023,27 +1025,27 @@ function FoodInput({
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between mb-2 gap-2">
         <label className="text-[10px] uppercase tracking-widest text-sand/80 flex items-center gap-1.5">
-          <UtensilsCrossed size={12} /> Log food or drink{" "}
-          {!viewingToday && <span className="text-sand">· past day</span>}
+          <UtensilsCrossed size={12} /> {tr("Log food or drink")}{" "}
+          {!viewingToday && <span className="text-sand">· {tr("past day")}</span>}
         </label>
         <button
           type="button"
           onClick={() => setScanOpen(true)}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-sand/40 text-sand text-[11px] font-semibold"
         >
-          <Camera size={12} /> Scan
+          <Camera size={12} /> {tr("Scan")}
         </button>
       </div>
       <textarea
         rows={2}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder='e.g. "chicken shawarma wrap" or "flat white with oat milk"'
+        placeholder={tr('"'"'e.g. "chicken shawarma wrap" or "flat white with oat milk"'"'"')}
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
       />
       {(saved.data?.length ?? 0) > 0 && (
         <div className="mt-2">
-          <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">My foods</div>
+          <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">{tr("My foods")}</div>
           <div className="flex flex-wrap gap-1.5">
             {saved.data!.map((s) => (
               <span
@@ -1062,8 +1064,8 @@ function FoodInput({
                   type="button"
                   onClick={() => renameSaved(s)}
                   disabled={busy}
-                  aria-label={`Rename ${s.label}`}
-                  title="Rename"
+                  aria-label={tr("Rename {label}", { label: s.label })}
+                  title={tr("Rename")}
                   className="px-1.5 py-1 border-l border-border/50 text-muted-foreground hover:text-sand disabled:opacity-40"
                 >
                   <Pencil size={11} />
@@ -1082,7 +1084,7 @@ function FoodInput({
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-sand text-primary-foreground text-xs font-semibold disabled:opacity-40"
         >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-          Log it
+          {tr("Log it")}
         </button>
       </div>
 
@@ -1102,6 +1104,7 @@ function FoodInput({
 
 function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
+  const tr = useT();
   const fatTotal = Math.max(1, Number(food.fat_g));
   const carbTotal = Math.max(1, Number(food.carbs_g));
   const proteinTotal = Math.max(1, Number(food.protein_g));
@@ -1131,7 +1134,7 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
               <button
                 onClick={onDelete}
                 className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
-                aria-label="Delete"
+                aria-label={tr("Delete")}
               >
                 <Trash2 size={14} />
               </button>
@@ -1139,7 +1142,7 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
           </div>
           <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
             {Math.round(Number(food.protein_g))}p · {Math.round(Number(food.carbs_g))}c · {Math.round(Number(food.fat_g))}f
-            {Number(food.sodium_mg) > 0 && ` · ${Math.round(Number(food.sodium_mg))}mg sodium`}
+            {Number(food.sodium_mg) > 0 && tr(" · {n}mg sodium", { n: Math.round(Number(food.sodium_mg)) })}
           </div>
         </div>
       </div>
@@ -1148,56 +1151,56 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
         <div className="mt-3 space-y-3 rounded-xl border border-border/40 bg-background/40 p-3">
           <div>
             <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              <span>Fat breakdown</span>
-              <span className="font-mono">{Math.round(Number(food.fat_g))}g total</span>
+              <span>{tr("Fat breakdown")}</span>
+              <span className="font-mono">{tr("{n}g total", { n: Math.round(Number(food.fat_g)) })}</span>
             </div>
             <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
               <div
                 className="h-full bg-coral"
                 style={{ width: `${satPct}%` }}
-                title={`Saturated ${Math.round(Number(food.saturated_fat_g))}g (${satPct}%)`}
+                title={tr("Saturated {n}g ({p}%)", { n: Math.round(Number(food.saturated_fat_g)), p: satPct })}
               />
               <div
                 className="h-full bg-sand"
                 style={{ width: `${unsatPct}%` }}
-                title={`Unsaturated ${Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g))}g (${unsatPct}%)`}
+                title={tr("Unsaturated {n}g ({p}%)", { n: Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g)), p: unsatPct })}
               />
             </div>
             <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Sat {Math.round(Number(food.saturated_fat_g))}g</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> Unsat {Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> {tr("Sat {n}g", { n: Math.round(Number(food.saturated_fat_g)) })}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> {tr("Unsat {n}g", { n: Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g)) })}</span>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              <span>Carb breakdown</span>
-              <span className="font-mono">{Math.round(Number(food.carbs_g))}g total</span>
+              <span>{tr("Carb breakdown")}</span>
+              <span className="font-mono">{tr("{n}g total", { n: Math.round(Number(food.carbs_g)) })}</span>
             </div>
             <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
-              <div className="h-full bg-coral" style={{ width: `${sugarPct}%` }} title={`Sugar ${Math.round(Number(food.sugar_g))}g`} />
-              <div className="h-full bg-oasis" style={{ width: `${fiberPct}%` }} title={`Fiber ${Math.round(Number(food.fiber_g))}g`} />
-              <div className="h-full bg-sand" style={{ width: `${starchPct}%` }} title={`Starch ${Math.round(Number(food.starch_g))}g`} />
+              <div className="h-full bg-coral" style={{ width: `${sugarPct}%` }} title={tr("Sugar {n}g", { n: Math.round(Number(food.sugar_g)) })} />
+              <div className="h-full bg-oasis" style={{ width: `${fiberPct}%` }} title={tr("Fiber {n}g", { n: Math.round(Number(food.fiber_g)) })} />
+              <div className="h-full bg-sand" style={{ width: `${starchPct}%` }} title={tr("Starch {n}g", { n: Math.round(Number(food.starch_g)) })} />
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Sugar {Math.round(Number(food.sugar_g))}g</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> Fiber {Math.round(Number(food.fiber_g))}g</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> Starch {Math.round(Number(food.starch_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> {tr("Sugar {n}g", { n: Math.round(Number(food.sugar_g)) })}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> {tr("Fiber {n}g", { n: Math.round(Number(food.fiber_g)) })}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> {tr("Starch {n}g", { n: Math.round(Number(food.starch_g)) })}</span>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              <span>Protein source</span>
-              <span className="font-mono">{Math.round(Number(food.protein_g))}g total</span>
+              <span>{tr("Protein source")}</span>
+              <span className="font-mono">{tr("{n}g total", { n: Math.round(Number(food.protein_g)) })}</span>
             </div>
             <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
-              <div className="h-full bg-coral" style={{ width: `${animalPct}%` }} title={`Animal ${Math.round(Number(food.animal_protein_g))}g`} />
-              <div className="h-full bg-oasis" style={{ width: `${plantPct}%` }} title={`Plant ${Math.round(Number(food.plant_protein_g))}g`} />
+              <div className="h-full bg-coral" style={{ width: `${animalPct}%` }} title={tr("Animal {n}g", { n: Math.round(Number(food.animal_protein_g)) })} />
+              <div className="h-full bg-oasis" style={{ width: `${plantPct}%` }} title={tr("Plant {n}g", { n: Math.round(Number(food.plant_protein_g)) })} />
             </div>
             <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Animal {Math.round(Number(food.animal_protein_g))}g</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> Plant {Math.round(Number(food.plant_protein_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> {tr("Animal {n}g", { n: Math.round(Number(food.animal_protein_g)) })}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> {tr("Plant {n}g", { n: Math.round(Number(food.plant_protein_g)) })}</span>
             </div>
           </div>
 
@@ -1205,19 +1208,19 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40">
               {Number(food.sodium_mg) > 0 && (
                 <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase">Sodium</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">{tr("Sodium")}</div>
                   <div className="font-mono text-xs">{Math.round(Number(food.sodium_mg))}mg</div>
                 </div>
               )}
               {Number(food.cholesterol_mg) > 0 && (
                 <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase">Cholesterol</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">{tr("Cholesterol")}</div>
                   <div className="font-mono text-xs">{Math.round(Number(food.cholesterol_mg))}mg</div>
                 </div>
               )}
               {Number(food.trans_fat_g) > 0 && (
                 <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase">Trans fat</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">{tr("Trans fat")}</div>
                   <div className="font-mono text-xs">{Math.round(Number(food.trans_fat_g))}g</div>
                 </div>
               )}
@@ -1241,6 +1244,7 @@ function DayLog({
   onChange: () => void;
 }) {
   type Row = { kind: "m" | "f"; ts: string; el: React.ReactNode };
+  const tr = useT();
   const del = useMutation({
     mutationFn: async ({ table, id }: { table: "movement_entries" | "food_entries"; id: string }) => {
       const { error } = await supabase.from(table).delete().eq("id", id);
@@ -1261,16 +1265,16 @@ function DayLog({
           label={m.label}
           sub={
             <>
-              {m.minutes} min ·{" "}
+              {tr("{n} min", { n: m.minutes })} ·{" "}
               <span
                 className={`inline-flex items-center gap-1 ${m.source === "watch" ? "text-oasis" : "text-muted-foreground"}`}
               >
                 {m.source === "watch" ? (
                   <>
-                    <Watch size={10} /> watch
+                    <Watch size={10} /> {tr("watch")}
                   </>
                 ) : (
-                  "approx."
+                  tr("approx.")
                 )}
               </span>
             </>
@@ -1290,7 +1294,7 @@ function DayLog({
   }, [movements, foods, del]);
 
   if (rows.length === 0 && exercises.length === 0) {
-    return <div className="text-sm text-muted-foreground text-center py-6">Nothing logged for this day yet.</div>;
+    return <div className="text-sm text-muted-foreground text-center py-6">{tr("Nothing logged for this day yet.")}</div>;
   }
 
   return (
@@ -1327,7 +1331,7 @@ function LogRow({
       <button
         onClick={onDelete}
         className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
-        aria-label="Delete"
+        aria-label={useT()("Delete")}
       >
         <Trash2 size={14} />
       </button>
@@ -1353,6 +1357,7 @@ const METRIC_META: Record<MetricKey, { label: string; unit: string; mode: "over"
 type DayPoint = { date: Date; value: number; target: number; isToday: boolean };
 
 function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: MetricKey) => void }) {
+  const tr = useT();
   return (
     <select
       value={value}
@@ -1361,7 +1366,7 @@ function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: Met
     >
       {(Object.keys(METRIC_META) as MetricKey[]).map((k) => (
         <option key={k} value={k}>
-          {METRIC_META[k].label}
+          {tr(METRIC_META[k].label)}
         </option>
       ))}
     </select>
