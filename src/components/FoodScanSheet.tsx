@@ -318,6 +318,14 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
                 />
                 <Bookmark size={13} /> Save to my foods for one-tap logging later
               </label>
+              {saveToLibrary && (
+                <input
+                  value={saveName}
+                  onChange={e => setSaveName(e.target.value)}
+                  placeholder={result.label}
+                  className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
+                />
+              )}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[10px] text-muted-foreground">{dateHint}</span>
                 <button
