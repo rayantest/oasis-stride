@@ -125,7 +125,27 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
+  /* Arabic typography */
+  html[lang="ar"], html[lang="ar"] body {
+    font-family: "Cairo", "Noto Kufi Arabic", ui-sans-serif, system-ui, sans-serif;
+  }
+  html[lang="ar"] h1,
+  html[lang="ar"] h2,
+  html[lang="ar"] h3,
+  html[lang="ar"] h4 {
+    font-family: "Cairo", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0;
+  }
 }
+
+/* --- RTL adjustments ------------------------------------------------ */
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+/* keep numeric readouts / charts left-to-right inside RTL text */
+[dir="rtl"] .ltr-nums { direction: ltr; unicode-bidi: isolate; }
+[dir="rtl"] svg { direction: ltr; }
+[dir="rtl"] input[type="number"],
+[dir="rtl"] input[type="date"] { direction: ltr; text-align: right; }
 
 
 /* Wave animation for oasis meter */
