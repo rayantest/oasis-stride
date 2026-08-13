@@ -1040,7 +1040,7 @@ function FoodInput({
         rows={2}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={tr('"'"'e.g. "chicken shawarma wrap" or "flat white with oat milk"'"'"')}
+        placeholder={tr('e.g. "chicken shawarma wrap" or "flat white with oat milk"')}
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
       />
       {(saved.data?.length ?? 0) > 0 && (
