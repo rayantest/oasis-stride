@@ -1048,8 +1048,99 @@ function FoodInput({
   );
 }
 
-function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
+const FOOD_EDIT_FIELDS: { key: keyof Food; label: string }[] = [
+  { key: "kcal", label: "Kcal" },
+  { key: "protein_g", label: "Protein g" },
+  { key: "carbs_g", label: "Carbs g" },
+  { key: "fat_g", label: "Fat g" },
+  { key: "saturated_fat_g", label: "Sat fat g" },
+  { key: "monounsaturated_fat_g", label: "Mono fat g" },
+  { key: "polyunsaturated_fat_g", label: "Poly fat g" },
+  { key: "sugar_g", label: "Sugar g" },
+  { key: "fiber_g", label: "Fiber g" },
+  { key: "starch_g", label: "Starch g" },
+  { key: "animal_protein_g", label: "Animal protein g" },
+  { key: "plant_protein_g", label: "Plant protein g" },
+  { key: "sodium_mg", label: "Sodium mg" },
+  { key: "cholesterol_mg", label: "Cholesterol mg" },
+  { key: "trans_fat_g", label: "Trans fat g" },
+];
+
+function FoodEditForm({ food, onCancel, onSaved }: { food: Food; onCancel: () => void; onSaved: () => void }) {
+  const [label, setLabel] = useState(food.label);
+  const [vals, setVals] = useState<Record<string, string>>(() =>
+    Object.fromEntries(FOOD_EDIT_FIELDS.map((f) => [f.key as string, String(Number(food[f.key] ?? 0))])),
+  );
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    if (!label.trim()) {
+      toast.error("Name can't be empty.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const patch: Record<string, number | string> = { label: label.trim() };
+      for (const f of FOOD_EDIT_FIELDS) {
+        const n = Number(vals[f.key as string]);
+        patch[f.key as string] = Number.isFinite(n) && n >= 0 ? n : 0;
+      }
+      const { error } = await supabase.from("food_entries").update(patch).eq("id", food.id);
+      if (error) throw error;
+      toast.success("Food updated");
+      onSaved();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 rounded-xl border border-border/40 bg-background/40 p-3 space-y-3">
+      <input
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder="Food name"
+        className="w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sand/40"
+      />
+      <div className="grid grid-cols-3 gap-2">
+        {FOOD_EDIT_FIELDS.map((f) => (
+          <label key={f.key as string} className="block">
+            <span className="block text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">{f.label}</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              value={vals[f.key as string]}
+              onChange={(e) => setVals((v) => ({ ...v, [f.key as string]: e.target.value }))}
+              className="w-full bg-input/50 border border-border/50 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-sand/40"
+            />
+          </label>
+        ))}
+      </div>
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={onCancel}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/60 text-xs"
+        >
+          <X size={13} /> Cancel
+        </button>
+        <button
+          onClick={save}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-sand text-primary-foreground text-xs font-semibold disabled:opacity-40"
+        >
+          {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FoodLogRow({ food, onDelete, onChange }: { food: Food; onDelete: () => void; onChange: () => void }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const fatTotal = Math.max(1, Number(food.fat_g));
   const carbTotal = Math.max(1, Number(food.carbs_g));
   const proteinTotal = Math.max(1, Number(food.protein_g));
