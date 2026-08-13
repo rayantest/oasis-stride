@@ -29,6 +29,7 @@ import {
 } from "@/components/ExerciseSection";
 
 import { toast, Toaster } from "sonner";
+import { useT, useI18n, LanguageToggle } from "@/lib/i18n";
 import {
   Footprints,
   UtensilsCrossed,
@@ -122,6 +123,8 @@ type Tab = "diet" | "movement";
 
 function App() {
   const qc = useQueryClient();
+  const tr = useT();
+  const { lang } = useI18n();
   const [selectedDate, setSelectedDate] = useState<Date>(() => dayStart(new Date()));
   const [metric, setMetric] = useState<MetricKey>("eaten_kcal");
   const [tab, setTab] = useState<Tab>("diet");
@@ -203,7 +206,7 @@ function App() {
   if (profileQ.error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-coral text-center">
-        Couldn't load profile.
+        {tr("Couldn't load profile.")}
         <br />
         {(profileQ.error as Error).message}
       </div>
@@ -256,8 +259,8 @@ function App() {
   });
 
   const dateLabel = viewingToday
-    ? "Today"
-    : selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    ? tr("Today")
+    : selectedDate.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "short", month: "short", day: "numeric" });
 
   return (
     <div className="min-h-screen pb-24 transition-colors duration-300" data-mode={tab}>
@@ -271,7 +274,7 @@ function App() {
               onClick={() => setSelectedDate(dayStart(new Date()))}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sand/15 border border-sand/30 text-sand text-xs font-semibold hover:bg-sand/25 transition"
             >
-              <ArrowLeft size={12} /> Back to today
+              <ArrowLeft size={12} /> {tr("Back to today")}
             </button>
           </div>
         </header>
@@ -279,67 +282,80 @@ function App() {
 
       <main className="mx-auto max-w-xl px-5 pt-6 space-y-6">
         {/* Diet / Movement switch */}
-        <div className="grid grid-cols-2 gap-1 p-1 rounded-full bg-secondary/60 border border-border/50">
-          <TabButton
-            active={tab === "diet"}
-            onClick={() => setTab("diet")}
-            icon={<UtensilsCrossed size={14} />}
-            label="Diet"
-          />
-          <TabButton
-            active={tab === "movement"}
-            onClick={() => setTab("movement")}
-            icon={<Footprints size={14} />}
-            label="Movement"
-          />
+        <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-1 p-1 rounded-full bg-secondary/60 border border-border/50 flex-1">
+            <TabButton
+              active={tab === "diet"}
+              onClick={() => setTab("diet")}
+              icon={<UtensilsCrossed size={14} />}
+              label={tr("Diet")}
+            />
+            <TabButton
+              active={tab === "movement"}
+              onClick={() => setTab("movement")}
+              icon={<Footprints size={14} />}
+              label={tr("Movement")}
+            />
+          </div>
+          <LanguageToggle />
         </div>
 
         {tab === "diet" ? (
           <>
             <FoodInput logDate={selectedDate} viewingToday={viewingToday} onLogged={invalidate} />
 
-            <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
+            <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
               <DayLog movements={[]} foods={dayFoods} exercises={[]} onChange={invalidate} />
             </Card>
 
-            <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
+            <Card title={viewingToday ? tr("Daily benchmark") : tr("Benchmark · {d}", { d: dateLabel })} hint={tr("Compass, not a rulebook.")}>
               <div className="space-y-3">
                 <BenchmarkRow
-                  label="Calories eaten"
+                  label={tr("Calories eaten")}
                   value={eaten}
                   target={t.calories}
                   unit="kcal"
                   mode="under"
-                  info={`BMR ${t.bmr} kcal ${t.used_scan_bmr ? "(measured in your InBody scan)" : "(Mifflin-St Jeor from height, weight, age, gender)"} × ${(t.tdee / t.bmr).toFixed(2)} activity multiplier = TDEE ${t.tdee} kcal. Minus a ${t.deficit} kcal/day deficit for your "${profile.fat_loss_pace}" pace (≈ ${t.kg_per_week.toFixed(2)} kg fat/week) = ${t.calories} kcal${t.calories === 1500 ? " (1500 kcal safety floor applied)" : ""}.`}
+                  info={tr("BMR {bmr} kcal {bmrSrc} × {mult} activity multiplier = TDEE {tdee} kcal. Minus a {deficit} kcal/day deficit for your \"{pace}\" pace (≈ {kgpw} kg fat/week) = {cal} kcal{floor}.", {
+                    bmr: t.bmr,
+                    bmrSrc: t.used_scan_bmr ? tr("(measured in your InBody scan)") : tr("(Mifflin-St Jeor from height, weight, age, gender)"),
+                    mult: (t.tdee / t.bmr).toFixed(2),
+                    tdee: t.tdee,
+                    deficit: t.deficit,
+                    pace: profile.fat_loss_pace,
+                    kgpw: t.kg_per_week.toFixed(2),
+                    cal: t.calories,
+                    floor: t.calories === 1500 ? tr(" (1500 kcal safety floor applied)") : "",
+                  })}
                 />
                 <BenchmarkRow
-                  label="Protein"
+                  label={tr("Protein")}
                   value={proteinG}
                   target={t.protein_g}
                   unit="g"
                   mode="over"
-                  info={`1.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.protein_g} g. High protein protects muscle mass while you're in a deficit.`}
+                  info={tr("1.8 g per kg of body weight × {w} kg = {p} g. High protein protects muscle mass while you're in a deficit.", { w: t.current_weight_kg, p: t.protein_g })}
                 />
                 <BenchmarkRow
-                  label="Carbs"
+                  label={tr("Carbs")}
                   value={carbsG}
                   target={t.carbs_g}
                   unit="g"
                   mode="under"
-                  info={`Whatever calories remain after protein and fat: ${t.calories} − ${t.protein_g * 4} (protein) − ${t.fat_g * 9} (fat) = ${t.carbs_g * 4} kcal ÷ 4 kcal/g = ${t.carbs_g} g.`}
+                  info={tr("Whatever calories remain after protein and fat: {cal} − {p} (protein) − {f} (fat) = {c4} kcal ÷ 4 kcal/g = {c} g.", { cal: t.calories, p: t.protein_g * 4, f: t.fat_g * 9, c4: t.carbs_g * 4, c: t.carbs_g })}
                 />
                 <BenchmarkRow
-                  label="Fat"
+                  label={tr("Fat")}
                   value={fatG}
                   target={t.fat_g}
                   unit="g"
                   mode="under"
-                  info={`0.8 g per kg of body weight × ${t.current_weight_kg} kg = ${t.fat_g} g, never below the 0.6 g/kg hormone-health floor.`}
+                  info={tr("0.8 g per kg of body weight × {w} kg = {f} g, never below the 0.6 g/kg hormone-health floor.", { w: t.current_weight_kg, f: t.fat_g })}
                 />
               </div>
             </Card>
 
-            <Card title="Historical Performance" right={<MetricPicker value={metric} onChange={setMetric} />}>
+            <Card title={tr("Historical Performance")} right={<MetricPicker value={metric} onChange={setMetric} />}>
               <HistoryChart
                 data={history}
                 foods={foods}
@@ -387,29 +403,33 @@ function App() {
               }
             />
 
-            <Card title={viewingToday ? "Today's log" : `Log · ${dateLabel}`}>
+            <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
               <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
             </Card>
 
-            <Card title={viewingToday ? "Daily benchmark" : `Benchmark · ${dateLabel}`} hint="Compass, not a rulebook.">
+            <Card title={viewingToday ? tr("Daily benchmark") : tr("Benchmark · {d}", { d: dateLabel })} hint={tr("Compass, not a rulebook.")}>
               <div className="space-y-3">
                 <BenchmarkRow
-                  label="Active burn"
+                  label={tr("Active burn")}
                   value={activeBurn}
                   target={t.active_burn}
                   unit="kcal"
                   mode="over"
-                  info={`Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently ${t.active_burn} kcal/day. It counts logged movement${ringBurn > 0 ? " plus active calories synced from your watch" : ""}, and is separate from your ${t.deficit} kcal/day food deficit. Change it by updating your goal answers in Body & profile.`}
+                  info={tr("Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently {b} kcal/day. It counts logged movement{ring}, and is separate from your {d} kcal/day food deficit. Change it by updating your goal answers in Body & profile.", {
+                    b: t.active_burn,
+                    ring: ringBurn > 0 ? tr(" plus active calories synced from your watch") : "",
+                    d: t.deficit,
+                  })}
                 />
                 {ringBurn > 0 && (
                   <div className="-mt-2 text-[11px] text-muted-foreground">
-                    Includes {Math.round(ringBurn)} kcal synced from your watch.
+                    {tr("Includes {n} kcal synced from your watch.", { n: Math.round(ringBurn) })}
                   </div>
                 )}
                 {EXERCISES.map((ex) => (
                   <BenchmarkRow
                     key={ex}
-                    label={EXERCISE_LABELS[ex as ExerciseKey]}
+                    label={tr(EXERCISE_LABELS[ex as ExerciseKey])}
                     value={repsFor(exercises, ex, selectedDate)}
                     target={strengthTargets[ex]}
                     unit="reps"
@@ -491,6 +511,8 @@ function CoachCard({
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const tr = useT();
+  const { lang } = useI18n();
 
   const signals = useMemo(() => computeSignals(profile, movements, foods, 7), [profile, movements, foods]);
 
@@ -554,6 +576,7 @@ function CoachCard({
 
     return {
       focus,
+      lang,
       exercises: exerciseSummary,
       profile: {
         age: profile.age,
@@ -584,18 +607,20 @@ function CoachCard({
       })),
       days,
     };
-  }, [profile, foods, movements, scans, signals, focus, exerciseSummary, rings]);
+  }, [profile, foods, movements, scans, signals, focus, exerciseSummary, rings, lang]);
 
   const contextKey = useMemo(
     () =>
       focus +
+      ":" +
+      lang +
       ":" +
       JSON.stringify(context).length +
       ":" +
       (context.days[0]?.date ?? "none") +
       ":" +
       context.days.length,
-    [context, focus],
+    [context, focus, lang],
   );
 
   const coachFn = useServerFn(generateCoachAdvice);
@@ -630,13 +655,13 @@ function CoachCard({
         aria-expanded={open}
       >
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-          <Compass size={12} /> Your coach · {focus === "movement" ? "movement" : "diet"}
+          <Compass size={12} /> {tr("Your coach")} · {focus === "movement" ? tr("movement") : tr("diet")}
         </span>
         <span className="flex items-center gap-2">
           {open && ai.isFetching && <Loader2 size={13} className="animate-spin text-oasis" />}
           {headline && (
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border border-oasis/40 text-oasis bg-oasis/10">
-              {headline.category}
+              {tr(headline.category)}
             </span>
           )}
           <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
@@ -647,23 +672,23 @@ function CoachCard({
         <>
           {ai.isFetching && !ai.data && (
             <p className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
-              <Loader2 size={12} className="animate-spin" /> Reading your logs, scans and goal…
+              <Loader2 size={12} className="animate-spin" /> {tr("Reading your logs, scans and goal…")}
             </p>
           )}
 
           {empty ? (
             <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-              Log a few days of food and movement — I'll start giving you personalized guidance from day 3.
+              {tr("Log a few days of food and movement — I'll start giving you personalized guidance from day 3.")}
             </p>
           ) : (
             <>
-              <p className="font-display text-base leading-snug mt-2 mb-3">{headline.headline}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{headline.detail}</p>
+              <p className="font-display text-base leading-snug mt-2 mb-3">{tr(headline.headline)}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{tr(headline.detail)}</p>
               <button
                 onClick={() => setExpanded(expanded === headline.id ? null : headline.id)}
                 className="text-[11px] font-mono uppercase tracking-wider text-oasis/80 hover:text-oasis transition"
               >
-                {expanded === headline.id ? "Hide math" : "Why?"}
+                {expanded === headline.id ? tr("Hide math") : tr("Why?")}
               </button>
               {expanded === headline.id && (
                 <p className="mt-2 text-xs font-mono text-muted-foreground bg-background/40 rounded-lg p-2 border border-border/40">
@@ -676,17 +701,17 @@ function CoachCard({
                   {rest.map((a) => (
                     <div key={a.id} className="rounded-xl border border-border/40 bg-background/40 p-3">
                       <div className="flex items-center justify-between mb-1 gap-2">
-                        <span className="text-sm font-semibold leading-snug">{a.headline}</span>
+                        <span className="text-sm font-semibold leading-snug">{tr(a.headline)}</span>
                         <span className="text-[9px] uppercase tracking-wider text-muted-foreground shrink-0">
-                          {a.category}
+                          {tr(a.category)}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{a.detail}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{tr(a.detail)}</p>
                       <button
                         onClick={() => setExpanded(expanded === a.id ? null : a.id)}
                         className="mt-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition"
                       >
-                        {expanded === a.id ? "Hide" : "Why?"}
+                        {expanded === a.id ? tr("Hide") : tr("Why?")}
                       </button>
                       {expanded === a.id && (
                         <p className="mt-1.5 text-[11px] font-mono text-muted-foreground/90">{a.why}</p>
@@ -746,6 +771,7 @@ function BenchmarkRow({
   const good = mode === "under" ? v <= target : v >= target;
   const color = good ? "var(--oasis)" : "var(--coral)";
   const [open, setOpen] = useState(false);
+  const tr = useT();
 
   return (
     <div>
@@ -756,7 +782,7 @@ function BenchmarkRow({
             <button
               type="button"
               onClick={() => setOpen((o) => !o)}
-              aria-label={`How the ${label} benchmark is set`}
+              aria-label={tr("How the {label} benchmark is set", { label })}
               aria-expanded={open}
               className={`inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border text-[9px] font-bold transition ${
                 open
@@ -772,7 +798,7 @@ function BenchmarkRow({
           <span style={{ color: good ? "var(--oasis)" : "var(--coral)" }}>{v}</span>
           <span className="text-muted-foreground">
             {" "}
-            / {target} {unit}
+            / {target} {tr(unit)}
           </span>
         </span>
       </div>
@@ -821,6 +847,8 @@ function MovementInput({
   const [text, setText] = useState("");
   const parse = useServerFn(parseMovement);
   const [busy, setBusy] = useState(false);
+  const tr = useT();
+  const { lang } = useI18n();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -833,7 +861,7 @@ function MovementInput({
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
-      toast.success(`Logged ${parsed.label} · ${parsed.kcal} kcal (${parsed.source})`);
+      toast.success(tr("Logged {label} · {kcal} kcal ({source})", { label: parsed.label, kcal: parsed.kcal, source: tr(parsed.source) }));
       setText("");
       onLogged();
     } catch (err) {
@@ -844,19 +872,19 @@ function MovementInput({
   };
 
   const dateHint = viewingToday
-    ? "Watch numbers are trusted exactly. No number → smart estimate."
-    : `Back-filling to ${logDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
+    ? tr("Watch numbers are trusted exactly. No number → smart estimate.")
+    : tr("Back-filling to {d}", { d: logDate.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "short", month: "short", day: "numeric" }) });
 
   return (
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
       <label className="text-[10px] uppercase tracking-widest text-oasis/80 flex items-center gap-1.5 mb-2">
-        <Footprints size={12} /> Log movement {!viewingToday && <span className="text-sand">· past day</span>}
+        <Footprints size={12} /> {tr("Log movement")} {!viewingToday && <span className="text-sand">· {tr("past day")}</span>}
       </label>
       <textarea
         rows={2}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder='e.g. "walked 30 min, watch said 145 kcal" or "played padel 45 min"'
+        placeholder={tr('e.g. "walked 30 min, watch said 145 kcal" or "played padel 45 min"')}
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-oasis/40 placeholder:text-muted-foreground/50"
       />
       <div className="flex items-center justify-between mt-2 gap-2">
@@ -867,7 +895,7 @@ function MovementInput({
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-oasis text-accent-foreground text-xs font-semibold disabled:opacity-40"
         >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-          Log it
+          {tr("Log it")}
         </button>
       </div>
     </form>
@@ -909,6 +937,8 @@ function FoodInput({
   const [busy, setBusy] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const qc = useQueryClient();
+  const tr = useT();
+  const { lang } = useI18n();
 
   const saved = useQuery({
     queryKey: ["saved_foods"],
@@ -925,7 +955,7 @@ function FoodInput({
 
   const dateHint = viewingToday
     ? " "
-    : `Back-filling to ${logDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
+    : tr("Back-filling to {d}", { d: logDate.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "short", month: "short", day: "numeric" }) });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -938,7 +968,7 @@ function FoodInput({
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
-      toast.success(`Logged ${parsed.label} · ${parsed.kcal} kcal`);
+      toast.success(tr("Logged {label} · {kcal} kcal", { label: parsed.label, kcal: parsed.kcal }));
       setText("");
       onLogged();
     } catch (err) {
@@ -972,7 +1002,7 @@ function FoodInput({
         created_at: timestampForDay(logDate),
       });
       if (error) throw error;
-      toast.success(`Logged ${s.label} · ${s.kcal} kcal`);
+      toast.success(tr("Logged {label} · {kcal} kcal", { label: s.label, kcal: s.kcal }));
       onLogged();
     } catch (err) {
       toast.error((err as Error).message);
@@ -982,12 +1012,12 @@ function FoodInput({
   };
 
   const renameSaved = async (s: SavedFood) => {
-    const next = window.prompt("Rename this saved food", s.label)?.trim();
+    const next = window.prompt(tr("Rename this saved food"), s.label)?.trim();
     if (!next || next === s.label) return;
     try {
       const { error } = await supabase.from("saved_foods").update({ label: next }).eq("id", s.id);
       if (error) throw error;
-      toast.success(`Renamed to ${next}`);
+      toast.success(tr("Renamed to {name}", { name: next }));
       qc.invalidateQueries({ queryKey: ["saved_foods"] });
     } catch (err) {
       toast.error((err as Error).message);
@@ -1000,27 +1030,27 @@ function FoodInput({
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between mb-2 gap-2">
         <label className="text-[10px] uppercase tracking-widest text-sand/80 flex items-center gap-1.5">
-          <UtensilsCrossed size={12} /> Log food or drink{" "}
-          {!viewingToday && <span className="text-sand">· past day</span>}
+          <UtensilsCrossed size={12} /> {tr("Log food or drink")}{" "}
+          {!viewingToday && <span className="text-sand">· {tr("past day")}</span>}
         </label>
         <button
           type="button"
           onClick={() => setScanOpen(true)}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-sand/40 text-sand text-[11px] font-semibold"
         >
-          <Camera size={12} /> Scan
+          <Camera size={12} /> {tr("Scan")}
         </button>
       </div>
       <textarea
         rows={2}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder='e.g. "chicken shawarma wrap" or "flat white with oat milk"'
+        placeholder={tr('e.g. "chicken shawarma wrap" or "flat white with oat milk"')}
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
       />
       {(saved.data?.length ?? 0) > 0 && (
         <div className="mt-2">
-          <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">My foods</div>
+          <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">{tr("My foods")}</div>
           <div className="flex flex-wrap gap-1.5">
             {saved.data!.map((s) => (
               <span
@@ -1039,8 +1069,8 @@ function FoodInput({
                   type="button"
                   onClick={() => renameSaved(s)}
                   disabled={busy}
-                  aria-label={`Rename ${s.label}`}
-                  title="Rename"
+                  aria-label={tr("Rename {label}", { label: s.label })}
+                  title={tr("Rename")}
                   className="px-1.5 py-1 border-l border-border/50 text-muted-foreground hover:text-sand disabled:opacity-40"
                 >
                   <Pencil size={11} />
@@ -1059,7 +1089,7 @@ function FoodInput({
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-sand text-primary-foreground text-xs font-semibold disabled:opacity-40"
         >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-          Log it
+          {tr("Log it")}
         </button>
       </div>
 
@@ -1079,6 +1109,7 @@ function FoodInput({
 
 function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
+  const tr = useT();
   const fatTotal = Math.max(1, Number(food.fat_g));
   const carbTotal = Math.max(1, Number(food.carbs_g));
   const proteinTotal = Math.max(1, Number(food.protein_g));
@@ -1108,7 +1139,7 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
               <button
                 onClick={onDelete}
                 className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
-                aria-label="Delete"
+                aria-label={tr("Delete")}
               >
                 <Trash2 size={14} />
               </button>
@@ -1116,7 +1147,7 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
           </div>
           <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
             {Math.round(Number(food.protein_g))}p · {Math.round(Number(food.carbs_g))}c · {Math.round(Number(food.fat_g))}f
-            {Number(food.sodium_mg) > 0 && ` · ${Math.round(Number(food.sodium_mg))}mg sodium`}
+            {Number(food.sodium_mg) > 0 && tr(" · {n}mg sodium", { n: Math.round(Number(food.sodium_mg)) })}
           </div>
         </div>
       </div>
@@ -1125,56 +1156,56 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
         <div className="mt-3 space-y-3 rounded-xl border border-border/40 bg-background/40 p-3">
           <div>
             <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              <span>Fat breakdown</span>
-              <span className="font-mono">{Math.round(Number(food.fat_g))}g total</span>
+              <span>{tr("Fat breakdown")}</span>
+              <span className="font-mono">{tr("{n}g total", { n: Math.round(Number(food.fat_g)) })}</span>
             </div>
             <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
               <div
                 className="h-full bg-coral"
                 style={{ width: `${satPct}%` }}
-                title={`Saturated ${Math.round(Number(food.saturated_fat_g))}g (${satPct}%)`}
+                title={tr("Saturated {n}g ({p}%)", { n: Math.round(Number(food.saturated_fat_g)), p: satPct })}
               />
               <div
                 className="h-full bg-sand"
                 style={{ width: `${unsatPct}%` }}
-                title={`Unsaturated ${Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g))}g (${unsatPct}%)`}
+                title={tr("Unsaturated {n}g ({p}%)", { n: Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g)), p: unsatPct })}
               />
             </div>
             <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Sat {Math.round(Number(food.saturated_fat_g))}g</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> Unsat {Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> {tr("Sat {n}g", { n: Math.round(Number(food.saturated_fat_g)) })}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> {tr("Unsat {n}g", { n: Math.round(Number(food.monounsaturated_fat_g) + Number(food.polyunsaturated_fat_g)) })}</span>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              <span>Carb breakdown</span>
-              <span className="font-mono">{Math.round(Number(food.carbs_g))}g total</span>
+              <span>{tr("Carb breakdown")}</span>
+              <span className="font-mono">{tr("{n}g total", { n: Math.round(Number(food.carbs_g)) })}</span>
             </div>
             <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
-              <div className="h-full bg-coral" style={{ width: `${sugarPct}%` }} title={`Sugar ${Math.round(Number(food.sugar_g))}g`} />
-              <div className="h-full bg-oasis" style={{ width: `${fiberPct}%` }} title={`Fiber ${Math.round(Number(food.fiber_g))}g`} />
-              <div className="h-full bg-sand" style={{ width: `${starchPct}%` }} title={`Starch ${Math.round(Number(food.starch_g))}g`} />
+              <div className="h-full bg-coral" style={{ width: `${sugarPct}%` }} title={tr("Sugar {n}g", { n: Math.round(Number(food.sugar_g)) })} />
+              <div className="h-full bg-oasis" style={{ width: `${fiberPct}%` }} title={tr("Fiber {n}g", { n: Math.round(Number(food.fiber_g)) })} />
+              <div className="h-full bg-sand" style={{ width: `${starchPct}%` }} title={tr("Starch {n}g", { n: Math.round(Number(food.starch_g)) })} />
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Sugar {Math.round(Number(food.sugar_g))}g</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> Fiber {Math.round(Number(food.fiber_g))}g</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> Starch {Math.round(Number(food.starch_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> {tr("Sugar {n}g", { n: Math.round(Number(food.sugar_g)) })}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> {tr("Fiber {n}g", { n: Math.round(Number(food.fiber_g)) })}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sand" /> {tr("Starch {n}g", { n: Math.round(Number(food.starch_g)) })}</span>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              <span>Protein source</span>
-              <span className="font-mono">{Math.round(Number(food.protein_g))}g total</span>
+              <span>{tr("Protein source")}</span>
+              <span className="font-mono">{tr("{n}g total", { n: Math.round(Number(food.protein_g)) })}</span>
             </div>
             <div className="h-2 w-full rounded-full overflow-hidden flex bg-border/40">
-              <div className="h-full bg-coral" style={{ width: `${animalPct}%` }} title={`Animal ${Math.round(Number(food.animal_protein_g))}g`} />
-              <div className="h-full bg-oasis" style={{ width: `${plantPct}%` }} title={`Plant ${Math.round(Number(food.plant_protein_g))}g`} />
+              <div className="h-full bg-coral" style={{ width: `${animalPct}%` }} title={tr("Animal {n}g", { n: Math.round(Number(food.animal_protein_g)) })} />
+              <div className="h-full bg-oasis" style={{ width: `${plantPct}%` }} title={tr("Plant {n}g", { n: Math.round(Number(food.plant_protein_g)) })} />
             </div>
             <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> Animal {Math.round(Number(food.animal_protein_g))}g</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> Plant {Math.round(Number(food.plant_protein_g))}g</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-coral" /> {tr("Animal {n}g", { n: Math.round(Number(food.animal_protein_g)) })}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-oasis" /> {tr("Plant {n}g", { n: Math.round(Number(food.plant_protein_g)) })}</span>
             </div>
           </div>
 
@@ -1182,19 +1213,19 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40">
               {Number(food.sodium_mg) > 0 && (
                 <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase">Sodium</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">{tr("Sodium")}</div>
                   <div className="font-mono text-xs">{Math.round(Number(food.sodium_mg))}mg</div>
                 </div>
               )}
               {Number(food.cholesterol_mg) > 0 && (
                 <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase">Cholesterol</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">{tr("Cholesterol")}</div>
                   <div className="font-mono text-xs">{Math.round(Number(food.cholesterol_mg))}mg</div>
                 </div>
               )}
               {Number(food.trans_fat_g) > 0 && (
                 <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase">Trans fat</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">{tr("Trans fat")}</div>
                   <div className="font-mono text-xs">{Math.round(Number(food.trans_fat_g))}g</div>
                 </div>
               )}
@@ -1218,6 +1249,7 @@ function DayLog({
   onChange: () => void;
 }) {
   type Row = { kind: "m" | "f"; ts: string; el: React.ReactNode };
+  const tr = useT();
   const del = useMutation({
     mutationFn: async ({ table, id }: { table: "movement_entries" | "food_entries"; id: string }) => {
       const { error } = await supabase.from(table).delete().eq("id", id);
@@ -1238,16 +1270,16 @@ function DayLog({
           label={m.label}
           sub={
             <>
-              {m.minutes} min ·{" "}
+              {tr("{n} min", { n: m.minutes })} ·{" "}
               <span
                 className={`inline-flex items-center gap-1 ${m.source === "watch" ? "text-oasis" : "text-muted-foreground"}`}
               >
                 {m.source === "watch" ? (
                   <>
-                    <Watch size={10} /> watch
+                    <Watch size={10} /> {tr("watch")}
                   </>
                 ) : (
-                  "approx."
+                  tr("approx.")
                 )}
               </span>
             </>
@@ -1267,7 +1299,7 @@ function DayLog({
   }, [movements, foods, del]);
 
   if (rows.length === 0 && exercises.length === 0) {
-    return <div className="text-sm text-muted-foreground text-center py-6">Nothing logged for this day yet.</div>;
+    return <div className="text-sm text-muted-foreground text-center py-6">{tr("Nothing logged for this day yet.")}</div>;
   }
 
   return (
@@ -1304,7 +1336,7 @@ function LogRow({
       <button
         onClick={onDelete}
         className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
-        aria-label="Delete"
+        aria-label={useT()("Delete")}
       >
         <Trash2 size={14} />
       </button>
@@ -1330,6 +1362,7 @@ const METRIC_META: Record<MetricKey, { label: string; unit: string; mode: "over"
 type DayPoint = { date: Date; value: number; target: number; isToday: boolean };
 
 function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: MetricKey) => void }) {
+  const tr = useT();
   return (
     <select
       value={value}
@@ -1338,7 +1371,7 @@ function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: Met
     >
       {(Object.keys(METRIC_META) as MetricKey[]).map((k) => (
         <option key={k} value={k}>
-          {METRIC_META[k].label}
+          {tr(METRIC_META[k].label)}
         </option>
       ))}
     </select>
@@ -1372,6 +1405,8 @@ function HistoryChart({
   selectedDate: Date;
   onSelect: (d: Date) => void;
 }) {
+  const tr = useT();
+  const { lang } = useI18n();
   const meta = METRIC_META[metric];
   const scrollRef = useRef<HTMLDivElement>(null);
   const target = data[0]?.target ?? 0;
@@ -1424,38 +1459,38 @@ function HistoryChart({
       <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground flex-wrap">
         {target > 0 && (
           <span className="inline-flex items-center gap-1">
-            <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> Benchmark {target} {meta.unit}
+            <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> {tr("Benchmark {t} {u}", { t: target, u: meta.unit })}
           </span>
         )}
         {isStackedMetric ? (
           <>
             {metric === "fat" && (
               <>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Sat</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> Unsat</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> {tr("Sat")}</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> {tr("Unsat")}</span>
               </>
             )}
             {metric === "carbs" && (
               <>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Sugar</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> Fiber</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> Starch</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> {tr("Sugar")}</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> {tr("Fiber")}</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-sand" /> {tr("Starch")}</span>
               </>
             )}
             {metric === "protein" && (
               <>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> Animal</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> Plant</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-coral" /> {tr("Animal")}</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-oasis" /> {tr("Plant")}</span>
               </>
             )}
           </>
         ) : (
           <>
             <span className="inline-flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> On track
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--oasis)" }} /> {tr("On track")}
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> Off target
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--coral)" }} /> {tr("Off target")}
             </span>
           </>
         )}
@@ -1510,12 +1545,12 @@ function HistoryChart({
                 <button
                   key={i}
                   onClick={() => onSelect(d.date)}
-                  title={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}${target > 0 ? ` (target ${d.target})` : ""}`}
+                  title={tr("{d} — {v} {u}{t}", { d: d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US"), v: Math.round(d.value), u: meta.unit, t: target > 0 ? tr(" (target {t})", { t: d.target }) : "" })}
                   className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
                   style={{ height: `${H + 28}px` }}
-                  aria-label={`${d.date.toDateString()} — ${Math.round(d.value)} ${meta.unit}`}
+                  aria-label={tr("{d} — {v} {u}", { d: d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US"), v: Math.round(d.value), u: meta.unit })}
                 >
                   <div className="flex-1 w-full flex items-end justify-center">
                     {segments.length > 0 ? (
@@ -1542,7 +1577,7 @@ function HistoryChart({
                       {d.date.getDate()}/{d.date.getMonth() + 1}
                     </div>
                     <div className={`text-[8px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
-                      {d.isToday ? "now" : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
+                      {d.isToday ? tr("now") : d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "narrow" })}
                     </div>
                   </div>
                 </button>
@@ -1552,7 +1587,7 @@ function HistoryChart({
         </div>
       </div>
       <div className="text-[10px] text-muted-foreground/70 mt-2 text-center">
-        Scroll for older days · tap a day to view its numbers
+        {tr("Scroll for older days · tap a day to view its numbers")}
       </div>
     </div>
   );
@@ -1561,6 +1596,7 @@ function HistoryChart({
 /* ---------- Profile & goal panel (inline, inside Body & profile) ---------- */
 
 function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => void }) {
+  const tr = useT();
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -1589,7 +1625,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
       toast.error(error.message);
       return;
     }
-    toast.success("Profile saved");
+    toast.success(tr("Profile saved"));
     onSaved();
   };
 
@@ -1602,48 +1638,48 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
   const projection = projectionText(answers.targetLossKg, t.kg_per_week);
   const misses = eventLikelyMisses(answers.deadline, answers.targetLossKg, t.kg_per_week);
   const paceLabel: Record<string, string> = {
-    modest: "Modest (0.5%/wk)",
-    moderate: "Moderate (0.75%/wk)",
-    aggressive: "Aggressive (1%/wk)",
+    modest: tr("Modest (0.5%/wk)"),
+    moderate: tr("Moderate (0.75%/wk)"),
+    aggressive: tr("Aggressive (1%/wk)"),
   };
   const actLabel: Record<string, string> = {
-    barely_moving: "Barely moving",
-    lightly_active: "Lightly active",
-    moderately_active: "Moderately active",
+    barely_moving: tr("Barely moving"),
+    lightly_active: tr("Lightly active"),
+    moderately_active: tr("Moderately active"),
   };
 
   return (
     <div className="rounded-xl border border-border/40 bg-background/40 p-4">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Profile & goal</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">{tr("Profile & goal")}</div>
 
       {form.caution_flag && (
         <div className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/40 px-3 py-2 text-xs text-amber-200">
-          ⚠️ Caution noted{form.caution_note ? `: ${form.caution_note}` : ""} — consider checking with a doctor before
-          high-strain training.
+          ⚠️ {tr("Caution noted")}
+          {form.caution_note ? `: ${form.caution_note}` : ""} — {tr("consider checking with a doctor before high-strain training.")}
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Height (cm)">
+        <Field label={tr("Height (cm)")}>
           <NumInput value={form.height_cm} onChange={(v) => set("height_cm", v)} />
         </Field>
-        <Field label="Weight (kg)">
+        <Field label={tr("Weight (kg)")}>
           <NumInput value={form.weight_kg} onChange={(v) => set("weight_kg", v)} step={0.1} />
         </Field>
-        <Field label="Age">
+        <Field label={tr("Age")}>
           <NumInput value={form.age} onChange={(v) => set("age", v)} />
         </Field>
-        <Field label="Resting HR">
+        <Field label={tr("Resting HR")}>
           <NumInput value={form.resting_hr} onChange={(v) => set("resting_hr", v)} />
         </Field>
-        <Field label="Gender">
+        <Field label={tr("Gender")}>
           <Select
             value={form.gender}
             onChange={(v) => set("gender", v)}
             options={[
-              ["male", "Male"],
-              ["female", "Female"],
-              ["other", "Other"],
+              ["male", tr("Male")],
+              ["female", tr("Female")],
+              ["other", tr("Other")],
             ]}
           />
         </Field>
@@ -1652,7 +1688,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
       <div className="mt-5 rounded-2xl border border-border/60 p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Your goal</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{tr("Your goal")}</div>
             <div className="text-sm font-medium">
               {paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} ·{" "}
               {actLabel[form.activity_level] ?? form.activity_level}
@@ -1662,24 +1698,23 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
             onClick={() => setGoalOpen(true)}
             className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shrink-0"
           >
-            Update your goal
+            {tr("Update your goal")}
           </button>
         </div>
         <div className="text-xs text-muted-foreground">
-          Active burn target: {form.active_burn_goal_kcal} kcal/day · derived from your questionnaire.
+          {tr("Active burn target: {n} kcal/day · derived from your questionnaire.", { n: form.active_burn_goal_kcal })}
         </div>
         {projection && (
           <div className="text-xs text-foreground/80 rounded-lg bg-secondary/50 px-3 py-2">{projection}</div>
         )}
         {misses && (
           <div className="text-xs text-amber-200 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
-            This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a
-            faster pace manually by re-running the questionnaire.
+            {tr("This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a faster pace manually by re-running the questionnaire.")}
           </div>
         )}
         {answers.dietary && answers.dietary !== "none" && (
           <div className="text-[11px] text-muted-foreground">
-            Dietary: {answers.dietary === "other" ? answers.dietaryOther || "other" : answers.dietary}
+            {tr("Dietary")}: {answers.dietary === "other" ? answers.dietaryOther || tr("other") : tr(String(answers.dietary))}
           </div>
         )}
       </div>
@@ -1687,21 +1722,23 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
       {scanWeightMismatch && latestScan?.weight_kg && (
         <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 px-3 py-2 text-[11px] flex items-center justify-between gap-2">
           <span>
-            Latest scan weight is {latestScan.weight_kg}kg (profile: {form.weight_kg}kg).
+            {tr("Latest scan weight is {s}kg (profile: {p}kg).", { s: latestScan.weight_kg, p: form.weight_kg })}
           </span>
           <button
             onClick={() => set("weight_kg", latestScan.weight_kg as number)}
             className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0"
           >
-            Sync
+            {tr("Sync")}
           </button>
         </div>
       )}
 
       <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
-        BMR {t.bmr}
-        {t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c /{" "}
-        {t.fat_g}f
+        <span className="ltr-nums">
+          BMR {t.bmr}
+          {t.used_scan_bmr ? " (scan)" : ""} · TDEE {t.tdee} · target {t.calories} kcal · {t.protein_g}p / {t.carbs_g}c
+          / {t.fat_g}f
+        </span>
       </div>
 
       <button
@@ -1709,7 +1746,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
         disabled={saving}
         className="w-full mt-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Save"}
+        {saving ? tr("Saving…") : tr("Save")}
       </button>
 
       {goalOpen && (

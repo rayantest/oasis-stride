@@ -13,6 +13,7 @@ export type AiCoachTip = {
 
 export type CoachContext = {
   focus?: "diet" | "movement";
+  lang?: "en" | "ar";
   exercises?: Array<{ exercise: string; avg_reps: number; best_reps: number; days_logged: number; target_reps: number }>;
   profile: {
     age: number;
@@ -68,6 +69,7 @@ Style rules (very important):
 - Give one concrete action per tip ("add a boiled egg at breakfast", "walk 15 min after dinner").
 - If there is very little data, encourage them to keep logging instead of inventing conclusions.
 
+${data.context.lang === "ar" ? "- LANGUAGE: write headline, detail and why in fluent, natural Modern Standard Arabic. Keep the JSON keys and the category value in English.\n" : ""}
 Return STRICT JSON only:
 {"tips":[{"category":"protein|calories|activity|consistency|body|trend|logging","headline":"...","detail":"...","why":"short line with the actual numbers you used"}]}`;
 

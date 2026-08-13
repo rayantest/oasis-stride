@@ -5,6 +5,7 @@ import type { GoalAnswers, Profile } from "@/lib/calc";
 import { deriveFromAnswers } from "@/lib/goal-derive";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { BodyCompStep } from "./BodyCompStep";
+import { useT } from "@/lib/i18n";
 
 
 type Props = {
@@ -33,6 +34,7 @@ const STEPS = [
 type Step = typeof STEPS[number];
 
 export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
+  const t = useT();
   const initial: GoalAnswers = useMemo(
     () => ({ ...(profile.goal_answers ?? {}) }),
     [profile.goal_answers],
@@ -82,7 +84,7 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
     } as any).eq("id", 1);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Goal updated");
+    toast.success(t("Goal updated"));
     onSaved();
   };
 
@@ -95,10 +97,10 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <button onClick={stepIdx === 0 ? onClose : back} className="text-muted-foreground text-sm flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> {stepIdx === 0 ? "Cancel" : "Back"}
+            <ArrowLeft className="w-4 h-4" /> {stepIdx === 0 ? t("Cancel") : t("Back")}
           </button>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Step {stepIdx + 1} / {STEPS.length}
+            {t("Step {current} / {total}", { current: stepIdx + 1, total: STEPS.length })}
           </div>
         </div>
 
@@ -110,110 +112,110 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
         {step === "parq" && <ParqStep a={a} setA={setA} />}
         {step === "lifestyle" && <LifestyleStep a={a} set={set} />}
         {step === "success" && (
-          <Q title="What does success look like in 3 months?">
+          <Q title={t("What does success look like in 3 months?")}>
             <Choices value={a.successLooksLike} onChange={v => set("successLooksLike", v as any)}
               options={[
-                ["scale_number", "A specific number on the scale"],
-                ["clothes_fit", "Clothes fitting better"],
-                ["more_energy", "More energy day to day"],
-                ["mix", "A mix of all of these"],
+                ["scale_number", t("A specific number on the scale")],
+                ["clothes_fit", t("Clothes fitting better")],
+                ["more_energy", t("More energy day to day")],
+                ["mix", t("A mix of all of these")],
               ]} />
           </Q>
         )}
         {step === "deadline" && (
-          <Q title="Is there a deadline or event pushing this?">
+          <Q title={t("Is there a deadline or event pushing this?")}>
             <Choices value={a.deadline} onChange={v => set("deadline", v as any)}
               options={[
-                ["specific_event", "Yes, a specific event/date"],
-                ["soft", "Yes, but soft/flexible"],
-                ["open_ended", "No, it's open-ended"],
+                ["specific_event", t("Yes, a specific event/date")],
+                ["soft", t("Yes, but soft/flexible")],
+                ["open_ended", t("No, it's open-ended")],
               ]} />
           </Q>
         )}
         {step === "weekday" && (
-          <Q title="Describe a normal weekday for you">
+          <Q title={t("Describe a normal weekday for you")}>
             <Choices value={a.weekdayShape} onChange={v => set("weekdayShape", v as any)}
               options={[
-                ["desk", "Mostly desk/sitting all day"],
-                ["some_walking", "Some walking/errands mixed in"],
-                ["on_feet", "On my feet a lot"],
+                ["desk", t("Mostly desk/sitting all day")],
+                ["some_walking", t("Some walking/errands mixed in")],
+                ["on_feet", t("On my feet a lot")],
               ]} />
           </Q>
         )}
         {step === "recent_days" && (
-          <Q title="In the last 2 weeks, how many days did you do real movement?"
-             sub="Walk, padel, gym — anything that counts.">
+          <Q title={t("In the last 2 weeks, how many days did you do real movement?")}
+             sub={t("Walk, padel, gym — anything that counts.")}>
             <Choices value={a.recentMoveDays} onChange={v => set("recentMoveDays", v as any)}
               options={[
-                ["0-2", "0–2 days"],
-                ["3-5", "3–5 days"],
-                ["6-7", "6–7 days"],
+                ["0-2", t("0–2 days")],
+                ["3-5", t("3–5 days")],
+                ["6-7", t("6–7 days")],
               ]} />
           </Q>
         )}
         {step === "eating" && (
-          <Q title="Any eating patterns that show up for you?" sub="Select all that apply.">
+          <Q title={t("Any eating patterns that show up for you?")} sub={t("Select all that apply.")}>
             <MultiChoices value={a.eatingPatterns ?? []} onToggle={v => toggleInList("eatingPatterns", v)}
               options={[
-                ["undereat_crash", "Undereat then crash later"],
-                ["overeat_night", "Overeat at night"],
-                ["skip_meals", "Skip meals"],
-                ["graze", "Graze all day"],
-                ["none", "None of these particularly"],
+                ["undereat_crash", t("Undereat then crash later")],
+                ["overeat_night", t("Overeat at night")],
+                ["skip_meals", t("Skip meals")],
+                ["graze", t("Graze all day")],
+                ["none", t("None of these particularly")],
               ]} />
           </Q>
         )}
         {step === "dietary" && (
-          <Q title="Dietary restrictions or preferences?">
+          <Q title={t("Dietary restrictions or preferences?")}>
             <Choices value={a.dietary} onChange={v => set("dietary", v as any)}
               options={[
-                ["none", "No restrictions"],
-                ["halal", "Halal only"],
-                ["vegetarian", "Vegetarian"],
-                ["other", "Other"],
+                ["none", t("No restrictions")],
+                ["halal", t("Halal only")],
+                ["vegetarian", t("Vegetarian")],
+                ["other", t("Other")],
               ]} />
             {a.dietary === "other" && (
-              <input type="text" placeholder="e.g. gluten-free, dairy-free" value={a.dietaryOther ?? ""}
+              <input type="text" placeholder={t("e.g. gluten-free, dairy-free")} value={a.dietaryOther ?? ""}
                 onChange={e => set("dietaryOther", e.target.value)}
                 className="mt-3 w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm" />
             )}
           </Q>
         )}
         {step === "derailers" && (
-          <Q title="What's actually derailed consistency for you before?" sub="Select all that apply.">
+          <Q title={t("What's actually derailed consistency for you before?")} sub={t("Select all that apply.")}>
             <MultiChoices value={a.derailers ?? []} onToggle={v => toggleInList("derailers", v)}
               options={[
-                ["time", "Time / busy schedule"],
-                ["motivation", "Motivation dips"],
-                ["injury", "Injury or health issue"],
-                ["social_eating", "Social eating (events, family, friends)"],
-                ["travel", "Travel"],
+                ["time", t("Time / busy schedule")],
+                ["motivation", t("Motivation dips")],
+                ["injury", t("Injury or health issue")],
+                ["social_eating", t("Social eating (events, family, friends)")],
+                ["travel", t("Travel")],
               ]} />
           </Q>
         )}
         {step === "realistic_days" && (
-          <Q title="Being honest, how many days a week can you realistically commit?">
+          <Q title={t("Being honest, how many days a week can you realistically commit?")}>
             <Choices value={a.realisticDays} onChange={v => set("realisticDays", v as any)}
               options={[
-                ["3", "3 days a week"],
-                ["4-5", "4–5 days a week"],
-                ["6-7", "6–7 days a week"],
+                ["3", t("3 days a week")],
+                ["4-5", t("4–5 days a week")],
+                ["6-7", t("6–7 days a week")],
               ]} />
             {a.stressLevel === "high" && (
               <p className="mt-3 text-xs text-amber-500/90">
-                Because you noted high stress, a modest pace is recommended regardless — stress affects adherence and recovery.
+                {t("Because you noted high stress, a modest pace is recommended regardless — stress affects adherence and recovery.")}
               </p>
             )}
           </Q>
         )}
         {step === "target_loss" && (
-          <Q title="Roughly how much weight would you like to lose?">
+          <Q title={t("Roughly how much weight would you like to lose?")}>
             <Choices value={a.targetLossKg} onChange={v => set("targetLossKg", v as any)}
               options={[
-                ["2-3", "Just a few kg (2–3kg)"],
-                ["5-7", "A moderate amount (5–7kg)"],
-                ["8-10", "A significant amount (8–10kg+)"],
-                ["none", "No specific number — just feel/look better"],
+                ["2-3", t("Just a few kg (2–3kg)")],
+                ["5-7", t("A moderate amount (5–7kg)")],
+                ["8-10", t("A significant amount (8–10kg+)")],
+                ["none", t("No specific number — just feel/look better")],
               ]} />
           </Q>
         )}
@@ -229,18 +231,18 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
           <div className="flex gap-2 mt-6">
             {stepIdx > 0 && (
               <button onClick={back} className="flex-1 py-3 rounded-full bg-secondary text-foreground text-sm">
-                Back
+                {t("Back")}
               </button>
             )}
             {stepIdx < STEPS.length - 1 ? (
               <button onClick={next}
                 className="flex-1 py-3 rounded-full bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-1">
-                Continue <ArrowRight className="w-4 h-4" />
+                {t("Continue")} <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
               <button onClick={save} disabled={saving}
                 className="flex-1 py-3 rounded-full bg-primary text-primary-foreground font-semibold disabled:opacity-50 flex items-center justify-center gap-1">
-                {saving ? "Saving…" : <>Save goal <Check className="w-4 h-4" /></>}
+                {saving ? t("Saving…") : <>{t("Save goal")} <Check className="w-4 h-4" /></>}
               </button>
             )}
           </div>
@@ -272,7 +274,7 @@ function Choices({ value, onChange, options }: {
         const sel = value === v;
         return (
           <button key={v} onClick={() => onChange(v)}
-            className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition-colors ${
+            className={`w-full text-start px-4 py-3 rounded-xl border text-sm transition-colors ${
               sel ? "border-primary bg-primary/10 text-foreground" : "border-border/50 bg-secondary/40 text-muted-foreground hover:text-foreground"
             }`}>
             {label}
@@ -294,7 +296,7 @@ function MultiChoices({ value, onToggle, options }: {
         const sel = value.includes(v);
         return (
           <button key={v} onClick={() => onToggle(v)}
-            className={`w-full text-left px-4 py-3 rounded-xl border text-sm flex items-center gap-2 transition-colors ${
+            className={`w-full text-start px-4 py-3 rounded-xl border text-sm flex items-center gap-2 transition-colors ${
               sel ? "border-primary bg-primary/10 text-foreground" : "border-border/50 bg-secondary/40 text-muted-foreground hover:text-foreground"
             }`}>
             <span className={`w-4 h-4 rounded border flex items-center justify-center ${sel ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
@@ -309,21 +311,22 @@ function MultiChoices({ value, onToggle, options }: {
 }
 
 function ParqStep({ a, setA }: { a: GoalAnswers; setA: React.Dispatch<React.SetStateAction<GoalAnswers>> }) {
+  const t = useT();
   const parq = a.parq ?? {};
   const setParq = (k: keyof NonNullable<GoalAnswers["parq"]>, v: boolean) =>
     setA(prev => ({ ...prev, parq: { ...(prev.parq ?? {}), [k]: v } }));
   const q: [keyof NonNullable<GoalAnswers["parq"]>, string][] = [
-    ["heart_condition", "Has a doctor ever told you that you have a heart condition and should only do activity recommended by a doctor?"],
-    ["pain_dizziness", "Do you feel pain, dizziness, or lose consciousness during physical activity?"],
-    ["bone_joint", "Do you have a bone or joint problem that could be made worse by increased activity?"],
-    ["bp_meds", "Are you currently on medication for blood pressure or a heart condition?"],
-    ["other_reason", "Is there any other reason you should be cautious about increasing activity?"],
+    ["heart_condition", t("Has a doctor ever told you that you have a heart condition and should only do activity recommended by a doctor?")],
+    ["pain_dizziness", t("Do you feel pain, dizziness, or lose consciousness during physical activity?")],
+    ["bone_joint", t("Do you have a bone or joint problem that could be made worse by increased activity?")],
+    ["bp_meds", t("Are you currently on medication for blood pressure or a heart condition?")],
+    ["other_reason", t("Is there any other reason you should be cautious about increasing activity?")],
   ];
   const anyYes = q.some(([k]) => parq[k]);
   return (
     <div>
-      <h3 className="font-display text-lg font-semibold mb-1">Quick health check</h3>
-      <p className="text-xs text-muted-foreground mb-4">Based on PAR-Q+. This stays on your profile.</p>
+      <h3 className="font-display text-lg font-semibold mb-1">{t("Quick health check")}</h3>
+      <p className="text-xs text-muted-foreground mb-4">{t("Based on PAR-Q+. This stays on your profile.")}</p>
       <div className="space-y-3">
         {q.map(([k, label]) => (
           <div key={k} className="rounded-xl border border-border/50 p-3">
@@ -334,21 +337,21 @@ function ParqStep({ a, setA }: { a: GoalAnswers; setA: React.Dispatch<React.SetS
                   className={`flex-1 py-1.5 rounded-lg text-xs font-medium border ${
                     parq[k] === val ? "border-primary bg-primary/10" : "border-border/50 bg-secondary/40 text-muted-foreground"
                   }`}>
-                  {String(lbl).toUpperCase()}
+                  {lbl === "yes" ? t("YES") : t("NO")}
                 </button>
               ))}
             </div>
           </div>
         ))}
         <div>
-          <div className="text-sm mb-2">Any past injuries or movements you should avoid/modify?</div>
+          <div className="text-sm mb-2">{t("Any past injuries or movements you should avoid/modify?")}</div>
           <textarea value={a.injuries ?? ""} onChange={e => setA(p => ({ ...p, injuries: e.target.value }))}
-            rows={2} placeholder="Optional"
+            rows={2} placeholder={t("Optional")}
             className="w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm" />
         </div>
         {(anyYes || (a.injuries && /pain|hernia|chest|dizz/i.test(a.injuries))) && (
           <div className="rounded-xl bg-amber-500/10 border border-amber-500/40 p-3 text-xs text-amber-200">
-            ⚠️ Worth checking with a doctor before increasing training intensity. The app will note this as a caution flag on your profile.
+            ⚠️ {t("Worth checking with a doctor before increasing training intensity. The app will note this as a caution flag on your profile.")}
           </div>
         )}
       </div>
@@ -360,27 +363,28 @@ function LifestyleStep({ a, set }: {
   a: GoalAnswers;
   set: <K extends keyof GoalAnswers>(k: K, v: GoalAnswers[K]) => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="font-display text-lg font-semibold mb-3">A bit about your life right now</h3>
-        <div className="text-xs text-muted-foreground mb-2">Sleep per night</div>
+        <h3 className="font-display text-lg font-semibold mb-3">{t("A bit about your life right now")}</h3>
+        <div className="text-xs text-muted-foreground mb-2">{t("Sleep per night")}</div>
         <Choices value={a.sleepHours} onChange={v => set("sleepHours", v as any)}
-          options={[["<5", "<5"], ["5-6", "5–6"], ["7-8", "7–8"], ["8+", "8+"]]} />
+          options={[["<5", t("<5")], ["5-6", t("5–6")], ["7-8", t("7–8")], ["8+", t("8+")]]} />
       </div>
       <div>
-        <div className="text-xs text-muted-foreground mb-2">Current stress / bandwidth</div>
+        <div className="text-xs text-muted-foreground mb-2">{t("Current stress / bandwidth")}</div>
         <Choices value={a.stressLevel} onChange={v => set("stressLevel", v as any)}
-          options={[["low", "Low"], ["moderate", "Moderate"], ["high", "High"]]} />
+          options={[["low", t("Low")], ["moderate", t("Moderate")], ["high", t("High")]]} />
       </div>
       <div>
-        <div className="text-xs text-muted-foreground mb-2">Movement you actually enjoy most</div>
+        <div className="text-xs text-muted-foreground mb-2">{t("Movement you actually enjoy most")}</div>
         <Choices value={a.preferredMovement} onChange={v => set("preferredMovement", v as any)}
           options={[
-            ["padel", "Padel / racquet"],
-            ["walk_run_cycle", "Walk / run / cycle"],
-            ["crossfit", "CrossFit-style"],
-            ["not_picky", "Not picky"],
+            ["padel", t("Padel / racquet")],
+            ["walk_run_cycle", t("Walk / run / cycle")],
+            ["crossfit", t("CrossFit-style")],
+            ["not_picky", t("Not picky")],
           ]} />
       </div>
     </div>
@@ -388,6 +392,7 @@ function LifestyleStep({ a, set }: {
 }
 
 function BestSetStep({ a, setA }: { a: GoalAnswers; setA: React.Dispatch<React.SetStateAction<GoalAnswers>> }) {
+  const t = useT();
   const best = a.bestSet ?? {};
   const set = (k: keyof NonNullable<GoalAnswers["bestSet"]>, v: string) =>
     setA(prev => ({
@@ -395,17 +400,18 @@ function BestSetStep({ a, setA }: { a: GoalAnswers; setA: React.Dispatch<React.S
       bestSet: { ...(prev.bestSet ?? {}), [k]: v === "" ? undefined : Math.max(0, Math.round(Number(v))) },
     }));
   const fields: [keyof NonNullable<GoalAnswers["bestSet"]>, string][] = [
-    ["pushups", "Push-ups"],
-    ["pullups", "Pull-ups"],
-    ["situps", "Sit-ups"],
-    ["squats", "Squats"],
+    ["pushups", t("Push-ups")],
+    ["pullups", t("Pull-ups")],
+    ["situps", t("Sit-ups")],
+    ["squats", t("Squats")],
   ];
   return (
     <div>
-      <h3 className="font-display text-lg font-semibold mb-1">Your current best set</h3>
+      <h3 className="font-display text-lg font-semibold mb-1">{t("Your current best set")}</h3>
       <p className="text-xs text-muted-foreground mb-4">
-        The most reps you can do in one unbroken set right now. Rough numbers are fine — leave blank to skip.
-        These anchor the AI's daily strength target suggestions.
+        {t("The most reps you can do in one unbroken set right now. Rough numbers are fine — leave blank to skip.")}
+        {" "}
+        {t("These anchor the AI's daily strength target suggestions.")}
       </p>
       <div className="grid grid-cols-2 gap-3">
         {fields.map(([k, label]) => (
@@ -417,7 +423,7 @@ function BestSetStep({ a, setA }: { a: GoalAnswers; setA: React.Dispatch<React.S
               min={0}
               value={best[k] ?? ""}
               onChange={e => set(k, e.target.value)}
-              placeholder="reps"
+              placeholder={t("reps")}
               className="mt-1 w-full bg-input/50 border border-border/50 rounded-lg px-3 py-2 text-sm font-mono text-foreground"
             />
           </label>
@@ -428,28 +434,29 @@ function BestSetStep({ a, setA }: { a: GoalAnswers; setA: React.Dispatch<React.S
 }
 
 function ReviewStep({ derived }: { derived: ReturnType<typeof deriveFromAnswers> }) {
+  const t = useT();
   const paceLabel: Record<string, string> = {
-    modest: "Modest (0.5%/wk)",
-    moderate: "Moderate (0.75%/wk)",
-    aggressive: "Aggressive (1%/wk)",
+    modest: t("Modest (0.5%/wk)"),
+    moderate: t("Moderate (0.75%/wk)"),
+    aggressive: t("Aggressive (1%/wk)"),
   };
   const actLabel: Record<string, string> = {
-    barely_moving: "Barely moving",
-    lightly_active: "Lightly active",
-    moderately_active: "Moderately active",
+    barely_moving: t("Barely moving"),
+    lightly_active: t("Lightly active"),
+    moderately_active: t("Moderately active"),
   };
   return (
     <div>
-      <h3 className="font-display text-lg font-semibold mb-3">Here's what we'll set</h3>
+      <h3 className="font-display text-lg font-semibold mb-3">{t("Here's what we'll set")}</h3>
       <div className="space-y-2 text-sm">
-        <Row label="Baseline activity" value={actLabel[derived.activity_level]} />
-        <Row label="Fat-loss pace" value={paceLabel[derived.fat_loss_pace]} />
-        <Row label="Weekly active burn" value={`${derived.weekly_active_burn_kcal} kcal / week`} />
-        <Row label="Health caution" value={derived.caution_flag ? "Flagged" : "None"} />
+        <Row label={t("Baseline activity")} value={actLabel[derived.activity_level]} />
+        <Row label={t("Fat-loss pace")} value={paceLabel[derived.fat_loss_pace]} />
+        <Row label={t("Weekly active burn")} value={t("{n} kcal / week", { n: derived.weekly_active_burn_kcal })} />
+        <Row label={t("Health caution")} value={derived.caution_flag ? t("Flagged") : t("None")} />
       </div>
       {derived.reasons.length > 0 && (
         <p className="mt-4 text-xs text-muted-foreground">
-          Pace kept gentle because of: {derived.reasons.join(", ")}.
+          {t("Pace kept gentle because of: {reasons}.", { reasons: derived.reasons.join(", ") })}
         </p>
       )}
     </div>
