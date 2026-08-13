@@ -163,3 +163,15 @@
   50% { opacity: 1; }
 }
 .shimmer { animation: shimmer 3s ease-in-out infinite; }
+
+/* Keep numeric / monospace readouts in logical LTR order under RTL layout */
+[dir="rtl"] .font-mono {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: right;
+}
+[dir="rtl"] .ltr-nums {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
