@@ -1341,7 +1341,14 @@ function DayLog({
     const fRows: Row[] = foods.map((f) => ({
       kind: "f",
       ts: f.created_at,
-      el: <FoodLogRow food={f} onDelete={() => del.mutate({ table: "food_entries", id: f.id })} />,
+      el: (
+        <FoodLogRow
+          key={"f" + f.id}
+          food={f}
+          onDelete={() => del.mutate({ table: "food_entries", id: f.id })}
+          onChange={onChange}
+        />
+      ),
     }));
     return [...mRows, ...fRows].sort((a, b) => b.ts.localeCompare(a.ts));
   }, [movements, foods, del]);
