@@ -1171,6 +1171,13 @@ function FoodLogRow({ food, onDelete, onChange }: { food: Food; onDelete: () => 
             <div className="flex items-center gap-2 shrink-0">
               <span className="font-mono text-sm text-sand">+{Math.round(Number(food.kcal))}</span>
               <button
+                onClick={() => { setEditing(!editing); setOpen(false); }}
+                className="p-1.5 rounded-full text-muted-foreground hover:text-sand hover:bg-sand/10 transition"
+                aria-label="Edit"
+              >
+                <Pencil size={14} />
+              </button>
+              <button
                 onClick={onDelete}
                 className="p-1.5 rounded-full text-muted-foreground hover:text-coral hover:bg-coral/10 transition"
                 aria-label="Delete"
