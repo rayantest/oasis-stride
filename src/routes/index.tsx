@@ -511,6 +511,8 @@ function CoachCard({
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const tr = useT();
+  const { lang } = useI18n();
 
   const signals = useMemo(() => computeSignals(profile, movements, foods, 7), [profile, movements, foods]);
 
