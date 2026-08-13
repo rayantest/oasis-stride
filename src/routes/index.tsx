@@ -661,7 +661,7 @@ function CoachCard({
           {open && ai.isFetching && <Loader2 size={13} className="animate-spin text-oasis" />}
           {headline && (
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border border-oasis/40 text-oasis bg-oasis/10">
-              {headline.category}
+              {tr(headline.category)}
             </span>
           )}
           <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
@@ -672,23 +672,23 @@ function CoachCard({
         <>
           {ai.isFetching && !ai.data && (
             <p className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
-              <Loader2 size={12} className="animate-spin" /> Reading your logs, scans and goal…
+              <Loader2 size={12} className="animate-spin" /> {tr("Reading your logs, scans and goal…")}
             </p>
           )}
 
           {empty ? (
             <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-              Log a few days of food and movement — I'll start giving you personalized guidance from day 3.
+              {tr("Log a few days of food and movement — I'll start giving you personalized guidance from day 3.")}
             </p>
           ) : (
             <>
-              <p className="font-display text-base leading-snug mt-2 mb-3">{headline.headline}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{headline.detail}</p>
+              <p className="font-display text-base leading-snug mt-2 mb-3">{tr(headline.headline)}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{tr(headline.detail)}</p>
               <button
                 onClick={() => setExpanded(expanded === headline.id ? null : headline.id)}
                 className="text-[11px] font-mono uppercase tracking-wider text-oasis/80 hover:text-oasis transition"
               >
-                {expanded === headline.id ? "Hide math" : "Why?"}
+                {expanded === headline.id ? tr("Hide math") : tr("Why?")}
               </button>
               {expanded === headline.id && (
                 <p className="mt-2 text-xs font-mono text-muted-foreground bg-background/40 rounded-lg p-2 border border-border/40">
@@ -701,17 +701,17 @@ function CoachCard({
                   {rest.map((a) => (
                     <div key={a.id} className="rounded-xl border border-border/40 bg-background/40 p-3">
                       <div className="flex items-center justify-between mb-1 gap-2">
-                        <span className="text-sm font-semibold leading-snug">{a.headline}</span>
+                        <span className="text-sm font-semibold leading-snug">{tr(a.headline)}</span>
                         <span className="text-[9px] uppercase tracking-wider text-muted-foreground shrink-0">
-                          {a.category}
+                          {tr(a.category)}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{a.detail}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{tr(a.detail)}</p>
                       <button
                         onClick={() => setExpanded(expanded === a.id ? null : a.id)}
                         className="mt-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition"
                       >
-                        {expanded === a.id ? "Hide" : "Why?"}
+                        {expanded === a.id ? tr("Hide") : tr("Why?")}
                       </button>
                       {expanded === a.id && (
                         <p className="mt-1.5 text-[11px] font-mono text-muted-foreground/90">{a.why}</p>
