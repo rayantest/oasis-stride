@@ -110,7 +110,7 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
       if (error) throw error;
       if (saveToLibrary) {
         await supabase.from("saved_foods").insert({
-          label: result.label,
+          label: saveName.trim() || result.label,
           grams: result.total_grams,
           kcal: result.kcal,
           protein_g: result.protein_g,
