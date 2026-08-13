@@ -1006,19 +1006,34 @@ function FoodInput({
           <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">My foods</div>
           <div className="flex flex-wrap gap-1.5">
             {saved.data!.map((s) => (
-              <button
+              <span
                 key={s.id}
-                type="button"
-                onClick={() => logSaved(s)}
-                disabled={busy}
-                className="px-2.5 py-1 rounded-full bg-muted/40 border border-border/50 text-[11px] hover:border-sand/50 disabled:opacity-40"
+                className="inline-flex items-center rounded-full bg-muted/40 border border-border/50 text-[11px] overflow-hidden"
               >
-                {s.label} <span className="text-muted-foreground">· {s.kcal}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => logSaved(s)}
+                  disabled={busy}
+                  className="px-2.5 py-1 hover:text-sand disabled:opacity-40"
+                >
+                  {s.label} <span className="text-muted-foreground">· {s.kcal}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => renameSaved(s)}
+                  disabled={busy}
+                  aria-label={`Rename ${s.label}`}
+                  title="Rename"
+                  className="px-1.5 py-1 border-l border-border/50 text-muted-foreground hover:text-sand disabled:opacity-40"
+                >
+                  <Pencil size={11} />
+                </button>
+              </span>
             ))}
           </div>
         </div>
       )}
+
       <div className="flex items-center justify-between mt-2 gap-2">
         <span className="text-[10px] text-muted-foreground">{dateHint}</span>
         <button
