@@ -1351,7 +1351,7 @@ function DayLog({
       ),
     }));
     return [...mRows, ...fRows].sort((a, b) => b.ts.localeCompare(a.ts));
-  }, [movements, foods, del]);
+  }, [movements, foods, del, onChange]);
 
   if (rows.length === 0 && exercises.length === 0) {
     return <div className="text-sm text-muted-foreground text-center py-6">Nothing logged for this day yet.</div>;
