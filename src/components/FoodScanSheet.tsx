@@ -41,11 +41,13 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
   const [result, setResult] = useState<FoodPhotoResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveToLibrary, setSaveToLibrary] = useState(false);
+  const [saveName, setSaveName] = useState("");
 
   const reset = () => {
     setImageDataUrl(null); setComment(""); setFollowUp("");
-    setHistory([]); setResult(null); setSaveToLibrary(false);
+    setHistory([]); setResult(null); setSaveToLibrary(false); setSaveName("");
   };
+
 
   const close = () => { reset(); onClose(); };
 
