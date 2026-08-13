@@ -40,6 +40,8 @@ import {
   ChevronDown,
   Compass,
   Camera,
+  Pencil,
+
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -978,6 +980,21 @@ function FoodInput({
       setBusy(false);
     }
   };
+
+  const renameSaved = async (s: SavedFood) => {
+    const next = window.prompt("Rename this saved food", s.label)?.trim();
+    if (!next || next === s.label) return;
+    try {
+      const { error } = await supabase.from("saved_foods").update({ label: next }).eq("id", s.id);
+      if (error) throw error;
+      toast.success(`Renamed to ${next}`);
+      qc.invalidateQueries({ queryKey: ["saved_foods"] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+
 
   return (
     <form onSubmit={submit} className="rounded-2xl bg-card border border-border/50 p-4 shadow-[var(--shadow-card)]">
