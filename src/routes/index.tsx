@@ -1632,7 +1632,6 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
   const scansQ = useBodyScans();
   const latestScan = (scansQ.data ?? [])[0] as BodyScan | undefined;
   const t = targets(form, latestScan ? { weight_kg: latestScan.weight_kg, bmr_kcal: latestScan.bmr_kcal } : null);
-  const scanWeightMismatch = latestScan?.weight_kg && Math.abs(latestScan.weight_kg - form.weight_kg) >= 0.5;
 
   const answers = form.goal_answers ?? {};
   const projection = projectionText(answers.targetLossKg, t.kg_per_week);
