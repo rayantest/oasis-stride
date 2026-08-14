@@ -1613,10 +1613,10 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
       .from("profile")
       .update({
         height_cm: form.height_cm,
-        weight_kg: form.weight_kg,
+        // weight comes from the latest body scan when one exists
+        weight_kg: latestScan?.weight_kg ?? form.weight_kg,
         age: form.age,
         gender: form.gender,
-        resting_hr: form.resting_hr,
         updated_at: new Date().toISOString(),
       })
       .eq("id", 1);
