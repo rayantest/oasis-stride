@@ -1749,9 +1749,10 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{tr("Your goal")}</div>
             <div className="text-sm font-medium">
-              {paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} ·{" "}
+              {tr(GOAL_LABEL[t.goal])} · {paceLabel[form.fat_loss_pace] ?? form.fat_loss_pace} ·{" "}
               {actLabel[form.activity_level] ?? form.activity_level}
             </div>
+
           </div>
           <button
             onClick={() => setGoalOpen(true)}
