@@ -1613,10 +1613,10 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
       .from("profile")
       .update({
         height_cm: form.height_cm,
-        weight_kg: form.weight_kg,
+        // weight comes from the latest body scan when one exists
+        weight_kg: latestScan?.weight_kg ?? form.weight_kg,
         age: form.age,
         gender: form.gender,
-        resting_hr: form.resting_hr,
         updated_at: new Date().toISOString(),
       })
       .eq("id", 1);
@@ -1632,7 +1632,6 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
   const scansQ = useBodyScans();
   const latestScan = (scansQ.data ?? [])[0] as BodyScan | undefined;
   const t = targets(form, latestScan ? { weight_kg: latestScan.weight_kg, bmr_kcal: latestScan.bmr_kcal } : null);
-  const scanWeightMismatch = latestScan?.weight_kg && Math.abs(latestScan.weight_kg - form.weight_kg) >= 0.5;
 
   const answers = form.goal_answers ?? {};
   const projection = projectionText(answers.targetLossKg, t.kg_per_week);
@@ -1663,14 +1662,8 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
         <Field label={tr("Height (cm)")}>
           <NumInput value={form.height_cm} onChange={(v) => set("height_cm", v)} />
         </Field>
-        <Field label={tr("Weight (kg)")}>
-          <NumInput value={form.weight_kg} onChange={(v) => set("weight_kg", v)} step={0.1} />
-        </Field>
         <Field label={tr("Age")}>
           <NumInput value={form.age} onChange={(v) => set("age", v)} />
-        </Field>
-        <Field label={tr("Resting HR")}>
-          <NumInput value={form.resting_hr} onChange={(v) => set("resting_hr", v)} />
         </Field>
         <Field label={tr("Gender")}>
           <Select
@@ -1719,19 +1712,6 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
         )}
       </div>
 
-      {scanWeightMismatch && latestScan?.weight_kg && (
-        <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 px-3 py-2 text-[11px] flex items-center justify-between gap-2">
-          <span>
-            {tr("Latest scan weight is {s}kg (profile: {p}kg).", { s: latestScan.weight_kg, p: form.weight_kg })}
-          </span>
-          <button
-            onClick={() => set("weight_kg", latestScan.weight_kg as number)}
-            className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shrink-0"
-          >
-            {tr("Sync")}
-          </button>
-        </div>
-      )}
 
       <div className="mt-4 rounded-xl bg-secondary/50 p-3 text-[11px] text-muted-foreground font-mono">
         <span className="ltr-nums">
