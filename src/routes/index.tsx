@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { parseMovement, parseFood } from "@/lib/ai-parse.functions";
-import { targets, bmr, type Profile } from "@/lib/calc";
+import { targets, bmr, GOAL_LABEL, type Profile } from "@/lib/calc";
+import { useDietTargets, dietTargetFor, snapshotDietTargets, type DietTargetRow } from "@/lib/diet-targets";
+
 import { generateCoachAdvice, type AiCoachTip } from "@/lib/coach-ai.functions";
 
 import { computeSignals } from "@/lib/coach-signals";
@@ -187,13 +189,50 @@ function App() {
     },
   });
 
+  const dietQ = useDietTargets();
+
+  // Keep a dated snapshot of the diet benchmark so past days never get rewritten.
+  const profileForSnapshot = profileQ.data;
+  const scansForSnapshot = scansQ.data;
+  const dietRowsLoaded = dietQ.data;
+  const foodsForSeed = foodQ.data;
+  useEffect(() => {
+    if (!profileForSnapshot || !dietRowsLoaded) return;
+    const latest = (scansForSnapshot ?? [])[0] ?? null;
+    const tt = targets(
+      profileForSnapshot,
+      latest ? { weight_kg: latest.weight_kg, bmr_kcal: latest.bmr_kcal } : null,
+    );
+    let seed: Date | undefined;
+    const stamps = (foodsForSeed ?? []).map((f) => new Date(f.created_at).getTime());
+    if (stamps.length > 0) seed = dayStart(new Date(Math.min(...stamps)));
+    snapshotDietTargets(
+      dietRowsLoaded,
+      {
+        calories: tt.calories,
+        protein_g: tt.protein_g,
+        carbs_g: tt.carbs_g,
+        fat_g: tt.fat_g,
+        active_burn: tt.active_burn,
+        primary_goal: tt.goal,
+      },
+      seed,
+    )
+      .then((wrote) => {
+        if (wrote) qc.invalidateQueries({ queryKey: ["diet_targets"] });
+      })
+      .catch(() => {});
+  }, [profileForSnapshot, scansForSnapshot, dietRowsLoaded, foodsForSeed, qc]);
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["movement"] });
     qc.invalidateQueries({ queryKey: ["food"] });
     qc.invalidateQueries({ queryKey: ["body_scans"] });
     qc.invalidateQueries({ queryKey: ["exercise_entries"] });
     qc.invalidateQueries({ queryKey: ["strength_targets"] });
+    qc.invalidateQueries({ queryKey: ["diet_targets"] });
   };
+
 
   if (profileQ.isLoading || movementQ.isLoading || foodQ.isLoading) {
     return (
@@ -236,7 +275,10 @@ function App() {
   const carbsG = dayFoods.reduce((s, f) => s + Number(f.carbs_g), 0);
   const fatG = dayFoods.reduce((s, f) => s + Number(f.fat_g), 0);
 
-  const history = historyDays(movements, foods, metric, t);
+  const dietRows = dietQ.data ?? [];
+  const history = historyDays(movements, foods, metric, t, dietRows);
+  const muscleTrend = muscleTrendFrom(scans);
+
 
   const targetRows = targetsQ.data ?? [];
   const strengthTargets = targetsFor(targetRows, selectedDate);
@@ -315,18 +357,29 @@ function App() {
                   value={eaten}
                   target={t.calories}
                   unit="kcal"
-                  mode="under"
-                  info={tr("BMR {bmr} kcal {bmrSrc} × {mult} activity multiplier = TDEE {tdee} kcal. Minus a {deficit} kcal/day deficit for your \"{pace}\" pace (≈ {kgpw} kg fat/week) = {cal} kcal{floor}.", {
-                    bmr: t.bmr,
-                    bmrSrc: t.used_scan_bmr ? tr("(measured in your InBody scan)") : tr("(Mifflin-St Jeor from height, weight, age, gender)"),
-                    mult: (t.tdee / t.bmr).toFixed(2),
-                    tdee: t.tdee,
-                    deficit: t.deficit,
-                    pace: profile.fat_loss_pace,
-                    kgpw: t.kg_per_week.toFixed(2),
-                    cal: t.calories,
-                    floor: t.calories === 1500 ? tr(" (1500 kcal safety floor applied)") : "",
-                  })}
+                  mode={t.goal === "muscle" ? "over" : "under"}
+                  info={
+                    tr("Goal: {goal}. BMR {bmr} kcal {bmrSrc} × {mult} activity multiplier = TDEE {tdee} kcal. ", {
+                      goal: tr(GOAL_LABEL[t.goal]),
+                      bmr: t.bmr,
+                      bmrSrc: t.used_scan_bmr ? tr("(measured in your InBody scan)") : tr("(Mifflin-St Jeor from height, weight, age, gender)"),
+                      mult: (t.tdee / t.bmr).toFixed(2),
+                      tdee: t.tdee,
+                    }) +
+                    (t.goal === "fat_loss"
+                      ? tr("Minus a {deficit} kcal/day deficit for your \"{pace}\" pace (≈ {kgpw} kg fat/week) = {cal} kcal{floor}.", {
+                          deficit: t.deficit,
+                          pace: profile.fat_loss_pace,
+                          kgpw: t.kg_per_week.toFixed(2),
+                          cal: t.calories,
+                          floor: t.calories === 1500 ? tr(" (1500 kcal safety floor applied)") : "",
+                        })
+                      : t.goal === "recomp"
+                        ? tr("Minus a small 10% deficit ({deficit} kcal) so you lose fat slowly while holding muscle = {cal} kcal.", { deficit: t.deficit, cal: t.calories })
+                        : t.goal === "muscle"
+                          ? tr("Plus a 10% surplus ({surplus} kcal) to fuel muscle growth = {cal} kcal.", { surplus: t.surplus, cal: t.calories })
+                          : tr("Kept at maintenance = {cal} kcal — the focus is energy and food quality, not weight change.", { cal: t.calories }))
+                  }
                 />
                 <BenchmarkRow
                   label={tr("Protein")}
@@ -334,7 +387,7 @@ function App() {
                   target={t.protein_g}
                   unit="g"
                   mode="over"
-                  info={tr("1.8 g per kg of body weight × {w} kg = {p} g. High protein protects muscle mass while you're in a deficit.", { w: t.current_weight_kg, p: t.protein_g })}
+                  info={tr("{ppk} g per kg of body weight × {w} kg = {p} g, set by your \"{goal}\" goal. Protein is what keeps or builds muscle.", { ppk: t.protein_per_kg, w: t.current_weight_kg, p: t.protein_g, goal: tr(GOAL_LABEL[t.goal]) })}
                 />
                 <BenchmarkRow
                   label={tr("Carbs")}
@@ -350,8 +403,12 @@ function App() {
                   target={t.fat_g}
                   unit="g"
                   mode="under"
-                  info={tr("0.8 g per kg of body weight × {w} kg = {f} g, never below the 0.6 g/kg hormone-health floor.", { w: t.current_weight_kg, f: t.fat_g })}
+                  info={tr("{fpk} g per kg of body weight × {w} kg = {f} g, never below the 0.6 g/kg hormone-health floor.", { fpk: t.fat_per_kg, w: t.current_weight_kg, f: t.fat_g })}
                 />
+                {muscleTrend && (
+                  <MuscleTrendRow trend={muscleTrend} />
+                )}
+
               </div>
             </Card>
 
@@ -590,7 +647,10 @@ function CoachCard({
         goal_answers: (profile.goal_answers ?? {}) as Record<string, unknown>,
       },
       targets: t,
+      primary_goal: t.goal,
+      muscle_trend: muscleTrendFrom(scans),
       bmr: bmr(profile),
+
       signals: Object.fromEntries(
         Object.entries(signals).map(([k, v]) => [k, Math.round((v as number) * 100) / 100]),
       ) as Record<string, number>,
@@ -1409,9 +1469,12 @@ function HistoryChart({
   const { lang } = useI18n();
   const meta = METRIC_META[metric];
   const scrollRef = useRef<HTMLDivElement>(null);
-  const target = data[0]?.target ?? 0;
-  const maxVal = Math.max(target, ...data.map((d) => d.value), 1);
+  // Benchmark shown in the legend = the one in effect on the selected day.
+  const target =
+    data.find((d) => isSameDay(d.date, selectedDate))?.target ?? data[data.length - 1]?.target ?? 0;
+  const maxVal = Math.max(target, ...data.map((d) => d.target), ...data.map((d) => d.value), 1);
   const scale = maxVal * 1.15;
+
   const H = 150;
 
   const breakdownByDay = useMemo(() => {
@@ -1498,16 +1561,6 @@ function HistoryChart({
 
       <div ref={scrollRef} className="overflow-x-auto pb-1 -mx-1 px-1">
         <div className="relative" style={{ minWidth: `${data.length * 34}px` }}>
-          {target > 0 && (
-            <div
-              className="absolute left-0 right-0 z-10 pointer-events-none"
-              style={{
-                bottom: `${28 + (target / scale) * H}px`,
-                borderTop: "2px dashed var(--sand)",
-                opacity: 0.85,
-              }}
-            />
-          )}
           <div className="flex items-end gap-1.5" style={{ height: `${H + 28}px` }}>
             {data.map((d, i) => {
               const key = dayKey(d.date);
@@ -1552,7 +1605,18 @@ function HistoryChart({
                   style={{ height: `${H + 28}px` }}
                   aria-label={tr("{d} — {v} {u}", { d: d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US"), v: Math.round(d.value), u: meta.unit })}
                 >
-                  <div className="flex-1 w-full flex items-end justify-center">
+                  <div className="flex-1 w-full flex items-end justify-center relative">
+                    {d.target > 0 && (
+                      <div
+                        className="absolute left-0 right-0 z-10 pointer-events-none"
+                        style={{
+                          bottom: `${(d.target / scale) * H}px`,
+                          borderTop: "2px dashed var(--sand)",
+                          opacity: 0.85,
+                        }}
+                      />
+                    )}
+
                     {segments.length > 0 ? (
                       <div className="w-[16px] rounded-t overflow-hidden flex flex-col-reverse" style={{ height: `${h}px`, opacity: 0.95 }}>
                         {segments.map((seg, idx) => (
@@ -1634,8 +1698,10 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
   const t = targets(form, latestScan ? { weight_kg: latestScan.weight_kg, bmr_kcal: latestScan.bmr_kcal } : null);
 
   const answers = form.goal_answers ?? {};
-  const projection = projectionText(answers.targetLossKg, t.kg_per_week);
-  const misses = eventLikelyMisses(answers.deadline, answers.targetLossKg, t.kg_per_week);
+  const lossFocused = t.goal === "fat_loss" || t.goal === "recomp";
+  const projection = lossFocused ? projectionText(answers.targetLossKg, t.kg_per_week) : null;
+  const misses = lossFocused && eventLikelyMisses(answers.deadline, answers.targetLossKg, t.kg_per_week);
+
   const paceLabel: Record<string, string> = {
     modest: tr("Modest (0.5%/wk)"),
     moderate: tr("Moderate (0.75%/wk)"),
@@ -1796,10 +1862,12 @@ function historyDays(
   foods: Food[],
   metric: MetricKey,
   t: ReturnType<typeof targets>,
+  dietRows: DietTargetRow[] = [],
 ): DayPoint[] {
   const out: DayPoint[] = [];
   const today = dayStart(new Date());
-  const target = metricTarget(metric, t);
+  const currentTarget = metricTarget(metric, t);
+
 
   // Start from the earliest logged entry (min 14 days of context).
   const stamps = [...movements.map((m) => m.created_at), ...foods.map((f) => f.created_at)];
@@ -1851,9 +1919,27 @@ function historyDays(
         break;
     }
     void dayMoves;
-    out.push({ date: d, value: Math.round(value), target, isToday: i === 0 });
+    const row = dietTargetFor(dietRows, d);
+    const dayTarget = row ? metricTargetFromRow(metric, row, currentTarget) : currentTarget;
+    out.push({ date: d, value: Math.round(value), target: dayTarget, isToday: i === 0 });
   }
   return out;
+}
+
+/** Historical benchmark for a day, from the snapshot that was in effect then. */
+function metricTargetFromRow(metric: MetricKey, row: DietTargetRow, fallback: number): number {
+  switch (metric) {
+    case "eaten_kcal":
+      return Number(row.calories);
+    case "protein":
+      return Number(row.protein_g);
+    case "carbs":
+      return Number(row.carbs_g);
+    case "fat":
+      return Number(row.fat_g);
+    default:
+      return fallback;
+  }
 }
 
 function metricTarget(metric: MetricKey, t: ReturnType<typeof targets>): number {
@@ -1875,3 +1961,77 @@ function metricTarget(metric: MetricKey, t: ReturnType<typeof targets>): number 
       return 0;
   }
 }
+
+/* ---------- Muscle mass trend ---------- */
+
+export type MuscleTrend = {
+  latest: number;
+  delta30: number | null;
+  delta90: number | null;
+  status: "gaining" | "holding" | "losing";
+};
+
+function muscleTrendFrom(scans: BodyScan[]): MuscleTrend | null {
+  const withMuscle = scans
+    .filter((s) => s.muscle_mass_kg != null && Number(s.muscle_mass_kg) > 0)
+    .sort((a, b) => (a.scan_date < b.scan_date ? 1 : -1));
+  if (withMuscle.length === 0) return null;
+  const latest = withMuscle[0];
+  const latestVal = Number(latest.muscle_mass_kg);
+  const latestTime = new Date(`${latest.scan_date}T00:00:00`).getTime();
+
+  const deltaOver = (days: number): number | null => {
+    const cutoff = latestTime - days * 86400000;
+    // closest scan at or before the cutoff, else the oldest one inside the window
+    const older = withMuscle.slice(1).find((s) => new Date(`${s.scan_date}T00:00:00`).getTime() <= cutoff)
+      ?? [...withMuscle.slice(1)].pop();
+    if (!older) return null;
+    return Math.round((latestVal - Number(older.muscle_mass_kg)) * 10) / 10;
+  };
+
+  const delta30 = deltaOver(30);
+  const delta90 = deltaOver(90);
+  const ref = delta30 ?? delta90 ?? 0;
+  const status = ref > 0.2 ? "gaining" : ref < -0.2 ? "losing" : "holding";
+  return { latest: latestVal, delta30, delta90, status };
+}
+
+function MuscleTrendRow({ trend }: { trend: MuscleTrend }) {
+  const tr = useT();
+  const [open, setOpen] = useState(false);
+  const color =
+    trend.status === "losing" ? "var(--coral)" : trend.status === "gaining" ? "var(--oasis)" : "var(--sand)";
+  const statusLabel =
+    trend.status === "gaining" ? tr("Gaining") : trend.status === "losing" ? tr("Losing") : tr("Holding");
+  const fmt = (n: number | null) => (n === null ? "—" : `${n > 0 ? "+" : ""}${n.toFixed(1)} kg`);
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span className="text-sm flex items-center gap-1.5">
+          {tr("Muscle mass")}
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={tr("How the {label} benchmark is set", { label: tr("Muscle mass") })}
+            className="w-4 h-4 rounded-full border border-border/70 text-[9px] leading-none text-muted-foreground flex items-center justify-center"
+          >
+            !
+          </button>
+        </span>
+        <span className="font-mono text-sm ltr-nums" style={{ color }}>
+          {trend.latest.toFixed(1)} kg · {statusLabel}
+        </span>
+      </div>
+      <div className="text-[11px] text-muted-foreground font-mono ltr-nums">
+        {tr("30d")} {fmt(trend.delta30)} · {tr("90d")} {fmt(trend.delta90)}
+      </div>
+      {open && (
+        <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+          {tr("Taken straight from your InBody scans: the change in muscle mass since your scan about a month and about three months ago. Weight going down only counts as progress if this line holds or rises.")}
+        </p>
+      )}
+    </div>
+  );
+}
+

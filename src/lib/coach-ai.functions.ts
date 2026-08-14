@@ -27,9 +27,12 @@ export type CoachContext = {
     goal_answers: Record<string, unknown>;
   };
   targets: { calories: number; protein_g: number; carbs_g: number; fat_g: number; active_burn: number };
+  primary_goal?: "fat_loss" | "recomp" | "muscle" | "health";
+  muscle_trend?: { latest: number; delta30: number | null; delta90: number | null; status: string } | null;
   bmr: number;
   signals: Record<string, number>;
   scans: Array<Record<string, number | string | null>>;
+
   days: Array<{
     date: string;
     kcal: number;
@@ -55,9 +58,22 @@ export const generateCoachAdvice = createServerFn({ method: "POST" })
       ? `FOCUS: MOVEMENT ONLY. Advise on activity, active calories, daily strength reps (pushups, pullups, situps, squats) versus their targets, consistency and recovery. Use body scans and goal for context. Do NOT give food, calorie-intake or macro advice. Allowed categories: activity, consistency, body, trend, logging.`
       : `FOCUS: DIET ONLY. Advise on calories eaten, protein, carbs and fat versus targets, eating patterns and consistency. Use body scans and goal for context. Do NOT give workout or training-volume advice. Allowed categories: protein, calories, consistency, body, trend, logging.`;
 
-    const system = `You are a personal fat-loss coach for ONE specific user. You get their full data: profile, goal answers, body composition scans over time (InBody-style), daily food logs (calories, protein, carbs, fat), daily movement (minutes and active calories) and daily strength reps, plus their calculated targets and BMR.
+    const goal = data.context.primary_goal ?? "fat_loss";
+    const goalRule = {
+      fat_loss: `THEIR GOAL: lose fat while keeping muscle. Support the calorie deficit, but never at the cost of muscle mass or strength.`,
+      recomp: `THEIR GOAL: body recomposition — lose fat AND keep or add muscle. Do NOT push a bigger deficit. Protein, strength progression and muscle mass matter as much as the scale.`,
+      muscle: `THEIR GOAL: build muscle and strength. They are eating in a small surplus on purpose. NEVER tell them to cut calories or that weight going up is bad — judge progress by muscle mass, strength reps and protein.`,
+      health: `THEIR GOAL: health and energy at maintenance calories. Do NOT push weight loss or a deficit. Judge progress by food quality, consistency, energy, sleep and muscle mass held.`,
+    }[goal];
+
+    const system = `You are a personal coach for ONE specific user. You get their full data: profile, goal answers, body composition scans over time (InBody-style), daily food logs (calories, protein, carbs, fat), daily movement (minutes and active calories) and daily strength reps, plus their calculated targets and BMR.
+
+${goalRule}
+
+Judge progress on more than fat loss: muscle mass trend from the scans (field muscle_trend), strength reps versus targets, protein intake and consistency all count as wins. Say so when they are going well, even if weight has not moved.
 
 ${focusRule}
+
 
 Write 3-5 pieces of advice, ordered most important first.
 

@@ -59,6 +59,48 @@ export type Database = {
         }
         Relationships: []
       }
+      diet_targets: {
+        Row: {
+          active_burn: number
+          calories: number
+          carbs_g: number
+          created_at: string
+          effective_date: string
+          fat_g: number
+          id: string
+          primary_goal: string
+          protein_g: number
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          active_burn?: number
+          calories?: number
+          carbs_g?: number
+          created_at?: string
+          effective_date: string
+          fat_g?: number
+          id?: string
+          primary_goal?: string
+          protein_g?: number
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          active_burn?: number
+          calories?: number
+          carbs_g?: number
+          created_at?: string
+          effective_date?: string
+          fat_g?: number
+          id?: string
+          primary_goal?: string
+          protein_g?: number
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exercise_entries: {
         Row: {
           created_at: string

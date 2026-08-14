@@ -103,4 +103,15 @@ export const AR_GOAL: Record<string, string> = {
   "Flagged": "مُعلَّم",
   "None": "لا يوجد",
   "Pace kept gentle because of: {reasons}.": "تم إبقاء الوتيرة معتدلة بسبب: {reasons}.",
+  "What should this plan optimise for?": "ما الهدف الأساسي لهذه الخطة؟",
+  "This sets your calories, protein and how your coach talks to you.": "هذا يحدد سعراتك وبروتينك وطريقة حديث مدربك معك.",
+  "Lose fat": "خسارة الدهون",
+  "Recomposition — lose fat, keep muscle": "إعادة التكوين — خسارة دهون مع الحفاظ على العضل",
+  "Build muscle & strength": "بناء العضل والقوة",
+  "Health & energy": "الصحة والطاقة",
+  "Recomposition": "إعادة التكوين",
+  "Fat loss uses a deficit, recomposition a small one, muscle a slight surplus, health & energy stays at maintenance.": "خسارة الدهون تستخدم عجزًا في السعرات، وإعادة التكوين عجزًا بسيطًا، وبناء العضل فائضًا خفيفًا، والصحة والطاقة تبقى عند مستوى الثبات.",
+  "Primary goal": "الهدف الأساسي",
+  "Muscle mass": "الكتلة العضلية",
 };
+

@@ -14,8 +14,9 @@ type Props = {
   onSaved: () => void;
 };
 
-const STEPS = [
+const ALL_STEPS = [
   "parq",
+  "primary_goal",
   "lifestyle",
   "success",
   "deadline",
@@ -31,7 +32,13 @@ const STEPS = [
   "review",
 ] as const;
 
-type Step = typeof STEPS[number];
+type Step = typeof ALL_STEPS[number];
+
+function stepsFor(goal: GoalAnswers["primaryGoal"]): Step[] {
+  const wantsLoss = goal === undefined || goal === "fat_loss" || goal === "recomp";
+  return ALL_STEPS.filter((s) => (s === "target_loss" ? wantsLoss : true));
+}
+
 
 export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
   const t = useT();
@@ -42,7 +49,9 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
   const [a, setA] = useState<GoalAnswers>(initial);
   const [stepIdx, setStepIdx] = useState(0);
   const [saving, setSaving] = useState(false);
-  const step: Step = STEPS[stepIdx];
+  const STEPS = useMemo(() => stepsFor(a.primaryGoal), [a.primaryGoal]);
+  const step: Step = STEPS[Math.min(stepIdx, STEPS.length - 1)];
+
 
   useEffect(() => {
     const orig = document.body.style.overflow;
@@ -110,6 +119,24 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
         </div>
 
         {step === "parq" && <ParqStep a={a} setA={setA} />}
+        {step === "primary_goal" && (
+          <Q
+            title={t("What should this plan optimise for?")}
+            sub={t("This sets your calories, protein and how your coach talks to you.")}
+          >
+            <Choices value={a.primaryGoal} onChange={v => set("primaryGoal", v as any)}
+              options={[
+                ["fat_loss", t("Lose fat")],
+                ["recomp", t("Recomposition — lose fat, keep muscle")],
+                ["muscle", t("Build muscle & strength")],
+                ["health", t("Health & energy")],
+              ]} />
+            <p className="mt-3 text-xs text-muted-foreground">
+              {t("Fat loss uses a deficit, recomposition a small one, muscle a slight surplus, health & energy stays at maintenance.")}
+            </p>
+          </Q>
+        )}
+
         {step === "lifestyle" && <LifestyleStep a={a} set={set} />}
         {step === "success" && (
           <Q title={t("What does success look like in 3 months?")}>
