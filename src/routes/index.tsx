@@ -405,10 +405,6 @@ function App() {
                   mode="under"
                   info={tr("{fpk} g per kg of body weight × {w} kg = {f} g, never below the 0.6 g/kg hormone-health floor.", { fpk: t.fat_per_kg, w: t.current_weight_kg, f: t.fat_g })}
                 />
-                {muscleTrend && (
-                  <MuscleTrendRow trend={muscleTrend} />
-                )}
-
               </div>
             </Card>
 
