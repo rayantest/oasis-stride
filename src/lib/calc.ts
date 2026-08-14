@@ -1,5 +1,9 @@
+export type PrimaryGoal = "fat_loss" | "recomp" | "muscle" | "health";
+
 export type GoalAnswers = {
-  // Health screen
+  // What the plan optimises for
+  primaryGoal?: PrimaryGoal;
+
   parq?: {
     heart_condition?: boolean;
     pain_dizziness?: boolean;
@@ -92,31 +96,69 @@ export type LatestScan = {
   bmr_kcal?: number | null;
 };
 
+export function primaryGoalOf(p: Profile): PrimaryGoal {
+  return p.goal_answers?.primaryGoal ?? "fat_loss";
+}
+
+export const GOAL_LABEL: Record<PrimaryGoal, string> = {
+  fat_loss: "Lose fat",
+  recomp: "Recomposition",
+  muscle: "Build muscle & strength",
+  health: "Health & energy",
+};
+
+// Protein and fat grams per kg of body weight, per primary goal.
+const GOAL_MACROS: Record<PrimaryGoal, { protein: number; fat: number }> = {
+  fat_loss: { protein: 1.8, fat: 0.8 },
+  recomp: { protein: 2.0, fat: 0.8 },
+  muscle: { protein: 2.0, fat: 0.9 },
+  health: { protein: 1.6, fat: 0.9 },
+};
+
 export function targets(p: Profile, scan?: LatestScan | null) {
   const currentWeight = scan?.weight_kg ?? p.weight_kg;
   const dailyTdee = tdee(p, scan);
-  const deficit = paceDeficitKcal({ weight_kg: currentWeight, fat_loss_pace: p.fat_loss_pace });
-  const cals = Math.max(1500, Math.round(dailyTdee - deficit));
-  const protein_g = Math.round(currentWeight * 1.8);
-  // Fat: 0.8 g/kg default, hard floor 0.6 g/kg
+  const goal = primaryGoalOf(p);
+  const paceDeficit = paceDeficitKcal({ weight_kg: currentWeight, fat_loss_pace: p.fat_loss_pace });
+
+  // Energy adjustment depends on what the plan optimises for.
+  let adjust = 0; // negative = deficit, positive = surplus
+  if (goal === "fat_loss") adjust = -paceDeficit;
+  else if (goal === "recomp") adjust = -Math.round(dailyTdee * 0.1);
+  else if (goal === "muscle") adjust = Math.round(dailyTdee * 0.1);
+  else adjust = 0;
+
+  const deficit = Math.max(0, -adjust);
+  const cals = Math.max(1500, Math.round(dailyTdee + adjust));
+
+  const macros = GOAL_MACROS[goal];
+  const protein_g = Math.round(currentWeight * macros.protein);
+  // Fat: goal-based g/kg, hard floor 0.6 g/kg for hormone health
   const fat_g = Math.max(
     Math.round(currentWeight * 0.6),
-    Math.round(currentWeight * 0.8),
+    Math.round(currentWeight * macros.fat),
   );
   const remaining = cals - protein_g * 4 - fat_g * 9;
   const carbs_g = Math.max(0, Math.round(remaining / 4));
   return {
     tdee: Math.round(dailyTdee),
     bmr: Math.round(bmr(p, scan)),
+    goal,
     calories: cals,
     protein_g,
     fat_g,
     carbs_g,
+    protein_per_kg: macros.protein,
+    fat_per_kg: macros.fat,
     active_burn: p.active_burn_goal_kcal,
     deficit,
-    kg_per_week: paceKgPerWeek({ weight_kg: currentWeight, fat_loss_pace: p.fat_loss_pace }),
+    surplus: Math.max(0, adjust),
+    kg_per_week: goal === "fat_loss"
+      ? paceKgPerWeek({ weight_kg: currentWeight, fat_loss_pace: p.fat_loss_pace })
+      : Math.abs(adjust) * 7 / 7000,
     current_weight_kg: currentWeight,
     used_scan_bmr: !!(scan?.bmr_kcal && scan.bmr_kcal > 0),
   };
+
 }
 
