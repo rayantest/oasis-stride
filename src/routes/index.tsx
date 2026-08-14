@@ -1663,14 +1663,8 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
         <Field label={tr("Height (cm)")}>
           <NumInput value={form.height_cm} onChange={(v) => set("height_cm", v)} />
         </Field>
-        <Field label={tr("Weight (kg)")}>
-          <NumInput value={form.weight_kg} onChange={(v) => set("weight_kg", v)} step={0.1} />
-        </Field>
         <Field label={tr("Age")}>
           <NumInput value={form.age} onChange={(v) => set("age", v)} />
-        </Field>
-        <Field label={tr("Resting HR")}>
-          <NumInput value={form.resting_hr} onChange={(v) => set("resting_hr", v)} />
         </Field>
         <Field label={tr("Gender")}>
           <Select
