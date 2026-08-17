@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { analyzeFoodPhoto, type FoodPhotoResult } from "@/lib/ai-parse.functions";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
-import {
 import { useVacation } from "@/lib/vacation";
+import {
   Camera, Loader2, X, Send, Plus, Bookmark, Sparkles, Upload,
 } from "lucide-react";
 
