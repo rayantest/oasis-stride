@@ -33,6 +33,8 @@ import {
 import { toast, Toaster } from "sonner";
 import { useT, useI18n, LanguageToggle } from "@/lib/i18n";
 import { useVacation, VacationBanner, VacationSwitch } from "@/lib/vacation";
+import { requireUid } from "@/lib/auth";
+import { SignOutButton } from "@/components/SignOutButton";
 import {
   Footprints,
   UtensilsCrossed,
@@ -136,6 +138,7 @@ function App() {
   const profileQ = useQuery({
     queryKey: ["profile"],
     queryFn: async (): Promise<Profile> => {
+      const uid = await requireUid();
       const { data, error } = await supabase.from("profile").select("*").eq("user_id", uid).single();
       if (error) throw error;
       return data as Profile;
@@ -513,6 +516,7 @@ function App() {
         )}
 
         <VacationSwitch />
+        <SignOutButton />
       </main>
     </div>
   );
