@@ -911,8 +911,11 @@ function MovementInput({
   const tr = useT();
   const { lang } = useI18n();
 
+  const { blocked } = useVacation();
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (blocked()) return;
     if (!text.trim() || busy) return;
     setBusy(true);
     try {
@@ -1018,8 +1021,11 @@ function FoodInput({
     ? " "
     : tr("Back-filling to {d}", { d: logDate.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "short", month: "short", day: "numeric" }) });
 
+  const { blocked } = useVacation();
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (blocked()) return;
     if (!text.trim() || busy) return;
     setBusy(true);
     try {
@@ -1040,7 +1046,7 @@ function FoodInput({
   };
 
   const logSaved = async (s: SavedFood) => {
-    if (busy) return;
+    if (blocked() || busy) return;
     setBusy(true);
     try {
       const { error } = await supabase.from("food_entries").insert({
@@ -1073,6 +1079,7 @@ function FoodInput({
   };
 
   const renameSaved = async (s: SavedFood) => {
+    if (blocked()) return;
     const next = window.prompt(tr("Rename this saved food"), s.label)?.trim();
     if (!next || next === s.label) return;
     try {
@@ -1311,8 +1318,10 @@ function DayLog({
 }) {
   type Row = { kind: "m" | "f"; ts: string; el: React.ReactNode };
   const tr = useT();
+  const { blocked } = useVacation();
   const del = useMutation({
     mutationFn: async ({ table, id }: { table: "movement_entries" | "food_entries"; id: string }) => {
+      if (blocked()) return;
       const { error } = await supabase.from(table).delete().eq("id", id);
       if (error) throw error;
     },
@@ -1673,6 +1682,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   const save = async () => {
+    if (blocked()) return;
     setSaving(true);
     const { error } = await supabase
       .from("profile")
