@@ -314,7 +314,7 @@ function App() {
           <div className="mx-auto max-w-xl px-5 py-3">
             <button
               onClick={() => setSelectedDate(dayStart(new Date()))}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sand/15 border border-sand/30 text-sand text-xs font-semibold hover:bg-sand/25 transition"
+              className="vacation-allow inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sand/15 border border-sand/30 text-sand text-xs font-semibold hover:bg-sand/25 transition"
             >
               <ArrowLeft size={12} /> {tr("Back to today")}
             </button>
@@ -528,7 +528,7 @@ function TabButton({
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-semibold transition ${
+      className={`vacation-allow flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-semibold transition ${
         active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
       }`}
     >
@@ -707,7 +707,7 @@ function CoachCard({
     <section className="rounded-2xl p-5 border border-border/50 bg-gradient-to-br from-card via-card to-oasis/5 shadow-[var(--shadow-card)]">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between mb-1 text-left"
+        className="vacation-allow w-full flex items-center justify-between mb-1 text-left"
         aria-expanded={open}
       >
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
@@ -742,7 +742,7 @@ function CoachCard({
               <p className="text-sm text-muted-foreground leading-relaxed mb-3">{tr(headline.detail)}</p>
               <button
                 onClick={() => setExpanded(expanded === headline.id ? null : headline.id)}
-                className="text-[11px] font-mono uppercase tracking-wider text-oasis/80 hover:text-oasis transition"
+                className="vacation-allow text-[11px] font-mono uppercase tracking-wider text-oasis/80 hover:text-oasis transition"
               >
                 {expanded === headline.id ? tr("Hide math") : tr("Why?")}
               </button>
@@ -765,7 +765,7 @@ function CoachCard({
                       <p className="text-xs text-muted-foreground leading-relaxed">{tr(a.detail)}</p>
                       <button
                         onClick={() => setExpanded(expanded === a.id ? null : a.id)}
-                        className="mt-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition"
+                        className="vacation-allow mt-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition"
                       >
                         {expanded === a.id ? tr("Hide") : tr("Why?")}
                       </button>
@@ -840,7 +840,7 @@ function BenchmarkRow({
               onClick={() => setOpen((o) => !o)}
               aria-label={tr("How the {label} benchmark is set", { label })}
               aria-expanded={open}
-              className={`inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border text-[9px] font-bold transition ${
+              className={`vacation-allow inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border text-[9px] font-bold transition ${
                 open
                   ? "border-sand text-sand bg-sand/15"
                   : "border-border text-muted-foreground hover:text-sand hover:border-sand/60"
@@ -1185,7 +1185,7 @@ function FoodLogRow({ food, onDelete }: { food: Food; onDelete: () => void }) {
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={() => setOpen(!open)}
-              className="text-left text-sm font-medium truncate flex items-center gap-1.5"
+              className="vacation-allow text-left text-sm font-medium truncate flex items-center gap-1.5"
             >
               {food.label}
               <ChevronDown size={12} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
@@ -1423,7 +1423,7 @@ function MetricPicker({ value, onChange }: { value: MetricKey; onChange: (v: Met
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as MetricKey)}
-      className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+      className="vacation-allow bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
     >
       {(Object.keys(METRIC_META) as MetricKey[]).map((k) => (
         <option key={k} value={k}>
@@ -1595,7 +1595,7 @@ function HistoryChart({
                   key={i}
                   onClick={() => onSelect(d.date)}
                   title={tr("{d} — {v} {u}{t}", { d: d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US"), v: Math.round(d.value), u: meta.unit, t: target > 0 ? tr(" (target {t})", { t: d.target }) : "" })}
-                  className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
+                  className={`vacation-allow group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
                   style={{ height: `${H + 28}px` }}
@@ -2011,7 +2011,7 @@ function MuscleTrendRow({ trend }: { trend: MuscleTrend }) {
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-label={tr("How the {label} benchmark is set", { label: tr("Muscle mass") })}
-            className="w-4 h-4 rounded-full border border-border/70 text-[9px] leading-none text-muted-foreground flex items-center justify-center"
+            className="vacation-allow w-4 h-4 rounded-full border border-border/70 text-[9px] leading-none text-muted-foreground flex items-center justify-center"
           >
             !
           </button>

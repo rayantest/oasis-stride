@@ -95,7 +95,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
   const { lang, setLang } = useI18n();
   return (
     <div
-      className={`inline-flex items-center rounded-full border border-border/60 bg-secondary/50 p-0.5 text-[11px] font-semibold ${className}`}
+      className={`vacation-allow inline-flex items-center rounded-full border border-border/60 bg-secondary/50 p-0.5 text-[11px] font-semibold ${className}`}
     >
       <button
         type="button"

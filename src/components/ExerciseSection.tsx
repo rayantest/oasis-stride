@@ -241,7 +241,7 @@ export function ExerciseSection({
           <select
             value={metric}
             onChange={(e) => setMetric(e.target.value as ExerciseKey | "total")}
-            className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="vacation-allow bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             {EXERCISES.map((ex) => (
               <option key={ex} value={ex}>
@@ -465,7 +465,7 @@ function RepLogger({
               onClick={() => setOpenInfo((o) => !o)}
               aria-label={t("How the {label} target is set", { label: t(EXERCISE_LABELS[ex]) })}
               aria-expanded={openInfo}
-              className={`inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border text-[9px] font-bold transition ${
+              className={`vacation-allow inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border text-[9px] font-bold transition ${
                 openInfo ? "border-sand text-sand bg-sand/15" : "border-border text-muted-foreground"
               }`}
             >
@@ -628,7 +628,7 @@ function ExerciseHistoryChart({
                         })
                       : t("{date} — {value} {unit}", { date: d.date.toDateString(), value: d.value, unit })
                   }
-                  className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
+                  className={`vacation-allow group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
                   style={{ height: `${H + 28}px` }}
