@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { requireUid } from "@/lib/auth";
 import { toast } from "sonner";
 import { Dumbbell, Plus, Trash2, Pencil, Sparkles, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -172,7 +173,9 @@ export function ExerciseSection({
     setBusy(true);
     try {
       if (blocked()) return;
+      const uid = await requireUid();
       const { error } = await supabase.from("exercise_entries" as never).insert({
+        user_id: uid,
         exercise: ex,
         reps,
         created_at: logTimestamp(),
@@ -361,7 +364,9 @@ function TargetEditor({
     if (blocked()) return;
     setSaving(true);
     try {
+      const uid = await requireUid();
       const row = {
+        user_id: uid,
         effective_date: dayKey(selectedDate),
         pushups: Math.max(0, Math.round(Number(vals.pushups) || 0)),
         pullups: Math.max(0, Math.round(Number(vals.pullups) || 0)),
@@ -372,7 +377,7 @@ function TargetEditor({
       };
       const { error } = await supabase
         .from("strength_targets" as never)
-        .upsert(row as never, { onConflict: "effective_date" } as never);
+        .upsert(row as never, { onConflict: "user_id,effective_date" } as never);
       if (error) throw error;
       toast.success(t("Targets set from {date}", { date: dateLabel }));
       onSaved();

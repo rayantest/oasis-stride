@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { requireUid } from "@/lib/auth";
 import { parseBodyScan } from "@/lib/ai-parse.functions";
 import { Camera, Pencil, SkipForward, Loader2, Check, ArrowLeft } from "lucide-react";
 import { useT } from "@/lib/i18n";
@@ -88,7 +89,9 @@ export function BodyCompStep({ onSaved, onSkip }: {
       return;
     }
     setSaving(true);
+    const uid = await requireUid();
     const { error } = await supabase.from("body_scans").insert({
+      user_id: uid,
       scan_date: values.scan_date,
       weight_kg: values.weight_kg,
       muscle_mass_kg: values.muscle_mass_kg,

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { requireUid } from "@/lib/auth";
 import { analyzeFoodPhoto, type FoodPhotoResult } from "@/lib/ai-parse.functions";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
@@ -92,7 +93,9 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
     if (blocked() || !result || busy) return;
     setBusy(true);
     try {
+      const uid = await requireUid();
       const { error } = await supabase.from("food_entries").insert({
+        user_id: uid,
         label: result.label,
         kcal: result.kcal,
         protein_g: result.protein_g,
@@ -114,6 +117,7 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
       if (error) throw error;
       if (saveToLibrary) {
         await supabase.from("saved_foods").insert({
+          user_id: uid,
           label: saveName.trim() || result.label,
           grams: result.total_grams,
           kcal: result.kcal,

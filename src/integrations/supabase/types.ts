@@ -25,6 +25,7 @@ export type Database = {
           muscle_mass_kg: number | null
           scan_date: string
           source: string
+          user_id: string | null
           visceral_fat_level: number | null
           waist_hip_ratio: number | null
           weight_kg: number | null
@@ -39,6 +40,7 @@ export type Database = {
           muscle_mass_kg?: number | null
           scan_date?: string
           source?: string
+          user_id?: string | null
           visceral_fat_level?: number | null
           waist_hip_ratio?: number | null
           weight_kg?: number | null
@@ -53,6 +55,7 @@ export type Database = {
           muscle_mass_kg?: number | null
           scan_date?: string
           source?: string
+          user_id?: string | null
           visceral_fat_level?: number | null
           waist_hip_ratio?: number | null
           weight_kg?: number | null
@@ -72,6 +75,7 @@ export type Database = {
           protein_g: number
           source: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           active_burn?: number
@@ -85,6 +89,7 @@ export type Database = {
           protein_g?: number
           source?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           active_burn?: number
@@ -98,6 +103,7 @@ export type Database = {
           protein_g?: number
           source?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -107,18 +113,21 @@ export type Database = {
           exercise: string
           id: string
           reps: number
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           exercise: string
           id?: string
           reps: number
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           exercise?: string
           id?: string
           reps?: number
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -131,6 +140,7 @@ export type Database = {
           id: string
           stand_hours: number
           steps: number
+          user_id: string | null
         }
         Insert: {
           active_calories?: number
@@ -140,6 +150,7 @@ export type Database = {
           id?: string
           stand_hours?: number
           steps?: number
+          user_id?: string | null
         }
         Update: {
           active_calories?: number
@@ -149,6 +160,7 @@ export type Database = {
           id?: string
           stand_hours?: number
           steps?: number
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -172,6 +184,7 @@ export type Database = {
           starch_g: number | null
           sugar_g: number | null
           trans_fat_g: number | null
+          user_id: string | null
         }
         Insert: {
           animal_protein_g?: number | null
@@ -192,6 +205,7 @@ export type Database = {
           starch_g?: number | null
           sugar_g?: number | null
           trans_fat_g?: number | null
+          user_id?: string | null
         }
         Update: {
           animal_protein_g?: number | null
@@ -212,6 +226,7 @@ export type Database = {
           starch_g?: number | null
           sugar_g?: number | null
           trans_fat_g?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -223,6 +238,7 @@ export type Database = {
           label: string
           minutes: number
           source: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -231,6 +247,7 @@ export type Database = {
           label: string
           minutes: number
           source: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -239,6 +256,7 @@ export type Database = {
           label?: string
           minutes?: number
           source?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -249,13 +267,16 @@ export type Database = {
           age: number
           caution_flag: boolean
           caution_note: string
+          display_name: string
           fat_loss_pace: string
           gender: string
           goal_answers: Json
           height_cm: number
-          id: number
+          onboarded_at: string | null
           resting_hr: number
+          sync_token: string
           updated_at: string
+          user_id: string | null
           weight_kg: number
         }
         Insert: {
@@ -264,13 +285,16 @@ export type Database = {
           age?: number
           caution_flag?: boolean
           caution_note?: string
+          display_name?: string
           fat_loss_pace?: string
           gender?: string
           goal_answers?: Json
           height_cm?: number
-          id?: number
+          onboarded_at?: string | null
           resting_hr?: number
+          sync_token?: string
           updated_at?: string
+          user_id?: string | null
           weight_kg?: number
         }
         Update: {
@@ -279,13 +303,16 @@ export type Database = {
           age?: number
           caution_flag?: boolean
           caution_note?: string
+          display_name?: string
           fat_loss_pace?: string
           gender?: string
           goal_answers?: Json
           height_cm?: number
-          id?: number
+          onboarded_at?: string | null
           resting_hr?: number
+          sync_token?: string
           updated_at?: string
+          user_id?: string | null
           weight_kg?: number
         }
         Relationships: []
@@ -312,6 +339,7 @@ export type Database = {
           starch_g: number | null
           sugar_g: number | null
           trans_fat_g: number | null
+          user_id: string | null
         }
         Insert: {
           animal_protein_g?: number | null
@@ -334,6 +362,7 @@ export type Database = {
           starch_g?: number | null
           sugar_g?: number | null
           trans_fat_g?: number | null
+          user_id?: string | null
         }
         Update: {
           animal_protein_g?: number | null
@@ -356,6 +385,7 @@ export type Database = {
           starch_g?: number | null
           sugar_g?: number | null
           trans_fat_g?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -371,6 +401,7 @@ export type Database = {
           source: string
           squats: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -383,6 +414,7 @@ export type Database = {
           source?: string
           squats?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -395,6 +427,7 @@ export type Database = {
           source?: string
           squats?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

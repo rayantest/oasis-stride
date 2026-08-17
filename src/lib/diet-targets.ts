@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { PrimaryGoal } from "@/lib/calc";
+import { requireUid } from "@/lib/auth";
 
 export type DietTargetRow = {
   id: string;
@@ -77,11 +78,13 @@ export async function snapshotDietTargets(
   const latest = rows.length > 0 ? rows[rows.length - 1] : null;
   if (latest && sameValues(latest, values)) return false;
 
+  const uid = await requireUid();
   const effective_date = dietDayKey(latest ? new Date() : (seedDate ?? new Date()));
   const { error } = await supabase
     .from("diet_targets" as never)
     .upsert(
       {
+        user_id: uid,
         effective_date,
         calories: Math.round(values.calories),
         protein_g: Math.round(values.protein_g),
@@ -91,7 +94,7 @@ export async function snapshotDietTargets(
         primary_goal: values.primary_goal,
         source: "auto",
       } as never,
-      { onConflict: "effective_date" } as never,
+      { onConflict: "user_id,effective_date" } as never,
     );
   if (error) throw error;
   return true;

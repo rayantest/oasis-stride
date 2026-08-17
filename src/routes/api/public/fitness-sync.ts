@@ -34,13 +34,17 @@ export const Route = createFileRoute('/api/public/fitness-sync')({
       GET: async () => json({ ok: true, endpoint: 'fitness-sync', method: 'POST' }),
 
       POST: async ({ request }) => {
-        const secret = process.env['SYNC_SECRET']
-        if (!secret) return json({ error: 'Sync not configured' }, 500)
+        const provided = (request.headers.get('x-sync-secret') ?? '').trim()
+        if (provided.length < 16) return json({ error: 'Unauthorized' }, 401)
 
-        const provided = request.headers.get('x-sync-secret') ?? ''
-        if (provided.length !== secret.length || provided !== secret) {
-          return json({ error: 'Unauthorized' }, 401)
-        }
+        const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+        const { data: owner } = await supabaseAdmin
+          .from('profile')
+          .select('user_id')
+          .eq('sync_token', provided)
+          .maybeSingle()
+
+        if (!owner?.user_id) return json({ error: 'Unauthorized' }, 401)
 
         let raw: unknown
         try {
@@ -54,12 +58,12 @@ export const Route = createFileRoute('/api/public/fitness-sync')({
           return json({ error: 'Invalid payload', details: parsed.error.issues }, 400)
         }
 
-        const rows = Array.isArray(parsed.data) ? parsed.data : [parsed.data]
+        const days = Array.isArray(parsed.data) ? parsed.data : [parsed.data]
+        const rows = days.map((d) => ({ ...d, user_id: owner.user_id }))
 
-        const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
         const { error } = await supabaseAdmin
           .from('fitness_rings')
-          .upsert(rows, { onConflict: 'date' })
+          .upsert(rows, { onConflict: 'user_id,date' })
 
         if (error) return json({ error: error.message }, 500)
 
