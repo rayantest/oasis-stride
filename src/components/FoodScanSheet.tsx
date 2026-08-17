@@ -5,6 +5,7 @@ import { analyzeFoodPhoto, type FoodPhotoResult } from "@/lib/ai-parse.functions
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import {
+import { useVacation } from "@/lib/vacation";
   Camera, Loader2, X, Send, Plus, Bookmark, Sparkles, Upload,
 } from "lucide-react";
 
@@ -87,7 +88,7 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
   };
 
   const add = async () => {
-    if (!result || busy) return;
+    if (blocked() || !result || busy) return;
     setBusy(true);
     try {
       const { error } = await supabase.from("food_entries").insert({

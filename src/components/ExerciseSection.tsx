@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { suggestStrengthTargets } from "@/lib/strength-target.functions";
 import type { Profile } from "@/lib/calc";
 import { useT } from "@/lib/i18n";
+import { useVacation } from "@/lib/vacation";
 
 export const EXERCISES = ["pushups", "pullups", "situps", "squats"] as const;
 export type ExerciseKey = (typeof EXERCISES)[number];
@@ -169,6 +170,7 @@ export function ExerciseSection({
     if (!reps || busy) return;
     setBusy(true);
     try {
+      if (blocked()) return;
       const { error } = await supabase.from("exercise_entries" as never).insert({
         exercise: ex,
         reps,
@@ -354,6 +356,7 @@ function TargetEditor({
   };
 
   const save = async () => {
+    if (blocked()) return;
     setSaving(true);
     try {
       const row = {
@@ -669,6 +672,7 @@ export function ExerciseLogRows({ entries, onChange }: { entries: ExerciseEntry[
   const qc = useQueryClient();
   const t = useT();
   const del = async (id: string) => {
+    if (blocked()) return;
     const { error } = await supabase
       .from("exercise_entries" as never)
       .delete()
