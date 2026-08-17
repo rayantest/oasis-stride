@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as ApiPublicFitnessSyncRouteImport } from './routes/api/public/fitness-sync'
 
@@ -22,6 +23,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   id: '/app',
@@ -38,12 +44,14 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRoutesById {
@@ -51,18 +59,20 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/app' | '/api/public/fitness-sync'
+  fullPaths: '/' | '/auth' | '/app' | '/onboarding' | '/api/public/fitness-sync'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/app' | '/api/public/fitness-sync'
+  to: '/' | '/auth' | '/app' | '/onboarding' | '/api/public/fitness-sync'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/app'
+    | '/_authenticated/onboarding'
     | '/api/public/fitness-sync'
   fileRoutesById: FileRoutesById
 }
@@ -88,6 +98,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app': {
       id: '/_authenticated/app'
       path: '/app'
@@ -107,10 +124,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppRoute: AuthenticatedAppRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
