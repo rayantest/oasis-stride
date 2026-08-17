@@ -730,7 +730,13 @@ function CoachCard({
         </span>
       </button>
 
-      {open && (
+      {open && vacation && (
+        <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+          {tr("You're on vacation. No targets, no catching up — rest is part of the plan. I'll pick things back up when you unlock.")}
+        </p>
+      )}
+
+      {open && !vacation && (
         <>
           {ai.isFetching && !ai.data && (
             <p className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
