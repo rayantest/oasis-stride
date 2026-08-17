@@ -148,6 +148,28 @@
 [dir="rtl"] input[type="date"] { direction: ltr; text-align: right; }
 
 
+/* --- Vacation mode: read-only lock ---------------------------------- */
+[data-vacation="on"] button:not(.vacation-allow):not(.vacation-allow *):not(:has(.vacation-allow)),
+[data-vacation="on"] input:not(.vacation-allow *),
+[data-vacation="on"] textarea:not(.vacation-allow *),
+[data-vacation="on"] select:not(.vacation-allow *),
+[data-vacation="on"] label:not(.vacation-allow *),
+[data-vacation="on"] [role="button"]:not(.vacation-allow):not(.vacation-allow *) {
+  pointer-events: none;
+  opacity: 0.45;
+  filter: grayscale(0.85);
+}
+[data-vacation="on"] .vacation-allow,
+[data-vacation="on"] .vacation-allow button,
+[data-vacation="on"] .vacation-allow input,
+[data-vacation="on"] .vacation-allow select,
+[data-vacation="on"] .vacation-allow label,
+[data-vacation="on"] .vacation-allow [role="button"] {
+  pointer-events: auto;
+  opacity: 1;
+  filter: none;
+}
+
 /* Wave animation for oasis meter */
 @keyframes wave {
   0% { transform: translateX(0) translateY(0); }
