@@ -114,7 +114,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <Outlet />
+        <VacationProvider>
+          <Outlet />
+        </VacationProvider>
       </LanguageProvider>
     </QueryClientProvider>
   );
