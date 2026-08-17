@@ -32,6 +32,7 @@ import {
 
 import { toast, Toaster } from "sonner";
 import { useT, useI18n, LanguageToggle } from "@/lib/i18n";
+import { useVacation, VacationBanner, VacationSwitch } from "@/lib/vacation";
 import {
   Footprints,
   UtensilsCrossed,
@@ -305,8 +306,9 @@ function App() {
     : selectedDate.toLocaleDateString(lang === "ar" ? "ar" : "en-US", { weekday: "short", month: "short", day: "numeric" });
 
   return (
-    <div className="min-h-screen pb-24 transition-colors duration-300" data-mode={tab}>
+    <div className="min-h-screen pb-24 transition-colors duration-300" data-mode={tab} data-vacation={vacation ? "on" : undefined}>
       <Toaster theme="light" position="top-center" richColors />
+      <VacationBanner />
 
 
       {!viewingToday && (
@@ -508,6 +510,8 @@ function App() {
             </BodyCompSection>
           </>
         )}
+
+        <VacationSwitch />
       </main>
     </div>
   );
