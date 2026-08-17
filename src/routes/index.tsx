@@ -688,7 +688,7 @@ function CoachCard({
   const ai = useQuery({
     queryKey: ["coach-ai", contextKey],
     queryFn: () => coachFn({ data: { context } }),
-    enabled: open,
+    enabled: open && !vacation,
     staleTime: 10 * 60 * 1000,
     retry: false,
   });
@@ -1674,6 +1674,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
+  const { blocked } = useVacation();
 
   useEffect(() => {
     setForm(profile);
