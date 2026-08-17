@@ -436,7 +436,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      claim_legacy_data: { Args: never; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
