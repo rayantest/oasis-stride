@@ -34,6 +34,7 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
   onLogged: () => void;
 }) {
   const t = useT();
+  const { blocked } = useVacation();
   const analyze = useServerFn(analyzeFoodPhoto);
   const cameraRef = useRef<HTMLInputElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);

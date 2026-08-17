@@ -160,6 +160,7 @@ export function ExerciseSection({
 }) {
   const qc = useQueryClient();
   const t = useT();
+  const { blocked } = useVacation();
   const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -297,6 +298,7 @@ function TargetEditor({
   const [rationale, setRationale] = useState("");
   const [thinking, setThinking] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { blocked } = useVacation();
   const suggest = useServerFn(suggestStrengthTargets);
   const t = useT();
 
@@ -671,6 +673,7 @@ function ExerciseHistoryChart({
 export function ExerciseLogRows({ entries, onChange }: { entries: ExerciseEntry[]; onChange: () => void }) {
   const qc = useQueryClient();
   const t = useT();
+  const { blocked } = useVacation();
   const del = async (id: string) => {
     if (blocked()) return;
     const { error } = await supabase
