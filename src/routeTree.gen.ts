@@ -9,12 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as ApiPublicFitnessSyncRouteImport } from './routes/api/public/fitness-sync'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/_authenticated/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicFitnessSyncRoute = ApiPublicFitnessSyncRouteImport.update({
@@ -24,38 +24,38 @@ const ApiPublicFitnessSyncRoute = ApiPublicFitnessSyncRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/app': typeof AuthenticatedAppRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/app': typeof AuthenticatedAppRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_authenticated/app': typeof AuthenticatedAppRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/fitness-sync'
+  fullPaths: '/app' | '/api/public/fitness-sync'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/fitness-sync'
-  id: '__root__' | '/' | '/api/public/fitness-sync'
+  to: '/app' | '/api/public/fitness-sync'
+  id: '__root__' | '/_authenticated/app' | '/api/public/fitness-sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AuthenticatedAppRoute: typeof AuthenticatedAppRoute
   ApiPublicFitnessSyncRoute: typeof ApiPublicFitnessSyncRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/fitness-sync': {
@@ -69,7 +69,7 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AuthenticatedAppRoute: AuthenticatedAppRoute,
   ApiPublicFitnessSyncRoute: ApiPublicFitnessSyncRoute,
 }
 export const routeTree = rootRouteImport

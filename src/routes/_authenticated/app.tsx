@@ -48,7 +48,7 @@ import {
 
 } from "lucide-react";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/app")({
   ssr: false,
   component: App,
 });
