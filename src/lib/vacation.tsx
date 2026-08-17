@@ -14,6 +14,7 @@ type Ctx = {
 const VacationContext = createContext<Ctx | null>(null);
 
 export function VacationProvider({ children }: { children: ReactNode }) {
+  const t = useT();
   const [vacation, setVacationState] = useState(false);
 
   useEffect(() => {
@@ -39,11 +40,11 @@ export function VacationProvider({ children }: { children: ReactNode }) {
       setVacation,
       blocked: () => {
         if (!vacation) return false;
-        toast("Vacation mode is on — enjoy it.");
+        toast(t("Vacation mode is on — nothing to log right now."));
         return true;
       },
     }),
-    [vacation, setVacation],
+    [vacation, setVacation, t],
   );
 
   return <VacationContext.Provider value={value}>{children}</VacationContext.Provider>;
