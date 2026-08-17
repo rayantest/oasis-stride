@@ -14,7 +14,7 @@ Here is how I see it, and what this first release covers: sign-up, private per-u
    - Step 3: their InBody scan — photo of the printout, parsed by AI, or typed in manually if they don't have one.
    - Then targets are computed and their first benchmark snapshot is saved.
 4. **Dashboard** — exactly the app you use today, only with their numbers: logging, food scanner, strength, body composition, history charts, coach, vacation mode.
-5. **Every visit after** — signed in automatically; a small account menu with sign out.
+5. **Every visit after** — signed in automatically; a single sign-out icon at the very bottom of the page, just after the vacation mode toggle.
 
 ## Is the AI personalised per user?
 
