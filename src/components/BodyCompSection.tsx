@@ -89,7 +89,7 @@ export function BodyCompSection({ gender, children }: { gender: string; children
   return (
     <section className="rounded-2xl border border-border/50 bg-card shadow-[var(--shadow-card)] overflow-hidden">
       <div className="w-full flex items-center justify-between px-5 py-4 gap-2">
-        <button onClick={() => setOpen(!open)} className="flex items-center gap-2 text-start flex-1"
+        <button onClick={() => setOpen(!open)} className="vacation-allow flex items-center gap-2 text-start flex-1"
           aria-expanded={open}>
           <Activity size={16} className="text-primary" />
           <span className="text-sm font-semibold">{t("Body & profile")}</span>
@@ -106,7 +106,7 @@ export function BodyCompSection({ gender, children }: { gender: string; children
         >
           <Plus size={12} /> {t("Add scan")}
         </button>
-        <button onClick={() => setOpen(!open)} aria-label={open ? t("Collapse") : t("Expand")}>
+        <button onClick={() => setOpen(!open)} aria-label={open ? t("Collapse") : t("Expand")} className="vacation-allow">
           <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
       </div>
@@ -127,7 +127,7 @@ export function BodyCompSection({ gender, children }: { gender: string; children
                     <select
                       value={activeMetric.key}
                       onChange={e => setMetric(e.target.value as MetricKey)}
-                      className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px]"
+                      className="vacation-allow bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px]"
                     >
                       {available.map(m => (
                         <option key={m.key} value={m.key}>{t(m.label)}</option>

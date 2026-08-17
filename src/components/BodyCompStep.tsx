@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseBodyScan } from "@/lib/ai-parse.functions";
 import { Camera, Pencil, SkipForward, Loader2, Check, ArrowLeft } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { useVacation } from "@/lib/vacation";
 
 export type ScanValues = {
   scan_date: string;
@@ -39,6 +40,7 @@ export function BodyCompStep({ onSaved, onSkip }: {
   const [source, setSource] = useState<"photo" | "manual">("manual");
   const fileRef = useRef<HTMLInputElement>(null);
   const parse = useServerFn(parseBodyScan);
+  const { blocked } = useVacation();
 
   const onPickFile = () => fileRef.current?.click();
 
@@ -80,6 +82,7 @@ export function BodyCompStep({ onSaved, onSkip }: {
   };
 
   const save = async () => {
+    if (blocked()) return;
     if (!values.weight_kg || values.weight_kg <= 0) {
       toast.error(t("Weight is required to save a scan."));
       return;

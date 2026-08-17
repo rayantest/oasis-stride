@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { suggestStrengthTargets } from "@/lib/strength-target.functions";
 import type { Profile } from "@/lib/calc";
 import { useT } from "@/lib/i18n";
+import { useVacation } from "@/lib/vacation";
 
 export const EXERCISES = ["pushups", "pullups", "situps", "squats"] as const;
 export type ExerciseKey = (typeof EXERCISES)[number];
@@ -159,6 +160,7 @@ export function ExerciseSection({
 }) {
   const qc = useQueryClient();
   const t = useT();
+  const { blocked } = useVacation();
   const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -169,6 +171,7 @@ export function ExerciseSection({
     if (!reps || busy) return;
     setBusy(true);
     try {
+      if (blocked()) return;
       const { error } = await supabase.from("exercise_entries" as never).insert({
         exercise: ex,
         reps,
@@ -241,7 +244,7 @@ export function ExerciseSection({
           <select
             value={metric}
             onChange={(e) => setMetric(e.target.value as ExerciseKey | "total")}
-            className="bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="vacation-allow bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             {EXERCISES.map((ex) => (
               <option key={ex} value={ex}>
@@ -295,6 +298,7 @@ function TargetEditor({
   const [rationale, setRationale] = useState("");
   const [thinking, setThinking] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { blocked } = useVacation();
   const suggest = useServerFn(suggestStrengthTargets);
   const t = useT();
 
@@ -354,6 +358,7 @@ function TargetEditor({
   };
 
   const save = async () => {
+    if (blocked()) return;
     setSaving(true);
     try {
       const row = {
@@ -465,7 +470,7 @@ function RepLogger({
               onClick={() => setOpenInfo((o) => !o)}
               aria-label={t("How the {label} target is set", { label: t(EXERCISE_LABELS[ex]) })}
               aria-expanded={openInfo}
-              className={`inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border text-[9px] font-bold transition ${
+              className={`vacation-allow inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border text-[9px] font-bold transition ${
                 openInfo ? "border-sand text-sand bg-sand/15" : "border-border text-muted-foreground"
               }`}
             >
@@ -628,7 +633,7 @@ function ExerciseHistoryChart({
                         })
                       : t("{date} — {value} {unit}", { date: d.date.toDateString(), value: d.value, unit })
                   }
-                  className={`group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
+                  className={`vacation-allow group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
                     selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
                   }`}
                   style={{ height: `${H + 28}px` }}
@@ -668,7 +673,9 @@ function ExerciseHistoryChart({
 export function ExerciseLogRows({ entries, onChange }: { entries: ExerciseEntry[]; onChange: () => void }) {
   const qc = useQueryClient();
   const t = useT();
+  const { blocked } = useVacation();
   const del = async (id: string) => {
+    if (blocked()) return;
     const { error } = await supabase
       .from("exercise_entries" as never)
       .delete()

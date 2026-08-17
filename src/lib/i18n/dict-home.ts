@@ -144,4 +144,13 @@ export const AR_HOME: Record<string, string> = {
   "Active burn target: {n} kcal/day · derived from your questionnaire.": "هدف الحرق النشط: {n} سعرة/اليوم · مشتق من استبيانك.",
   "This pace likely won't reach your goal by your event date — that's okay, but worth knowing. You can pick a faster pace manually by re-running the questionnaire.": "هذه الوتيرة غالبًا لن تُوصلك إلى هدفك قبل موعد مناسبتك — لا بأس بذلك، لكن من المفيد معرفته. يمكنك اختيار وتيرة أسرع بإعادة الاستبيان.",
   "Latest scan weight is {s}kg (profile: {p}kg).": "وزن آخر فحص هو {s} كجم (في الملف: {p} كجم).",
+  // Vacation mode
+  "Vacation mode": "وضع الإجازة",
+  "Pause all logging and editing. Your data stays exactly as it is — enjoy your break, unlock whenever you want.": "أوقف كل التسجيل والتعديل مؤقتًا. تبقى بياناتك كما هي تمامًا — استمتع بإجازتك، وافتح القفل متى شئت.",
+  "Vacation mode — enjoy it. Nothing to log, nothing to catch up on.": "وضع الإجازة — استمتع به. لا شيء لتسجّله، ولا شيء لتعوّضه.",
+  "Unlock": "فتح القفل",
+  "Vacation mode on. Enjoy — nothing to log.": "تم تفعيل وضع الإجازة. استمتع — لا شيء لتسجّله.",
+  "Welcome back — tracking is on again.": "أهلًا بعودتك — عاد التتبع للعمل.",
+  "Vacation mode is on — nothing to log right now.": "وضع الإجازة مفعّل — لا تسجيل في الوقت الحالي.",
+  "You're on vacation. No targets, no catching up — rest is part of the plan. I'll pick things back up when you unlock.": "أنت في إجازة. لا أهداف ولا تعويض — الراحة جزء من الخطة. سأعود معك عند فتح القفل.",
 };

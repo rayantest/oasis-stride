@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { analyzeFoodPhoto, type FoodPhotoResult } from "@/lib/ai-parse.functions";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
+import { useVacation } from "@/lib/vacation";
 import {
   Camera, Loader2, X, Send, Plus, Bookmark, Sparkles, Upload,
 } from "lucide-react";
@@ -33,6 +34,7 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
   onLogged: () => void;
 }) {
   const t = useT();
+  const { blocked } = useVacation();
   const analyze = useServerFn(analyzeFoodPhoto);
   const cameraRef = useRef<HTMLInputElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -87,7 +89,7 @@ export function FoodScanSheet({ open, onClose, logTimestamp, dateHint, onLogged 
   };
 
   const add = async () => {
-    if (!result || busy) return;
+    if (blocked() || !result || busy) return;
     setBusy(true);
     try {
       const { error } = await supabase.from("food_entries").insert({

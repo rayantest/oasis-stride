@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { LanguageProvider } from "../lib/i18n";
+import { VacationProvider } from "../lib/vacation";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -114,7 +115,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <Outlet />
+        <VacationProvider>
+          <Outlet />
+        </VacationProvider>
       </LanguageProvider>
     </QueryClientProvider>
   );
