@@ -37,7 +37,9 @@ export type GoalAnswers = {
 };
 
 export type Profile = {
-  id: number;
+  user_id: string;
+  display_name?: string;
+  onboarded_at?: string | null;
   height_cm: number;
   weight_kg: number;
   age: number;
