@@ -128,6 +128,7 @@ function App() {
   const qc = useQueryClient();
   const tr = useT();
   const { lang } = useI18n();
+  const { vacation } = useVacation();
   const [selectedDate, setSelectedDate] = useState<Date>(() => dayStart(new Date()));
   const [metric, setMetric] = useState<MetricKey>("eaten_kcal");
   const [tab, setTab] = useState<Tab>("diet");
