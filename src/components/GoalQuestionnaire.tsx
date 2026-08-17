@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { requireUid } from "@/lib/auth";
 import type { GoalAnswers, Profile } from "@/lib/calc";
 import { deriveFromAnswers } from "@/lib/goal-derive";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -72,6 +73,7 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
 
   const save = async () => {
     setSaving(true);
+    const uid = await requireUid();
     const cautionNote = derived.caution_flag
       ? [
           a.parq?.heart_condition && "heart condition",
@@ -90,7 +92,7 @@ export function GoalQuestionnaire({ profile, onClose, onSaved }: Props) {
       caution_flag: derived.caution_flag,
       caution_note: cautionNote,
       updated_at: new Date().toISOString(),
-    } as any).eq("id", 1);
+    } as any).eq("user_id", uid);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(t("Goal updated"));

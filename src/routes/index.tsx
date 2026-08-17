@@ -136,7 +136,7 @@ function App() {
   const profileQ = useQuery({
     queryKey: ["profile"],
     queryFn: async (): Promise<Profile> => {
-      const { data, error } = await supabase.from("profile").select("*").eq("id", 1).single();
+      const { data, error } = await supabase.from("profile").select("*").eq("user_id", uid).single();
       if (error) throw error;
       return data as Profile;
     },
@@ -927,7 +927,9 @@ function MovementInput({
     setBusy(true);
     try {
       const parsed = await parse({ data: { text: text.trim(), weight_kg: weight } });
+      const uid = await requireUid();
       const { error } = await supabase.from("movement_entries").insert({
+        user_id: uid,
         ...parsed,
         created_at: timestampForDay(logDate),
       });
@@ -1037,7 +1039,9 @@ function FoodInput({
     setBusy(true);
     try {
       const parsed = await parse({ data: { text: text.trim() } });
+      const uid = await requireUid();
       const { error } = await supabase.from("food_entries").insert({
+        user_id: uid,
         ...parsed,
         created_at: timestampForDay(logDate),
       });
@@ -1056,7 +1060,9 @@ function FoodInput({
     if (blocked() || busy) return;
     setBusy(true);
     try {
+      const uid = await requireUid();
       const { error } = await supabase.from("food_entries").insert({
+        user_id: uid,
         label: s.label,
         kcal: s.kcal,
         protein_g: s.protein_g,
@@ -1702,7 +1708,7 @@ function ProfilePanel({ profile, onSaved }: { profile: Profile; onSaved: () => v
         gender: form.gender,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", 1);
+      .eq("user_id", form.user_id);
     setSaving(false);
     if (error) {
       toast.error(error.message);
