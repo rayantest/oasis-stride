@@ -4,9 +4,9 @@ import { toast, Toaster } from "sonner";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { useT, useI18n, LanguageToggle } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — revertV" },
@@ -22,6 +22,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const t = useT();
+  const { dir } = useI18n();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,7 +61,7 @@ function AuthPage() {
         if (error) throw error;
         const { data } = await supabase.auth.getSession();
         if (data.session) navigate({ to: "/app", replace: true });
-        else toast.success("Check your inbox to confirm your email.");
+        else toast.success(t("Check your inbox to confirm your email."));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -73,12 +75,15 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background px-5 py-16">
+    <div className="min-h-screen bg-background px-5 py-12" dir={dir}>
       <Toaster position="top-center" />
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="text-center text-2xl font-bold tracking-tight">revertV</h1>
+        <div className="flex justify-center">
+          <LanguageToggle />
+        </div>
+        <h1 className="mt-6 text-center text-2xl font-bold tracking-tight">revertV</h1>
         <p className="mt-1 text-center text-sm text-muted-foreground">
-          {mode === "signin" ? "Welcome back." : "Create your account."}
+          {mode === "signin" ? t("Welcome back.") : t("Create your account.")}
         </p>
 
         <button
@@ -86,11 +91,11 @@ function AuthPage() {
           disabled={busy}
           className="mt-8 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold transition hover:bg-muted disabled:opacity-60"
         >
-          Continue with Google
+          {t("Continue with Google")}
         </button>
 
         <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-wide text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+          <span className="h-px flex-1 bg-border" /> {t("or")} <span className="h-px flex-1 bg-border" />
         </div>
 
         <form onSubmit={submit} className="space-y-3">
@@ -108,7 +113,7 @@ function AuthPage() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            placeholder={t("Password")}
             className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
           />
           <button
@@ -117,7 +122,7 @@ function AuthPage() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === "signin" ? "Sign in" : "Create account"}
+            {mode === "signin" ? t("Sign in") : t("Create account")}
           </button>
         </form>
 
@@ -125,7 +130,7 @@ function AuthPage() {
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           className="mt-5 w-full text-center text-xs text-muted-foreground underline"
         >
-          {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
+          {mode === "signin" ? t("New here? Create an account") : t("Already have an account? Sign in")}
         </button>
       </div>
     </div>
