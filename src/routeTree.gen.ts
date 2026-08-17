@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as ApiPublicFitnessSyncRouteImport } from './routes/api/public/fitness-sync'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   id: '/_authenticated/app',
   path: '/app',
@@ -24,33 +30,44 @@ const ApiPublicFitnessSyncRoute = ApiPublicFitnessSyncRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRoutesByTo {
+  '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/api/public/fitness-sync': typeof ApiPublicFitnessSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/app' | '/api/public/fitness-sync'
+  fullPaths: '/auth' | '/app' | '/api/public/fitness-sync'
   fileRoutesByTo: FileRoutesByTo
-  to: '/app' | '/api/public/fitness-sync'
-  id: '__root__' | '/_authenticated/app' | '/api/public/fitness-sync'
+  to: '/auth' | '/app' | '/api/public/fitness-sync'
+  id: '__root__' | '/auth' | '/_authenticated/app' | '/api/public/fitness-sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AuthRoute: typeof AuthRoute
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
   ApiPublicFitnessSyncRoute: typeof ApiPublicFitnessSyncRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app': {
       id: '/_authenticated/app'
       path: '/app'
@@ -69,6 +86,7 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  AuthRoute: AuthRoute,
   AuthenticatedAppRoute: AuthenticatedAppRoute,
   ApiPublicFitnessSyncRoute: ApiPublicFitnessSyncRoute,
 }

@@ -78,6 +78,7 @@ export async function snapshotDietTargets(
   const latest = rows.length > 0 ? rows[rows.length - 1] : null;
   if (latest && sameValues(latest, values)) return false;
 
+  const uid = await requireUid();
   const effective_date = dietDayKey(latest ? new Date() : (seedDate ?? new Date()));
   const { error } = await supabase
     .from("diet_targets" as never)
