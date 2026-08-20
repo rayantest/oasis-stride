@@ -1,0 +1,1 @@
+delete from public.fitness_rings where date='2026-08-20' and steps=1 and active_calories=1;
