@@ -172,6 +172,44 @@ export function WorkoutSection({
     }
   };
 
+  const plans = useMemo(
+    () => [dailyStrengthTemplate(coreTargets as unknown as Record<string, number>), ...WORKOUT_TEMPLATES],
+    [coreTargets],
+  );
+
+  /** Tap a plan: start the day with it, or append it to the workout already open. */
+  const applyPlan = async (name: string, key: string | null, list: TemplateExercise[]) => {
+    if (!workout) {
+      await createWorkout(name, key, list);
+      return;
+    }
+    if (blocked() || busy || !list.length) return;
+    setBusy(true);
+    try {
+      const uid = await requireUid();
+      const rows = list.map((e, i) => ({
+        workout_id: workout.id,
+        user_id: uid,
+        name: e.name,
+        mode: e.mode,
+        rounds: e.rounds,
+        reps: e.reps,
+        seconds: e.seconds,
+        position: exercises.length + i,
+      }));
+      const { error } = await supabase.from("workout_exercises" as never).insert(rows as never);
+      if (error) throw error;
+      toast.success(t("Added {name} to today's workout", { name: t(name) }));
+      refreshWorkout();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+
+
   const addExercise = async (pick: { library_id: string | null; name: string; mode: ExerciseMode }) => {
     setPicking(false);
     if (blocked() || !workout) return;
