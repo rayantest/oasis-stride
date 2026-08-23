@@ -333,63 +333,59 @@ export function WorkoutSection({
         )}
       </div>
 
-      {dailyStrength && <div className="mb-5 pb-4 border-b border-border/40">{dailyStrength}</div>}
-
-
+      <div className="-mx-1 px-1 mb-3 overflow-x-auto">
+        <div className="flex items-stretch gap-2 w-max">
+          {plans.map((tpl) => (
+            <button
+              key={tpl.key}
+              disabled={busy}
+              onClick={() => applyPlan(tpl.name, tpl.key, tpl.exercises)}
+              className="shrink-0 w-[132px] text-start rounded-xl border border-border/50 bg-background/40 p-2.5 hover:border-primary/40 transition disabled:opacity-50"
+            >
+              <div className="text-xs font-medium truncate">{t(tpl.name)}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{t(tpl.hint)}</div>
+              <div className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
+                {t("{n} exercises", { n: tpl.exercises.length })}
+              </div>
+            </button>
+          ))}
+          {saved.map((s) => (
+            <div
+              key={s.id}
+              className="shrink-0 w-[132px] rounded-xl border border-border/50 bg-secondary/40 p-2.5 relative"
+            >
+              <button
+                disabled={busy}
+                onClick={() => applyPlan(s.name, null, s.payload ?? [])}
+                className="text-start w-full disabled:opacity-50"
+              >
+                <div className="text-xs font-medium truncate pe-4">{s.name}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">{t("Your template")}</div>
+                <div className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
+                  {t("{n} exercises", { n: (s.payload ?? []).length })}
+                </div>
+              </button>
+              <button
+                onClick={() => deleteTemplate(s.id)}
+                className="absolute top-1.5 end-1.5 text-muted-foreground hover:text-coral"
+                aria-label={t("Delete")}
+              >
+                <X size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {!workout ? (
         <div>
           <div className="text-[11px] text-muted-foreground mb-2.5">
-            {t("Pick a suggested day, reuse one of yours, or build your own.")}
+            {t("Pick a ready plan above, or build your own.")}
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {WORKOUT_TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.key}
-                disabled={busy}
-                onClick={() => createWorkout(tpl.name, tpl.key, tpl.exercises)}
-                className="text-start rounded-xl border border-border/50 bg-background/40 p-3 hover:border-primary/40 transition disabled:opacity-50"
-              >
-                <div className="text-xs font-medium">{t(tpl.name)}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{t(tpl.hint)}</div>
-                <div className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
-                  {t("{n} exercises", { n: tpl.exercises.length })}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {saved.length > 0 && (
-            <div className="mt-3">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">
-                {t("Your templates")}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {saved.map((s) => (
-                  <span
-                    key={s.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-secondary/70 border border-border/50 ps-3 pe-1.5 py-1 text-[11px]"
-                  >
-                    <button disabled={busy} onClick={() => createWorkout(s.name, null, s.payload ?? [])}>
-                      {s.name}
-                    </button>
-                    <button
-                      onClick={() => deleteTemplate(s.id)}
-                      className="text-muted-foreground hover:text-coral"
-                      aria-label={t("Delete")}
-                    >
-                      <X size={11} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
           <button
             disabled={busy}
             onClick={() => createWorkout(t("My workout"), null, [])}
-            className="mt-3 w-full inline-flex items-center justify-center gap-1 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-1 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
           >
             <Plus size={13} /> {t("Build your own")}
           </button>
