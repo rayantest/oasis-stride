@@ -290,6 +290,15 @@ function App() {
   const targetRows = targetsQ.data ?? [];
   const strengthTargets = targetsFor(targetRows, selectedDate);
 
+  /** Core-lift reps for a day = legacy Daily-four entries + rounds done in the workout builder. */
+  const coreRepsFor = (ex: ExerciseKey, d: Date) => {
+    const k = localKey(d);
+    const fromSets = workoutSets
+      .filter((s) => s.exercise_name === CORE_CANONICAL[ex] && s.date === k)
+      .reduce((sum, s) => sum + Number(s.reps), 0);
+    return repsFor(exercises, ex, d) + fromSets;
+  };
+
   const exerciseSummary = EXERCISES.map((ex) => {
     const rows = exercises.filter((e) => e.exercise === ex);
     const byDay = new Map<string, number>();
