@@ -134,16 +134,13 @@ export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
     .reduce((s, e) => s + Number(e.reps), 0);
 }
 
-/* ---------- Section ---------- */
+/* ---------- Daily four (embedded in the workout card) ---------- */
 
-export function ExerciseSection({
+export function DailyFour({
   entries,
   selectedDate,
   logTimestamp,
   onChange,
-  onSelectDate,
-  burnFor,
-  burnTarget = 0,
   profile,
   latestScan = null,
   targetRows,
@@ -152,9 +149,6 @@ export function ExerciseSection({
   selectedDate: Date;
   logTimestamp: () => string;
   onChange: () => void;
-  onSelectDate?: (d: Date) => void;
-  burnFor?: (d: Date) => number;
-  burnTarget?: number;
   profile: Profile;
   latestScan?: Record<string, number | string | null> | null;
   targetRows: StrengthTargetRow[];
@@ -162,7 +156,6 @@ export function ExerciseSection({
   const qc = useQueryClient();
   const t = useT();
   const { blocked } = useVacation();
-  const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -191,14 +184,12 @@ export function ExerciseSection({
     }
   };
 
-  const series = useMemo(() => buildSeries(entries), [entries]);
-
   return (
-    <section className="rounded-2xl bg-card border border-border/50 shadow-[var(--shadow-card)] p-5">
-      <div className="flex items-center justify-between mb-3 gap-2">
-        <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-          <Dumbbell size={13} /> {t("Daily strength")}
-        </h2>
+    <div>
+      <div className="flex items-center justify-between mb-2.5 gap-2">
+        <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+          <Dumbbell size={12} /> {t("Daily four")}
+        </h3>
         <button
           onClick={() => setEditing((e) => !e)}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/70 border border-border/50 text-[11px] text-muted-foreground hover:text-foreground transition"
@@ -223,7 +214,6 @@ export function ExerciseSection({
         />
       )}
 
-      {/* Loggers */}
       <div className="grid grid-cols-2 gap-2.5">
         {EXERCISES.map((ex) => (
           <RepLogger
@@ -237,40 +227,10 @@ export function ExerciseSection({
           />
         ))}
       </div>
-
-      {/* History */}
-      <div className="mt-5">
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">
-            {t("Historical Performance")}{" "}
-          </h3>
-          <select
-            value={metric}
-            onChange={(e) => setMetric(e.target.value as ExerciseKey | "total")}
-            className="vacation-allow bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
-          >
-            {EXERCISES.map((ex) => (
-              <option key={ex} value={ex}>
-                {t(EXERCISE_LABELS[ex])}
-              </option>
-            ))}
-            <option value="total">{t("Active burn")}</option>
-          </select>
-        </div>
-
-        <ExerciseHistoryChart
-          series={series}
-          metric={metric}
-          targets={targets}
-          selectedDate={selectedDate}
-          onSelect={(d) => onSelectDate?.(d)}
-          burnFor={burnFor}
-          burnTarget={burnTarget}
-        />
-      </div>
-    </section>
+    </div>
   );
 }
+
 
 /* ---------- Target editor ---------- */
 
