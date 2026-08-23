@@ -105,7 +105,6 @@ export function WorkoutSection({
   selectedDate,
   coreEntries = [],
   onSelectDate,
-  dailyStrength,
   coreTargets,
   burnFor,
   burnTarget = 0,
@@ -113,7 +112,6 @@ export function WorkoutSection({
   selectedDate: Date;
   coreEntries?: ExerciseEntry[];
   onSelectDate?: (d: Date) => void;
-  dailyStrength?: React.ReactNode;
   coreTargets?: Record<ExerciseKey, number>;
   burnFor?: (d: Date) => number;
   burnTarget?: number;
