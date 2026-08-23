@@ -501,7 +501,7 @@ function App() {
                   <BenchmarkRow
                     key={ex}
                     label={tr(EXERCISE_LABELS[ex as ExerciseKey])}
-                    value={repsFor(exercises, ex, selectedDate)}
+                    value={coreRepsFor(ex as ExerciseKey, selectedDate)}
                     target={strengthTargets[ex]}
                     unit="reps"
                     mode="over"
