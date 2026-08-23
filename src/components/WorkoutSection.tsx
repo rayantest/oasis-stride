@@ -455,8 +455,12 @@ export function WorkoutSection({
           coreEntries={coreEntries}
           selectedDate={selectedDate}
           onSelectDate={onSelectDate}
+          coreTargets={coreTargets}
+          burnFor={burnFor}
+          burnTarget={burnTarget}
         />
       </div>
+
 
       {picking && <ExercisePicker onPick={addExercise} onClose={() => setPicking(false)} />}
     </section>
