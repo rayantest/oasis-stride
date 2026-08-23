@@ -17,7 +17,6 @@ import { BodyCompSection, useBodyScans, type BodyScan } from "@/components/BodyC
 import { projectionText, eventLikelyMisses } from "@/lib/goal-derive";
 import { FoodScanSheet } from "@/components/FoodScanSheet";
 import {
-  DailyFour,
   ExerciseLogRows,
   useExerciseEntries,
   repsFor,
@@ -30,6 +29,7 @@ import {
   type ExerciseKey,
 } from "@/components/ExerciseSection";
 import { WorkoutSection } from "@/components/WorkoutSection";
+import { useWorkoutSets, CORE_CANONICAL } from "@/components/ExerciseHistory";
 
 
 import { toast, Toaster } from "sonner";
@@ -179,6 +179,7 @@ function App() {
 
   const scansQ = useBodyScans();
   const exercisesQ = useExerciseEntries();
+  const workoutSetsQ = useWorkoutSets();
   const targetsQ = useStrengthTargets();
 
   const ringsQ = useQuery({
@@ -267,6 +268,7 @@ function App() {
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
   const exercises = (exercisesQ.data ?? []) as ExerciseEntry[];
+  const workoutSets = workoutSetsQ.data ?? [];
   const viewingToday = isToday(selectedDate);
 
   const dayMovements = movements.filter((m) => isSameDay(new Date(m.created_at), selectedDate));
@@ -289,6 +291,15 @@ function App() {
 
   const targetRows = targetsQ.data ?? [];
   const strengthTargets = targetsFor(targetRows, selectedDate);
+
+  /** Core-lift reps for a day = legacy Daily-four entries + rounds done in the workout builder. */
+  const coreRepsFor = (ex: ExerciseKey, d: Date) => {
+    const k = localKey(d);
+    const fromSets = workoutSets
+      .filter((s) => s.exercise_name === CORE_CANONICAL[ex] && s.date === k)
+      .reduce((sum, s) => sum + Number(s.reps), 0);
+    return repsFor(exercises, ex, d) + fromSets;
+  };
 
   const exerciseSummary = EXERCISES.map((ex) => {
     const rows = exercises.filter((e) => e.exercise === ex);
@@ -458,17 +469,6 @@ function App() {
                 movements.filter((m) => isSameDay(new Date(m.created_at), d)).reduce((s, m) => s + Number(m.kcal), 0) +
                 (ringByDate.get(localKey(d)) ?? 0)
               }
-              dailyStrength={
-                <DailyFour
-                  entries={exercises}
-                  selectedDate={selectedDate}
-                  logTimestamp={() => timestampForDay(selectedDate)}
-                  onChange={invalidate}
-                  profile={profile}
-                  latestScan={latestScan as unknown as Record<string, number | string | null> | null}
-                  targetRows={targetRows}
-                />
-              }
             />
 
 
@@ -501,7 +501,7 @@ function App() {
                   <BenchmarkRow
                     key={ex}
                     label={tr(EXERCISE_LABELS[ex as ExerciseKey])}
-                    value={repsFor(exercises, ex, selectedDate)}
+                    value={coreRepsFor(ex as ExerciseKey, selectedDate)}
                     target={strengthTargets[ex]}
                     unit="reps"
                     mode="over"
