@@ -448,27 +448,29 @@ function App() {
               onLogged={invalidate}
             />
 
-            <ExerciseSection
-              entries={exercises}
+            <WorkoutSection
               selectedDate={selectedDate}
-              logTimestamp={() => timestampForDay(selectedDate)}
-              onChange={invalidate}
+              coreEntries={exercises}
               onSelectDate={(d: Date) => setSelectedDate(dayStart(d))}
-              profile={profile}
-              latestScan={latestScan as unknown as Record<string, number | string | null> | null}
-              targetRows={targetRows}
+              coreTargets={strengthTargets}
               burnTarget={t.active_burn}
               burnFor={(d: Date) =>
                 movements.filter((m) => isSameDay(new Date(m.created_at), d)).reduce((s, m) => s + Number(m.kcal), 0) +
                 (ringByDate.get(localKey(d)) ?? 0)
               }
+              dailyStrength={
+                <DailyFour
+                  entries={exercises}
+                  selectedDate={selectedDate}
+                  logTimestamp={() => timestampForDay(selectedDate)}
+                  onChange={invalidate}
+                  profile={profile}
+                  latestScan={latestScan as unknown as Record<string, number | string | null> | null}
+                  targetRows={targetRows}
+                />
+              }
             />
 
-            <WorkoutSection
-              selectedDate={selectedDate}
-              coreEntries={exercises}
-              onSelectDate={(d: Date) => setSelectedDate(dayStart(d))}
-            />
 
 
 
