@@ -458,17 +458,6 @@ function App() {
                 movements.filter((m) => isSameDay(new Date(m.created_at), d)).reduce((s, m) => s + Number(m.kcal), 0) +
                 (ringByDate.get(localKey(d)) ?? 0)
               }
-              dailyStrength={
-                <DailyFour
-                  entries={exercises}
-                  selectedDate={selectedDate}
-                  logTimestamp={() => timestampForDay(selectedDate)}
-                  onChange={invalidate}
-                  profile={profile}
-                  latestScan={latestScan as unknown as Record<string, number | string | null> | null}
-                  targetRows={targetRows}
-                />
-              }
             />
 
 
