@@ -462,6 +462,14 @@ function App() {
               }
             />
 
+            <WorkoutSection
+              selectedDate={selectedDate}
+              coreEntries={exercises}
+              onSelectDate={(d: Date) => setSelectedDate(dayStart(d))}
+            />
+
+
+
             <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
               <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
             </Card>
