@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { useVacation } from "@/lib/vacation";
 import {
   WORKOUT_TEMPLATES,
+  dailyStrengthTemplate,
   dayKeyLocal,
   type ExerciseMode,
   type TemplateExercise,
