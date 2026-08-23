@@ -14,7 +14,7 @@ import {
 } from "@/lib/workout-templates";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { ExerciseHistory, useWorkoutSets, type WorkoutSet } from "@/components/ExerciseHistory";
-import type { ExerciseEntry } from "@/components/ExerciseSection";
+import type { ExerciseEntry, ExerciseKey } from "@/components/ExerciseSection";
 
 type Workout = {
   id: string;
@@ -105,10 +105,18 @@ export function WorkoutSection({
   selectedDate,
   coreEntries = [],
   onSelectDate,
+  dailyStrength,
+  coreTargets,
+  burnFor,
+  burnTarget = 0,
 }: {
   selectedDate: Date;
   coreEntries?: ExerciseEntry[];
   onSelectDate?: (d: Date) => void;
+  dailyStrength?: React.ReactNode;
+  coreTargets?: Record<ExerciseKey, number>;
+  burnFor?: (d: Date) => number;
+  burnTarget?: number;
 }) {
   const t = useT();
   const qc = useQueryClient();
@@ -327,6 +335,10 @@ export function WorkoutSection({
         )}
       </div>
 
+      {dailyStrength && <div className="mb-5 pb-4 border-b border-border/40">{dailyStrength}</div>}
+
+
+
       {!workout ? (
         <div>
           <div className="text-[11px] text-muted-foreground mb-2.5">
@@ -447,8 +459,12 @@ export function WorkoutSection({
           coreEntries={coreEntries}
           selectedDate={selectedDate}
           onSelectDate={onSelectDate}
+          coreTargets={coreTargets}
+          burnFor={burnFor}
+          burnTarget={burnTarget}
         />
       </div>
+
 
       {picking && <ExercisePicker onPick={addExercise} onClose={() => setPicking(false)} />}
     </section>

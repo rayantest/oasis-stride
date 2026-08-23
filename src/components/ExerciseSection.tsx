@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { requireUid } from "@/lib/auth";
@@ -134,16 +134,13 @@ export function repsFor(entries: ExerciseEntry[], ex: ExerciseKey, date: Date) {
     .reduce((s, e) => s + Number(e.reps), 0);
 }
 
-/* ---------- Section ---------- */
+/* ---------- Daily four (embedded in the workout card) ---------- */
 
-export function ExerciseSection({
+export function DailyFour({
   entries,
   selectedDate,
   logTimestamp,
   onChange,
-  onSelectDate,
-  burnFor,
-  burnTarget = 0,
   profile,
   latestScan = null,
   targetRows,
@@ -152,9 +149,6 @@ export function ExerciseSection({
   selectedDate: Date;
   logTimestamp: () => string;
   onChange: () => void;
-  onSelectDate?: (d: Date) => void;
-  burnFor?: (d: Date) => number;
-  burnTarget?: number;
   profile: Profile;
   latestScan?: Record<string, number | string | null> | null;
   targetRows: StrengthTargetRow[];
@@ -162,7 +156,6 @@ export function ExerciseSection({
   const qc = useQueryClient();
   const t = useT();
   const { blocked } = useVacation();
-  const [metric, setMetric] = useState<ExerciseKey | "total">("pushups");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -191,14 +184,12 @@ export function ExerciseSection({
     }
   };
 
-  const series = useMemo(() => buildSeries(entries), [entries]);
-
   return (
-    <section className="rounded-2xl bg-card border border-border/50 shadow-[var(--shadow-card)] p-5">
-      <div className="flex items-center justify-between mb-3 gap-2">
-        <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-          <Dumbbell size={13} /> {t("Daily strength")}
-        </h2>
+    <div>
+      <div className="flex items-center justify-between mb-2.5 gap-2">
+        <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+          <Dumbbell size={12} /> {t("Daily four")}
+        </h3>
         <button
           onClick={() => setEditing((e) => !e)}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/70 border border-border/50 text-[11px] text-muted-foreground hover:text-foreground transition"
@@ -223,7 +214,6 @@ export function ExerciseSection({
         />
       )}
 
-      {/* Loggers */}
       <div className="grid grid-cols-2 gap-2.5">
         {EXERCISES.map((ex) => (
           <RepLogger
@@ -237,40 +227,10 @@ export function ExerciseSection({
           />
         ))}
       </div>
-
-      {/* History */}
-      <div className="mt-5">
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <h3 className="font-display text-xs uppercase tracking-widest text-muted-foreground">
-            {t("Historical Performance")}{" "}
-          </h3>
-          <select
-            value={metric}
-            onChange={(e) => setMetric(e.target.value as ExerciseKey | "total")}
-            className="vacation-allow bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
-          >
-            {EXERCISES.map((ex) => (
-              <option key={ex} value={ex}>
-                {t(EXERCISE_LABELS[ex])}
-              </option>
-            ))}
-            <option value="total">{t("Active burn")}</option>
-          </select>
-        </div>
-
-        <ExerciseHistoryChart
-          series={series}
-          metric={metric}
-          targets={targets}
-          selectedDate={selectedDate}
-          onSelect={(d) => onSelectDate?.(d)}
-          burnFor={burnFor}
-          burnTarget={burnTarget}
-        />
-      </div>
-    </section>
+    </div>
   );
 }
+
 
 /* ---------- Target editor ---------- */
 
@@ -526,149 +486,6 @@ function RepLogger({
           <Plus size={14} />
         </button>
       </form>
-    </div>
-  );
-}
-
-/* ---------- Line chart ---------- */
-
-type Point = { date: Date; values: Record<ExerciseKey, number> };
-
-function buildSeries(entries: ExerciseEntry[]): Point[] {
-  const today = dayStart(new Date());
-  let start = new Date(today);
-  start.setDate(start.getDate() - 13);
-  for (const e of entries) {
-    const d = dayStart(new Date(e.created_at));
-    if (d < start) start = d;
-  }
-  const days = Math.round((today.getTime() - start.getTime()) / 86400000);
-  const out: Point[] = [];
-  for (let i = days; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const values = {} as Record<ExerciseKey, number>;
-    for (const ex of EXERCISES) values[ex] = repsFor(entries, ex, d);
-    out.push({ date: d, values });
-  }
-  return out;
-}
-
-function ExerciseHistoryChart({
-  series,
-  metric,
-  targets,
-  selectedDate,
-  onSelect,
-  burnFor,
-  burnTarget = 0,
-}: {
-  series: Point[];
-  metric: ExerciseKey | "total";
-  targets: Record<ExerciseKey, number>;
-  selectedDate: Date;
-  onSelect: (d: Date) => void;
-  burnFor?: (d: Date) => number;
-  burnTarget?: number;
-}) {
-  const t = useT();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const H = 150;
-  const isBurn = metric === "total";
-  const unit = isBurn ? t("kcal") : t("reps");
-  const label = isBurn ? t("Active burn") : t(EXERCISE_LABELS[metric]);
-  const color = isBurn ? "var(--oasis)" : EXERCISE_COLORS[metric];
-  const target = isBurn ? Math.round(burnTarget) : targets[metric];
-
-  const data = series.map((p) => ({
-    date: p.date,
-    value: isBurn ? Math.round(burnFor?.(p.date) ?? 0) : p.values[metric],
-  }));
-
-  const todayKey = dayKey(new Date());
-  const maxVal = Math.max(target, ...data.map((d) => d.value), 1);
-  const scale = maxVal * 1.15;
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollLeft = el.scrollWidth;
-  }, [metric, data.length]);
-
-  return (
-    <div>
-      <div className="flex items-center gap-3 mb-2 text-[10px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-0.5 rounded" style={{ background: "var(--sand)" }} /> {t("Target {target} {unit}", { target: target || "—", unit })}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} /> {label}
-        </span>
-      </div>
-
-      <div ref={scrollRef} className="overflow-x-auto pb-1 -mx-1 px-1">
-        <div className="relative" style={{ minWidth: `${data.length * 34}px` }}>
-          {target > 0 && (
-            <div
-              className="absolute start-0 end-0 z-10 pointer-events-none"
-              style={{
-                bottom: `${28 + (target / scale) * H}px`,
-                borderTop: "2px dashed var(--sand)",
-                opacity: 0.85,
-              }}
-            />
-          )}
-          <div className="flex items-end gap-1.5" style={{ height: `${H + 28}px` }}>
-            {data.map((d, i) => {
-              const h = Math.max(2, (d.value / scale) * H);
-              const isToday = dayKey(d.date) === todayKey;
-              const selected = dayKey(d.date) === dayKey(selectedDate);
-              const good = target > 0 && d.value >= target;
-              const barColor = d.value === 0 ? "oklch(0.35 0.02 210 / 0.5)" : good ? color : "var(--coral)";
-              return (
-                <button
-                  key={i}
-                  onClick={() => onSelect(d.date)}
-                  title={
-                    target
-                      ? t("{date} — {value} {unit} (target {target})", {
-                          date: d.date.toDateString(),
-                          value: d.value,
-                          unit,
-                          target,
-                        })
-                      : t("{date} — {value} {unit}", { date: d.date.toDateString(), value: d.value, unit })
-                  }
-                  className={`vacation-allow group shrink-0 w-[28px] flex flex-col items-center justify-end rounded-md transition ${
-                    selected ? "bg-sand/10 ring-1 ring-sand/40" : "hover:bg-secondary/40"
-                  }`}
-                  style={{ height: `${H + 28}px` }}
-                  aria-label={t("{date} — {value} {unit}", { date: d.date.toDateString(), value: d.value, unit })}
-                >
-                  <div className="flex-1 w-full flex items-end justify-center">
-                    <div
-                      className="w-[16px] rounded-t transition-all duration-500"
-                      style={{ height: `${h}px`, background: barColor, opacity: d.value === 0 ? 0.4 : 0.9 }}
-                    />
-                  </div>
-                  <div className="h-[28px] flex flex-col items-center justify-center leading-tight">
-                    <div
-                      className={`text-[9px] font-mono ${isToday ? "text-sand font-bold" : selected ? "text-foreground" : "text-muted-foreground"}`}
-                    >
-                      {d.date.getDate()}/{d.date.getMonth() + 1}
-                    </div>
-                    <div className={`text-[8px] font-mono ${selected ? "text-sand/80" : "text-muted-foreground/60"}`}>
-                      {isToday ? t("now") : d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      <div className="text-[10px] text-muted-foreground/70 mt-2 text-center">
-        {t("Scroll for older days · tap a day to view its numbers")}
-      </div>
     </div>
   );
 }

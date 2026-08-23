@@ -1,5 +1,6 @@
 export const AR_EXERCISE: Record<string, string> = {
   "Daily strength": "القوة اليومية",
+  "Daily four": "التمارين الأربعة اليومية",
   "Edit targets": "تعديل الأهداف",
   Close: "إغلاق",
   "Historical Performance": "الأداء عبر الوقت",
