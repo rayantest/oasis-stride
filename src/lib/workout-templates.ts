@@ -95,6 +95,25 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
   },
 ];
 
+/** The four core lifts, kept as a one-tap plan for people used to "Daily strength". */
+export const CORE_LIFTS: { key: string; name: string; fallback: number }[] = [
+  { key: "pushups", name: "Push-up", fallback: 40 },
+  { key: "pullups", name: "Pull-up", fallback: 8 },
+  { key: "situps", name: "Sit-up", fallback: 50 },
+  { key: "squats", name: "Bodyweight squat", fallback: 60 },
+];
+
+export function dailyStrengthTemplate(targets?: Record<string, number>): WorkoutTemplate {
+  return {
+    key: "daily-strength",
+    name: "Daily strength",
+    hint: "Your four core lifts",
+    exercises: CORE_LIFTS.map((c) =>
+      r(c.name, 1, Math.max(1, Math.round(Number(targets?.[c.key] ?? c.fallback) || c.fallback))),
+    ),
+  };
+}
+
 export const MUSCLE_GROUPS = ["push", "pull", "legs", "core", "cardio", "mobility", "other"] as const;
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];
 
