@@ -335,6 +335,10 @@ export function WorkoutSection({
         )}
       </div>
 
+      {dailyStrength && <div className="mb-5 pb-4 border-b border-border/40">{dailyStrength}</div>}
+
+
+
       {!workout ? (
         <div>
           <div className="text-[11px] text-muted-foreground mb-2.5">
