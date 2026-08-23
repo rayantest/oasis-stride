@@ -17,7 +17,7 @@ import { BodyCompSection, useBodyScans, type BodyScan } from "@/components/BodyC
 import { projectionText, eventLikelyMisses } from "@/lib/goal-derive";
 import { FoodScanSheet } from "@/components/FoodScanSheet";
 import {
-  ExerciseSection,
+  DailyFour,
   ExerciseLogRows,
   useExerciseEntries,
   repsFor,
