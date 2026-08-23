@@ -14,7 +14,7 @@ import {
 } from "@/lib/workout-templates";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { ExerciseHistory, useWorkoutSets, type WorkoutSet } from "@/components/ExerciseHistory";
-import type { ExerciseEntry } from "@/components/ExerciseSection";
+import type { ExerciseEntry, ExerciseKey } from "@/components/ExerciseSection";
 
 type Workout = {
   id: string;
