@@ -29,6 +29,8 @@ import {
   type ExerciseEntry,
   type ExerciseKey,
 } from "@/components/ExerciseSection";
+import { WorkoutSection } from "@/components/WorkoutSection";
+
 
 import { toast, Toaster } from "sonner";
 import { useT, useI18n, LanguageToggle } from "@/lib/i18n";
