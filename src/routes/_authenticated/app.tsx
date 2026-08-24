@@ -472,45 +472,6 @@ function App() {
             />
 
 
-
-
-            <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
-              <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
-            </Card>
-
-            <Card title={viewingToday ? tr("Daily benchmark") : tr("Benchmark · {d}", { d: dateLabel })} hint={tr("Compass, not a rulebook.")}>
-              <div className="space-y-3">
-                <BenchmarkRow
-                  label={tr("Active burn")}
-                  value={activeBurn}
-                  target={t.active_burn}
-                  unit="kcal"
-                  mode="over"
-                  info={tr("Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently {b} kcal/day. It counts logged movement{ring}, and is separate from your {d} kcal/day food deficit. Change it by updating your goal answers in Body & profile.", {
-                    b: t.active_burn,
-                    ring: ringBurn > 0 ? tr(" plus active calories synced from your watch") : "",
-                    d: t.deficit,
-                  })}
-                />
-                {ringBurn > 0 && (
-                  <div className="-mt-2 text-[11px] text-muted-foreground">
-                    {tr("Includes {n} kcal synced from your watch.", { n: Math.round(ringBurn) })}
-                  </div>
-                )}
-                {EXERCISES.map((ex) => (
-                  <BenchmarkRow
-                    key={ex}
-                    label={tr(EXERCISE_LABELS[ex as ExerciseKey])}
-                    value={coreRepsFor(ex as ExerciseKey, selectedDate)}
-                    target={strengthTargets[ex]}
-                    unit="reps"
-                    mode="over"
-                    info={targetInfoText(targetRows, selectedDate, ex as ExerciseKey)}
-                  />
-                ))}
-              </div>
-            </Card>
-
             <CoachCard
               focus="movement"
               profile={profile}
