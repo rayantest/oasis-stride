@@ -24,12 +24,10 @@ import {
   EXERCISE_LABELS,
   useStrengthTargets,
   targetsFor,
-  targetInfoText,
   type ExerciseEntry,
   type ExerciseKey,
 } from "@/components/ExerciseSection";
 import { WorkoutSection } from "@/components/WorkoutSection";
-import { useWorkoutSets, CORE_CANONICAL } from "@/components/ExerciseHistory";
 
 
 import { toast, Toaster } from "sonner";
@@ -179,7 +177,6 @@ function App() {
 
   const scansQ = useBodyScans();
   const exercisesQ = useExerciseEntries();
-  const workoutSetsQ = useWorkoutSets();
   const targetsQ = useStrengthTargets();
 
   const ringsQ = useQuery({
@@ -268,7 +265,6 @@ function App() {
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
   const exercises = (exercisesQ.data ?? []) as ExerciseEntry[];
-  const workoutSets = workoutSetsQ.data ?? [];
   const viewingToday = isToday(selectedDate);
 
   const dayMovements = movements.filter((m) => isSameDay(new Date(m.created_at), selectedDate));
@@ -292,14 +288,6 @@ function App() {
   const targetRows = targetsQ.data ?? [];
   const strengthTargets = targetsFor(targetRows, selectedDate);
 
-  /** Core-lift reps for a day = legacy Daily-four entries + rounds done in the workout builder. */
-  const coreRepsFor = (ex: ExerciseKey, d: Date) => {
-    const k = localKey(d);
-    const fromSets = workoutSets
-      .filter((s) => s.exercise_name === CORE_CANONICAL[ex] && s.date === k)
-      .reduce((sum, s) => sum + Number(s.reps), 0);
-    return repsFor(exercises, ex, d) + fromSets;
-  };
 
   const exerciseSummary = EXERCISES.map((ex) => {
     const rows = exercises.filter((e) => e.exercise === ex);
@@ -471,44 +459,8 @@ function App() {
               }
             />
 
-
-
-
             <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
               <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
-            </Card>
-
-            <Card title={viewingToday ? tr("Daily benchmark") : tr("Benchmark · {d}", { d: dateLabel })} hint={tr("Compass, not a rulebook.")}>
-              <div className="space-y-3">
-                <BenchmarkRow
-                  label={tr("Active burn")}
-                  value={activeBurn}
-                  target={t.active_burn}
-                  unit="kcal"
-                  mode="over"
-                  info={tr("Set from your goal questionnaire (realistic training days, weekday shape, preferred movement) — currently {b} kcal/day. It counts logged movement{ring}, and is separate from your {d} kcal/day food deficit. Change it by updating your goal answers in Body & profile.", {
-                    b: t.active_burn,
-                    ring: ringBurn > 0 ? tr(" plus active calories synced from your watch") : "",
-                    d: t.deficit,
-                  })}
-                />
-                {ringBurn > 0 && (
-                  <div className="-mt-2 text-[11px] text-muted-foreground">
-                    {tr("Includes {n} kcal synced from your watch.", { n: Math.round(ringBurn) })}
-                  </div>
-                )}
-                {EXERCISES.map((ex) => (
-                  <BenchmarkRow
-                    key={ex}
-                    label={tr(EXERCISE_LABELS[ex as ExerciseKey])}
-                    value={coreRepsFor(ex as ExerciseKey, selectedDate)}
-                    target={strengthTargets[ex]}
-                    unit="reps"
-                    mode="over"
-                    info={targetInfoText(targetRows, selectedDate, ex as ExerciseKey)}
-                  />
-                ))}
-              </div>
             </Card>
 
             <CoachCard
