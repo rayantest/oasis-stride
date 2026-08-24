@@ -311,7 +311,7 @@ function App() {
     m.set(key, (m.get(key) ?? 0) + reps);
     dayTotals.set(name, m);
   };
-  exercises.forEach((r) => bump(r.exercise, dayKey(new Date(r.created_at)), Number(r.reps) || 0));
+  exercises.forEach((r) => bump(r.exercise, localKey(new Date(r.created_at)), Number(r.reps) || 0));
   allSets.forEach((s) => {
     const core = coreNames.get(norm(s.exercise_name));
     bump(core ?? s.exercise_name, s.date, Number(s.reps) || 0);
