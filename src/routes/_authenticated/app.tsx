@@ -293,22 +293,46 @@ function App() {
   const strengthTargets = targetsFor(targetRows, selectedDate);
 
 
-  const exerciseSummary = EXERCISES.map((ex) => {
-    const rows = exercises.filter((e) => e.exercise === ex);
-    const byDay = new Map<string, number>();
-    rows.forEach((r) => {
-      const k = dayKey(new Date(r.created_at));
-      byDay.set(k, (byDay.get(k) ?? 0) + Number(r.reps));
-    });
-    const vals = [...byDay.values()];
+  const allSets = (setsQ.data ?? []) as WorkoutSet[];
+  const daySets = allSets.filter((s) => s.date === localKey(selectedDate));
+
+  const norm = (s: string) => s.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  const coreNames = new Map(
+    Object.entries(CORE_CANONICAL).map(([k, name]) => [norm(name), k as ExerciseKey] as const),
+  );
+
+  // reps per day, per exercise — legacy rep entries + new workout rounds merged
+  const dayTotals = new Map<string, Map<string, number>>();
+  const bump = (name: string, key: string, reps: number) => {
+    if (!reps) return;
+    const m = dayTotals.get(name) ?? new Map<string, number>();
+    m.set(key, (m.get(key) ?? 0) + reps);
+    dayTotals.set(name, m);
+  };
+  exercises.forEach((r) => bump(r.exercise, dayKey(new Date(r.created_at)), Number(r.reps) || 0));
+  allSets.forEach((s) => {
+    const core = coreNames.get(norm(s.exercise_name));
+    bump(core ?? s.exercise_name, s.date, Number(s.reps) || 0);
+  });
+
+  const summarise = (name: string, target?: number) => {
+    const vals = [...(dayTotals.get(name)?.values() ?? [])];
     return {
-      exercise: ex as string,
+      exercise: name,
       avg_reps: vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : 0,
       best_reps: vals.length ? Math.max(...vals) : 0,
       days_logged: vals.length,
-      target_reps: strengthTargets[ex],
+      target_reps: target ?? 0,
     };
-  });
+  };
+
+  const exerciseSummary = [
+    ...EXERCISES.map((ex) => summarise(ex as string, strengthTargets[ex])),
+    ...[...dayTotals.keys()]
+      .filter((n) => !(EXERCISES as readonly string[]).includes(n))
+      .map((n) => summarise(n)),
+  ];
+
 
   const dateLabel = viewingToday
     ? tr("Today")
