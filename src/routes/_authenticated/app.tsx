@@ -298,7 +298,7 @@ function App() {
   const allSets = (setsQ.data ?? []) as WorkoutSet[];
   const daySets = allSets.filter((s) => s.date === localKey(selectedDate));
 
-  const norm = (s: string) => s.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  const norm = (s: string) => s.trim().toLowerCase().replace(/[\s_-]+/g, "").replace(/s$/, "");
   const coreNames = new Map(
     Object.entries(CORE_CANONICAL).map(([k, name]) => [norm(name), k as ExerciseKey] as const),
   );
