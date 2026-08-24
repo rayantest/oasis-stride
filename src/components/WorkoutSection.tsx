@@ -377,19 +377,33 @@ export function WorkoutSection({
       <div className="-mx-1 px-1 mb-3 overflow-x-auto">
         <div className="flex items-stretch gap-2 w-max">
           {plans.map((tpl) => (
-            <button
+            <div
               key={tpl.key}
-              disabled={busy}
-              onClick={() => applyPlan(tpl.name, tpl.key, tpl.exercises)}
-              className="shrink-0 w-[132px] text-start rounded-xl border border-border/50 bg-background/40 p-2.5 hover:border-primary/40 transition disabled:opacity-50"
+              className="shrink-0 w-[132px] relative rounded-xl border border-border/50 bg-background/40 hover:border-primary/40 transition"
             >
-              <div className="text-xs font-medium truncate">{t(tpl.name)}</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{t(tpl.hint)}</div>
-              <div className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
-                {t("{n} exercises", { n: tpl.exercises.length })}
-              </div>
-            </button>
+              <button
+                disabled={busy}
+                onClick={() => applyPlan(tpl.name, tpl.key, tpl.exercises)}
+                className="text-start w-full p-2.5 disabled:opacity-50"
+              >
+                <div className="text-xs font-medium truncate pe-4">{t(tpl.name)}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{t(tpl.hint)}</div>
+                <div className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
+                  {t("{n} exercises", { n: tpl.exercises.length })}
+                </div>
+              </button>
+              {tpl.key === "daily-strength" && (
+                <button
+                  onClick={() => setEditingTargets(true)}
+                  className="absolute top-1.5 end-1.5 text-muted-foreground hover:text-foreground"
+                  aria-label={t("Edit daily targets")}
+                >
+                  <Pencil size={11} />
+                </button>
+              )}
+            </div>
           ))}
+
           {saved.map((s) => (
             <div
               key={s.id}
