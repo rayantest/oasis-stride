@@ -178,6 +178,8 @@ function App() {
   const scansQ = useBodyScans();
   const exercisesQ = useExerciseEntries();
   const targetsQ = useStrengthTargets();
+  const setsQ = useWorkoutSets();
+
 
   const ringsQ = useQuery({
     queryKey: ["fitness_rings"],
