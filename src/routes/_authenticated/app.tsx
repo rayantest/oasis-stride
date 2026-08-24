@@ -28,7 +28,7 @@ import {
   type ExerciseKey,
 } from "@/components/ExerciseSection";
 import { WorkoutSection } from "@/components/WorkoutSection";
-import { useWorkoutSets, CORE_CANONICAL } from "@/components/ExerciseHistory";
+import { useWorkoutSets } from "@/components/ExerciseHistory";
 
 
 import { toast, Toaster } from "sonner";
