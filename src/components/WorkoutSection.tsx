@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { requireUid } from "@/lib/auth";
 import { toast } from "sonner";
-import { Check, ListPlus, Play, Pause, Plus, Trash2, X, Bookmark, Flag } from "lucide-react";
+import { Check, ListPlus, Play, Pause, Plus, Trash2, X, Bookmark, Flag, Pencil } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useVacation } from "@/lib/vacation";
 import {
@@ -15,7 +15,13 @@ import {
 } from "@/lib/workout-templates";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { ExerciseHistory, useWorkoutSets, type WorkoutSet } from "@/components/ExerciseHistory";
-import type { ExerciseEntry, ExerciseKey } from "@/components/ExerciseSection";
+import {
+  EXERCISES,
+  EXERCISE_LABELS,
+  DEFAULT_STRENGTH_TARGETS,
+  type ExerciseEntry,
+  type ExerciseKey,
+} from "@/components/ExerciseSection";
 
 type Workout = {
   id: string;
@@ -177,6 +183,8 @@ export function WorkoutSection({
     () => [dailyStrengthTemplate(coreTargets as unknown as Record<string, number>), ...WORKOUT_TEMPLATES],
     [coreTargets],
   );
+  const [editingTargets, setEditingTargets] = useState(false);
+
 
   /** Tap a plan: start the day with it, or append it to the workout already open. */
   const applyPlan = async (name: string, key: string | null, list: TemplateExercise[]) => {
@@ -375,19 +383,33 @@ export function WorkoutSection({
       <div className="-mx-1 px-1 mb-3 overflow-x-auto">
         <div className="flex items-stretch gap-2 w-max">
           {plans.map((tpl) => (
-            <button
+            <div
               key={tpl.key}
-              disabled={busy}
-              onClick={() => applyPlan(tpl.name, tpl.key, tpl.exercises)}
-              className="shrink-0 w-[132px] text-start rounded-xl border border-border/50 bg-background/40 p-2.5 hover:border-primary/40 transition disabled:opacity-50"
+              className="shrink-0 w-[132px] relative rounded-xl border border-border/50 bg-background/40 hover:border-primary/40 transition"
             >
-              <div className="text-xs font-medium truncate">{t(tpl.name)}</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{t(tpl.hint)}</div>
-              <div className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
-                {t("{n} exercises", { n: tpl.exercises.length })}
-              </div>
-            </button>
+              <button
+                disabled={busy}
+                onClick={() => applyPlan(tpl.name, tpl.key, tpl.exercises)}
+                className="text-start w-full p-2.5 disabled:opacity-50"
+              >
+                <div className="text-xs font-medium truncate pe-4">{t(tpl.name)}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{t(tpl.hint)}</div>
+                <div className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
+                  {t("{n} exercises", { n: tpl.exercises.length })}
+                </div>
+              </button>
+              {tpl.key === "daily-strength" && (
+                <button
+                  onClick={() => setEditingTargets(true)}
+                  className="absolute top-1.5 end-1.5 text-muted-foreground hover:text-foreground"
+                  aria-label={t("Edit daily targets")}
+                >
+                  <Pencil size={11} />
+                </button>
+              )}
+            </div>
           ))}
+
           {saved.map((s) => (
             <div
               key={s.id}
@@ -500,6 +522,17 @@ export function WorkoutSection({
 
 
       {picking && <ExercisePicker onPick={addExercise} onClose={() => setPicking(false)} />}
+      {editingTargets && (
+        <TargetEditor
+          current={coreTargets}
+          onClose={() => setEditingTargets(false)}
+          onSaved={() => {
+            setEditingTargets(false);
+            qc.invalidateQueries({ queryKey: ["strength_targets"] });
+          }}
+        />
+      )}
+
     </section>
   );
 }
@@ -658,5 +691,98 @@ function RoundTimer({ seconds, onDone }: { seconds: number; onDone: () => void }
     >
       {running ? <Pause size={11} /> : <Play size={11} />} {left}s
     </button>
+  );
+}
+
+/* ---------- Daily strength targets (the dashed benchmark line) ---------- */
+
+function TargetEditor({
+  current,
+  onClose,
+  onSaved,
+}: {
+  current?: Record<ExerciseKey, number>;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const t = useT();
+  const { blocked } = useVacation();
+  const base = { ...DEFAULT_STRENGTH_TARGETS, ...(current ?? {}) };
+  const [vals, setVals] = useState<Record<ExerciseKey, number>>(base);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (blocked() || saving) return;
+    setSaving(true);
+    try {
+      const uid = await requireUid();
+      const effective_date = dayKeyLocal(new Date());
+      const row = {
+        user_id: uid,
+        effective_date,
+        pushups: vals.pushups,
+        pullups: vals.pullups,
+        situps: vals.situps,
+        squats: vals.squats,
+        source: "manual",
+      };
+      const { data: existing } = await supabase
+        .from("strength_targets" as never)
+        .select("id")
+        .eq("effective_date", effective_date)
+        .limit(1);
+      const found = (existing ?? [])[0] as { id: string } | undefined;
+      const { error } = found
+        ? await supabase.from("strength_targets" as never).update(row as never).eq("id", found.id)
+        : await supabase.from("strength_targets" as never).insert(row as never);
+      if (error) throw error;
+      toast.success(t("Targets updated from today."));
+      onSaved();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-card border border-border/60 p-5 shadow-[var(--shadow-card)]">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-display text-sm uppercase tracking-widest text-muted-foreground">
+            {t("Daily strength targets")}
+          </h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label={t("Close")}>
+            <X size={14} />
+          </button>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          {t("Applies from today forward — past days keep the target they had.")}
+        </p>
+        <div className="space-y-2.5">
+          {EXERCISES.map((ex) => (
+            <label key={ex} className="flex items-center justify-between gap-3">
+              <span className="text-xs">{t(EXERCISE_LABELS[ex])}</span>
+              <input
+                type="number"
+                min={0}
+                value={vals[ex]}
+                onChange={(e) =>
+                  setVals((v) => ({ ...v, [ex]: Math.max(0, Math.round(Number(e.target.value) || 0)) }))
+                }
+                className="vacation-allow w-20 bg-input/50 border border-border/50 rounded-lg px-2 py-1 text-xs font-mono text-end focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </label>
+          ))}
+        </div>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="w-full mt-4 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
+        >
+          {t("Save targets")}
+        </button>
+      </div>
+    </div>
   );
 }

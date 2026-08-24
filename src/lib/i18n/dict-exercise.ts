@@ -90,5 +90,11 @@ export const AR_EXERCISE: Record<string, string> = {
   Cardio: "كارديو",
   Mobility: "مرونة",
   Other: "أخرى",
+  "Edit daily targets": "تعديل الأهداف اليومية",
+  "Daily strength targets": "أهداف القوة اليومية",
+  "Applies from today forward — past days keep the target they had.":
+    "يُطبَّق من اليوم فصاعدًا — الأيام السابقة تحتفظ بهدفها السابق.",
+  "Save targets": "حفظ الأهداف",
+  "Targets updated from today.": "تم تحديث الأهداف من اليوم.",
+  "{n} rounds · workout": "{n} جولات · تمرين",
 };
-
