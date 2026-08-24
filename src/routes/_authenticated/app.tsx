@@ -1318,15 +1318,18 @@ function DayLog({
   movements,
   foods,
   exercises = [],
+  sets = [],
   onChange,
 }: {
   movements: Movement[];
   foods: Food[];
   exercises?: ExerciseEntry[];
+  sets?: WorkoutSet[];
   onChange: () => void;
 }) {
   type Row = { kind: "m" | "f"; ts: string; el: React.ReactNode };
   const tr = useT();
+  const qc = useQueryClient();
   const { blocked } = useVacation();
   const del = useMutation({
     mutationFn: async ({ table, id }: { table: "movement_entries" | "food_entries"; id: string }) => {
@@ -1337,6 +1340,31 @@ function DayLog({
     onSuccess: onChange,
     onError: (e) => toast.error((e as Error).message),
   });
+
+  const deleteSets = async (ids: string[]) => {
+    if (blocked()) return;
+    const { error } = await supabase.from("workout_sets" as never).delete().in("id", ids);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["workout_sets"] });
+    qc.invalidateQueries({ queryKey: ["workout_today"] });
+    onChange();
+  };
+
+  const setGroups = useMemo(() => {
+    const map = new Map<string, { name: string; rounds: number; reps: number; seconds: number; ids: string[] }>();
+    for (const s of sets) {
+      const g = map.get(s.exercise_name) ?? { name: s.exercise_name, rounds: 0, reps: 0, seconds: 0, ids: [] };
+      g.rounds += 1;
+      g.reps += Number(s.reps) || 0;
+      g.seconds += Number(s.seconds) || 0;
+      g.ids.push(s.id);
+      map.set(s.exercise_name, g);
+    }
+    return [...map.values()];
+  }, [sets]);
 
   const rows: Row[] = useMemo(() => {
     const mRows: Row[] = movements.map((m) => ({
@@ -1372,22 +1400,34 @@ function DayLog({
     const fRows: Row[] = foods.map((f) => ({
       kind: "f",
       ts: f.created_at,
-      el: <FoodLogRow food={f} onDelete={() => del.mutate({ table: "food_entries", id: f.id })} />,
+      el: <FoodLogRow key={"f" + f.id} food={f} onDelete={() => del.mutate({ table: "food_entries", id: f.id })} />,
     }));
     return [...mRows, ...fRows].sort((a, b) => b.ts.localeCompare(a.ts));
-  }, [movements, foods, del]);
+  }, [movements, foods, del, tr]);
 
-  if (rows.length === 0 && exercises.length === 0) {
+  if (rows.length === 0 && exercises.length === 0 && setGroups.length === 0) {
     return <div className="text-sm text-muted-foreground text-center py-6">{tr("Nothing logged for this day yet.")}</div>;
   }
 
   return (
     <div className="divide-y divide-border/40">
       {rows.map((r) => r.el)}
+      {setGroups.map((g) => (
+        <LogRow
+          key={"w" + g.name}
+          icon={<Dumbbell size={16} className="text-oasis" />}
+          label={tr(g.name)}
+          sub={tr("{n} rounds · workout", { n: g.rounds })}
+          value={g.reps > 0 ? tr("{n} reps", { n: g.reps }) : `${g.seconds}s`}
+          tone="cool"
+          onDelete={() => deleteSets(g.ids)}
+        />
+      ))}
       <ExerciseLogRows entries={exercises} onChange={onChange} />
     </div>
   );
 }
+
 
 function LogRow({
   icon,
