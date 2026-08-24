@@ -49,6 +49,8 @@ import {
   Compass,
   Camera,
   Pencil,
+  Dumbbell,
+
 
 } from "lucide-react";
 
