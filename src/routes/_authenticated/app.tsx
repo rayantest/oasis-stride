@@ -471,6 +471,9 @@ function App() {
               }
             />
 
+            <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
+              <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
+            </Card>
 
             <CoachCard
               focus="movement"
