@@ -516,6 +516,17 @@ export function WorkoutSection({
 
 
       {picking && <ExercisePicker onPick={addExercise} onClose={() => setPicking(false)} />}
+      {editingTargets && (
+        <TargetEditor
+          current={coreTargets}
+          onClose={() => setEditingTargets(false)}
+          onSaved={() => {
+            setEditingTargets(false);
+            qc.invalidateQueries({ queryKey: ["strength_targets"] });
+          }}
+        />
+      )}
+
     </section>
   );
 }
