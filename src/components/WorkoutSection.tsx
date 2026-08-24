@@ -177,6 +177,8 @@ export function WorkoutSection({
     () => [dailyStrengthTemplate(coreTargets as unknown as Record<string, number>), ...WORKOUT_TEMPLATES],
     [coreTargets],
   );
+  const [editingTargets, setEditingTargets] = useState(false);
+
 
   /** Tap a plan: start the day with it, or append it to the workout already open. */
   const applyPlan = async (name: string, key: string | null, list: TemplateExercise[]) => {
