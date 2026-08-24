@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { requireUid } from "@/lib/auth";
 import { toast } from "sonner";
-import { Check, ListPlus, Play, Pause, Plus, Trash2, X, Bookmark, Flag } from "lucide-react";
+import { Check, ListPlus, Play, Pause, Plus, Trash2, X, Bookmark, Flag, Pencil } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useVacation } from "@/lib/vacation";
 import {
@@ -15,7 +15,13 @@ import {
 } from "@/lib/workout-templates";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { ExerciseHistory, useWorkoutSets, type WorkoutSet } from "@/components/ExerciseHistory";
-import type { ExerciseEntry, ExerciseKey } from "@/components/ExerciseSection";
+import {
+  EXERCISES,
+  EXERCISE_LABELS,
+  DEFAULT_STRENGTH_TARGETS,
+  type ExerciseEntry,
+  type ExerciseKey,
+} from "@/components/ExerciseSection";
 
 type Workout = {
   id: string;
