@@ -490,7 +490,7 @@ function App() {
             />
 
             <Card title={viewingToday ? tr("Today's log") : tr("Log · {d}", { d: dateLabel })}>
-              <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} onChange={invalidate} />
+              <DayLog movements={dayMovements} foods={[]} exercises={dayExercises} sets={daySets} onChange={invalidate} />
             </Card>
 
             <CoachCard
