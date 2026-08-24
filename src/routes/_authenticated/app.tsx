@@ -178,7 +178,6 @@ function App() {
 
   const scansQ = useBodyScans();
   const exercisesQ = useExerciseEntries();
-  const workoutSetsQ = useWorkoutSets();
   const targetsQ = useStrengthTargets();
 
   const ringsQ = useQuery({
@@ -267,7 +266,6 @@ function App() {
   const movements = movementQ.data ?? [];
   const foods = foodQ.data ?? [];
   const exercises = (exercisesQ.data ?? []) as ExerciseEntry[];
-  const workoutSets = workoutSetsQ.data ?? [];
   const viewingToday = isToday(selectedDate);
 
   const dayMovements = movements.filter((m) => isSameDay(new Date(m.created_at), selectedDate));
