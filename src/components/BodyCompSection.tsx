@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, Activity, Plus, X } from "lucide-react";
@@ -226,15 +226,51 @@ function MetricChart({ metric, scans, picker }: {
         </p>
       ) : (
         <>
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24" preserveAspectRatio="none">
-            <path d={area} fill={metric.color} opacity={0.12} />
-            <path d={path} fill="none" stroke={metric.color} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-            {xy.map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r={1.6} fill={metric.color} vectorEffect="non-scaling-stroke" />
-            ))}
-          </svg>
+          <div
+            ref={chartRef}
+            className="relative touch-none select-none cursor-pointer"
+            onPointerDown={(e) => {
+              const el = chartRef.current;
+              if (!el || xy.length === 0) return;
+              const rect = el.getBoundingClientRect();
+              const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+              const idx = Math.round(frac * (xy.length - 1));
+              setTouched(idx);
+            }}
+          >
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24" preserveAspectRatio="none">
+              <path d={area} fill={metric.color} opacity={0.12} />
+              <path d={path} fill="none" stroke={metric.color} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+              {xy.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r={1.6} fill={metric.color} vectorEffect="non-scaling-stroke" />
+              ))}
+              {touched != null && xy[touched] && (
+                <circle
+                  cx={xy[touched].x}
+                  cy={xy[touched].y}
+                  r={3}
+                  fill="none"
+                  stroke={metric.color}
+                  strokeWidth={1.5}
+                  vectorEffect="non-scaling-stroke"
+                />
+              )}
+            </svg>
+            {touched != null && xy[touched] && (
+              <div
+                className="absolute -top-1 z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-border/60 bg-card px-2 py-1 shadow-md pointer-events-none whitespace-nowrap"
+                style={{ left: `${(xy[touched].x / W) * 100}%` }}
+              >
+                <div className="text-[11px] font-bold font-mono leading-tight" style={{ color: metric.color }}>
+                  {fmt(xy[touched].v)}{metric.unit ? ` ${metric.unit}` : ""}
+                </div>
+                <div className="text-[9px] text-muted-foreground font-mono leading-tight">{xy[touched].date}</div>
+              </div>
+            )}
+          </div>
           <div className="flex justify-between text-[9px] font-mono text-muted-foreground mt-1">
             <span>{pts[0].date} · {fmt(pts[0].v)}</span>
+            <span>{t("tap the chart")}</span>
             <span>{pts[pts.length - 1].date} · {fmt(last as number)}</span>
           </div>
         </>
