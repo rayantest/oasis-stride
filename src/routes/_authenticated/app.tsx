@@ -1667,6 +1667,16 @@ function HistoryChart({
                   aria-label={tr("{d} — {v} {u}", { d: d.date.toLocaleDateString(lang === "ar" ? "ar" : "en-US"), v: Math.round(d.value), u: meta.unit })}
                 >
                   <div className="flex-1 w-full flex items-end justify-center relative">
+                    {d.value > 0 && (
+                      <div
+                        className={`absolute -top-0.5 left-1/2 -translate-x-1/2 text-[8px] font-mono leading-none whitespace-nowrap ${
+                          selected ? "text-foreground font-bold" : "text-muted-foreground"
+                        }`}
+                        style={{ bottom: `${h + 3}px` }}
+                      >
+                        {Math.round(d.value)}
+                      </div>
+                    )}
                     {d.target > 0 && (
                       <div
                         className="absolute left-0 right-0 z-10 pointer-events-none"
