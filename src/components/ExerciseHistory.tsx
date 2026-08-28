@@ -225,7 +225,17 @@ export function ExerciseHistory({
                   }`}
                   style={{ height: `${H + 28}px` }}
                 >
-                  <div className="flex-1 w-full flex items-end justify-center">
+                  <div className="flex-1 w-full flex items-end justify-center relative">
+                    {p.value > 0 && (
+                      <div
+                        className={`absolute left-1/2 -translate-x-1/2 text-[8px] font-mono leading-none whitespace-nowrap ${
+                          selected ? "text-foreground font-bold" : "text-muted-foreground"
+                        }`}
+                        style={{ bottom: `${h + 3}px` }}
+                      >
+                        {p.value}
+                      </div>
+                    )}
                     <div
                       className="w-[16px] rounded-t transition-all duration-500"
                       style={{
