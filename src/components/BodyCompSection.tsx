@@ -176,6 +176,8 @@ function MetricChart({ metric, scans, picker }: {
   picker: React.ReactNode;
 }) {
   const t = useT();
+  const [touched, setTouched] = useState<number | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
   const pts = scans
     .map(s => ({ v: s[metric.key] as number | null, date: s.scan_date }))
     .filter((p): p is { v: number; date: string } => p.v != null);
