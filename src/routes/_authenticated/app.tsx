@@ -1127,19 +1127,19 @@ function FoodInput({
         className="w-full bg-input/50 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sand/40 placeholder:text-muted-foreground/50"
       />
       {(saved.data?.length ?? 0) > 0 && (
-        <div className="mt-2">
+        <div className="mt-3">
           <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">{tr("My foods")}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
             {saved.data!.map((s) => (
               <span
                 key={s.id}
-                className="inline-flex items-center rounded-full bg-muted/40 border border-border/50 text-[11px] overflow-hidden"
+                className="inline-flex items-center shrink-0 rounded-full bg-muted/40 border border-border/50 text-[11px] overflow-hidden snap-start"
               >
                 <button
                   type="button"
                   onClick={() => logSaved(s)}
                   disabled={busy}
-                  className="px-2.5 py-1 hover:text-sand disabled:opacity-40"
+                  className="px-2.5 py-1.5 hover:text-sand disabled:opacity-40 whitespace-nowrap"
                 >
                   {s.label} <span className="text-muted-foreground">· {s.kcal}</span>
                 </button>
@@ -1149,7 +1149,7 @@ function FoodInput({
                   disabled={busy}
                   aria-label={tr("Rename {label}", { label: s.label })}
                   title={tr("Rename")}
-                  className="px-1.5 py-1 border-l border-border/50 text-muted-foreground hover:text-sand disabled:opacity-40"
+                  className="px-1.5 py-1.5 border-s border-border/50 text-muted-foreground hover:text-sand disabled:opacity-40"
                 >
                   <Pencil size={11} />
                 </button>
