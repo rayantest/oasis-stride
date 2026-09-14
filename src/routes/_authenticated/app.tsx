@@ -1017,8 +1017,7 @@ function FoodInput({
       const { data, error } = await supabase
         .from("saved_foods")
         .select("*")
-        .order("created_at", { ascending: false })
-        .limit(12);
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as SavedFood[];
     },
