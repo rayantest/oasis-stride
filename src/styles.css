@@ -186,6 +186,15 @@
 }
 .shimmer { animation: shimmer 3s ease-in-out infinite; }
 
+/* Hide scrollbars while keeping overflow scroll functional */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Keep numeric / monospace readouts in logical LTR order under RTL layout */
 [dir="rtl"] .font-mono {
   direction: ltr;
