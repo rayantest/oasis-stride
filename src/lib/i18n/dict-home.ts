@@ -27,6 +27,8 @@ export const AR_HOME: Record<string, string> = {
   "Rename {label}": "إعادة تسمية {label}",
   "Rename this saved food": "أعد تسمية هذا الطعام المحفوظ",
   "Renamed to {name}": "تمت إعادة التسمية إلى {name}",
+  "Delete {label} from your saved foods?": "حذف {label} من أطعمتك المحفوظة؟",
+  "Deleted {label}": "تم حذف {label}",
   "Back-filling to {d}": "تسجيل بأثر رجعي إلى {d}",
   "Logged {label} · {kcal} kcal": "تم تسجيل {label} · {kcal} سعرة",
   "Logged {label} · {kcal} kcal ({source})": "تم تسجيل {label} · {kcal} سعرة ({source})",

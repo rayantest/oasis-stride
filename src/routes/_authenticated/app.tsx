@@ -1102,6 +1102,19 @@ function FoodInput({
     }
   };
 
+  const deleteSaved = async (s: SavedFood) => {
+    if (blocked()) return;
+    if (!window.confirm(tr("Delete {label} from your saved foods?", { label: s.label }))) return;
+    try {
+      const { error } = await supabase.from("saved_foods").delete().eq("id", s.id);
+      if (error) throw error;
+      toast.success(tr("Deleted {label}", { label: s.label }));
+      qc.invalidateQueries({ queryKey: ["saved_foods"] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
 
 
   return (
@@ -1152,6 +1165,16 @@ function FoodInput({
                   className="px-1.5 py-1.5 border-s border-border/50 text-muted-foreground hover:text-sand disabled:opacity-40"
                 >
                   <Pencil size={11} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteSaved(s)}
+                  disabled={busy}
+                  aria-label={tr("Delete {label}", { label: s.label })}
+                  title={tr("Delete")}
+                  className="px-1.5 py-1.5 border-s border-border/50 text-muted-foreground hover:text-destructive disabled:opacity-40"
+                >
+                  <Trash2 size={11} />
                 </button>
               </span>
             ))}
